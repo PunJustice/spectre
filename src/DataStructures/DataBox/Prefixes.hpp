@@ -78,6 +78,14 @@ struct FixedSource : db::PrefixTag, db::SimpleTag {
 };
 
 /// \ingroup DataBoxTagsGroup
+/// \brief Prefix indicating an analytic source term for iterative solvs.
+template <typename Tag>
+struct AnalyticSource : db::PrefixTag, db::SimpleTag {
+  using type = typename Tag::type;
+  using tag = Tag;
+};
+
+/// \ingroup DataBoxTagsGroup
 /// \brief Prefix indicating the initial value of a quantity
 ///
 /// \snippet Test_DataBoxPrefixes.cpp initial_name

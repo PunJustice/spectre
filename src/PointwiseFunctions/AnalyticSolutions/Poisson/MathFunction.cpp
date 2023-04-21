@@ -58,6 +58,8 @@ void MathFunctionVariables<DataType, Dim>::operator()(
   for (size_t d = 0; d < Dim; ++d) {
     get(*fixed_source_for_field) -= second_deriv.get(d, d);
   }
+  const double eps = 0.001;
+  get(*fixed_source_for_field) += eps*second_deriv.get(0, 1);
 }
 
 }  // namespace detail

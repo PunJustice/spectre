@@ -10,4 +10,5 @@ spectre_target_headers(
   InitializeFields.hpp
   InitializeFixedSources.hpp
   RunEventsAndTriggers.hpp
+  CheckConvergence.hpp
   )
