@@ -29,5 +29,12 @@ struct Field : db::SimpleTag {
   using type = Scalar<DataVector>;
 };
 
+/*!
+ * \brief The number of full solve's done for iterative solves.
+ */
+struct SolveIteration : db::SimpleTag {
+  using type = size_t;
+};
+
 }  // namespace Tags
 }  // namespace Poisson
