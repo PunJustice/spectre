@@ -17,6 +17,8 @@
 #include "Elliptic/Executables/Solver.hpp"
 #include "Elliptic/Systems/Poisson/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Poisson/FirstOrderSystem.hpp"
+#include "Elliptic/Systems/Poisson/Tags.hpp"
+#include "Elliptic/Tags.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
 #include "IO/Observer/Actions/RegisterEvents.hpp"
 #include "IO/Observer/Helpers.hpp"
