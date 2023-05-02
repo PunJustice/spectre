@@ -12,10 +12,12 @@
 #include "Domain/Creators/RegisterDerivedWithCharm.hpp"
 #include "Domain/RadiallyCompressedCoordinates.hpp"
 #include "Domain/Tags.hpp"
+#include "Elliptic/Actions/CheckConvergence.hpp"
 #include "Elliptic/Actions/InitializeAnalyticSolution.hpp"
 #include "Elliptic/Actions/InitializeFields.hpp"
 #include "Elliptic/Actions/InitializeFixedSources.hpp"
 #include "Elliptic/Actions/RunEventsAndTriggers.hpp"
+#include "Elliptic/Actions/IterativeSolve.hpp"
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/ApplyOperator.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/InitializeDomain.hpp"
@@ -248,15 +250,16 @@ struct Metavariables {
                                                 Label>;
 
   using solve_actions = tmpl::list<
-      typename linear_solver::template solve<
-          tmpl::list<
-              typename multigrid::template solve<
-                  build_linear_operator_actions,
-                  smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
-                  smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
-              ::LinearSolver::Actions::make_identity_if_skipped<
-                  multigrid, build_linear_operator_actions>>,
-          elliptic::Actions::RunEventsAndTriggers<linear_solver_iteration_id>>,
+      elliptic::Actions::IterativeSolve,
+      typename linear_solver::template solve<tmpl::list<
+          Actions::RunEventsAndTriggers,
+          typename multigrid::template solve<
+              build_linear_operator_actions,
+              smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
+              smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
+          ::LinearSolver::Actions::make_identity_if_skipped<
+              multigrid, build_linear_operator_actions>>>,
+      Actions::RunEventsAndTriggers, elliptic::Actions::CheckConvergence,
       Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
