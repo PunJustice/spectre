@@ -63,7 +63,7 @@ struct InitializeFixedSources {
   using const_global_cache_tags =
       tmpl::list<elliptic::dg::Tags::Massive, BackgroundTag>;
   using simple_tags = tmpl::list<fixed_sources_tag, analytic_sources_tag,
-                                 Poisson::Tags::SolveIterations>;
+                                 Poisson::Tags::SolveIteration>;
   using compute_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
@@ -82,13 +82,13 @@ struct InitializeFixedSources {
     // Setting our initial guess to be zero, this is equal to the fixed source
     // for the first solve. This will be updated each iteration with a different
     // action.
-    auto analytic_sources = elliptic::util::get_analytic_data<
+    auto fixed_sources = elliptic::util::get_analytic_data<
         typename fixed_sources_tag::tags_list>(background, box,
                                                inertial_coords);
 
     // For an initial guess of 0, the first fixed_source is simply the analytic
     // source.
-    auto fixed_sources = analytic_sources;
+    auto analytic_sources = fixed_sources;
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
@@ -97,8 +97,8 @@ struct InitializeFixedSources {
       const auto& det_inv_jacobian = db::get<
           domain::Tags::DetInvJacobian<Frame::ElementLogical, Frame::Inertial>>(
           box);
-      analytic_sources /= get(det_inv_jacobian);
-      ::dg::apply_mass_matrix(make_not_null(&analytic_sources), mesh);
+      fixed_sources /= get(det_inv_jacobian);
+      ::dg::apply_mass_matrix(make_not_null(&fixed_sources), mesh);
     }
 
     // Here we set the number of iterative solves done so far to 0.

@@ -78,7 +78,7 @@ struct FixedSource : db::PrefixTag, db::SimpleTag {
 };
 
 /// \ingroup DataBoxTagsGroup
-/// \brief Prefix indicating an analytic source term for iterative solvs.
+/// \brief Prefix indicating an analytic source term for iterative solves.
 template <typename Tag>
 struct AnalyticSource : db::PrefixTag, db::SimpleTag {
   using type = typename Tag::type;
