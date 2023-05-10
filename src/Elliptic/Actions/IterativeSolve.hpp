@@ -14,8 +14,8 @@
 #include "DataStructures/Variables.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
-#include "Elliptic/Utilities/GetAnalyticData.hpp"
 #include "Elliptic/Systems/Poisson/Tags.hpp"
+#include "Elliptic/Utilities/GetAnalyticData.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Parallel/AlgorithmExecution.hpp"
@@ -73,17 +73,18 @@ struct IterativeSolve {
       const ParallelComponent* const /*meta*/) {
     const auto& analytic_source = db::get<analytic_sources_tag>(box);
     const auto& previous_solve = db::get<Poisson::Tags::Field>(box);
-    const auto& mesh = db::get<domain::Tags::Mesh<3>>(box);
+    const auto& mesh = db::get<domain::Tags::Mesh<Dim>>(box);
     const auto& inverse_jacobian =
-        db::get<domain::Tags::InverseJacobian<3, Frame::ElementLogical,
+        db::get<domain::Tags::InverseJacobian<Dim, Frame::ElementLogical,
                                               Frame::Inertial>>(box);
     const auto first_derivative =
         partial_derivative(previous_solve, mesh, inverse_jacobian);
     const auto second_derivative =
         partial_derivative(first_derivative, mesh, inverse_jacobian);
+    const double eps = db::get<Poisson::Tags::Epsilon>(box);
 
-    DataVector new_source_dv = analytic_source[0] +
-                                  0.001 * second_derivative.get(0, 1);
+    DataVector new_source_dv =
+        analytic_source[0] + eps * second_derivative.get(0, 1);
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
@@ -95,11 +96,12 @@ struct IterativeSolve {
       ::dg::apply_mass_matrix(make_not_null(&new_source_dv), mesh);
     }
 
-    const Scalar<DataVector>new_source{new_source_dv};
+    const Scalar<DataVector> new_source{new_source_dv};
 
     // Increment SolveIteration
     size_t iteration = db::get<Poisson::Tags::SolveIteration>(box) + 1;
     Parallel::printf(std::to_string(iteration));
+
     db::mutate<fixed_sources_tag, ::Poisson::Tags::SolveIteration>(
         make_not_null(&box),
         [](const gsl::not_null<Scalar<DataVector>*> field,
