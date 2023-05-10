@@ -26,6 +26,7 @@
 #include "Elliptic/DiscontinuousGalerkin/SubdomainOperator/SubdomainOperator.hpp"
 #include "Elliptic/Systems/Poisson/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Poisson/FirstOrderSystem.hpp"
+#include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "Elliptic/Tags.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
 #include "IO/Observer/Actions/RegisterEvents.hpp"
@@ -129,6 +130,8 @@ struct Metavariables {
       true, fixed_sources_tag, LinearSolver::multigrid::Tags::IsFinestGrid>;
   using linear_solver_iteration_id =
       Convergence::Tags::IterationId<typename linear_solver::options_group>;
+
+  using self_consistent_iteration_id = Poisson::Tags::SolveIteration;
   // Precondition each linear solver iteration with a multigrid V-cycle
   using multigrid = LinearSolver::multigrid::Multigrid<
       volume_dim, typename linear_solver::operand_tag,
@@ -171,7 +174,8 @@ struct Metavariables {
   // Collect all items to store in the cache.
   using const_global_cache_tags =
       tmpl::list<background_tag, initial_guess_tag,
-                 domain::Tags::RadiallyCompressedCoordinatesOptions>;
+                 domain::Tags::RadiallyCompressedCoordinatesOptions,
+                 Poisson::Tags::MaxIterations, Poisson::Tags::Epsilon>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
@@ -193,7 +197,8 @@ struct Metavariables {
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
                        dg::Events::field_observations<
-                           volume_dim, observe_fields, observer_compute_tags,
+                           volume_dim, self_consistent_iteration_id,
+                           observe_fields, observer_compute_tags,
                            LinearSolver::multigrid::Tags::IsFinestGrid>>>>,
         tmpl::pair<Trigger, elliptic::Triggers::all_triggers<
                                 typename linear_solver::options_group>>>;
@@ -226,12 +231,7 @@ struct Metavariables {
       elliptic::dg::Actions::initialize_operator<system>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
-      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
-          system, fixed_sources_tag>,
       // Apply the DG operator to the initial guess
-      elliptic::dg::Actions::apply_operator<
-          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
-          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
       Parallel::Actions::TerminatePhase>;
 
   using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
@@ -251,15 +251,21 @@ struct Metavariables {
 
   using solve_actions = tmpl::list<
       elliptic::Actions::IterativeSolve,
+      elliptic::dg::Actions::apply_operator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
+      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
+          system, fixed_sources_tag>,
       typename linear_solver::template solve<tmpl::list<
-          Actions::RunEventsAndTriggers,
           typename multigrid::template solve<
               build_linear_operator_actions,
               smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
               smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
           ::LinearSolver::Actions::make_identity_if_skipped<
               multigrid, build_linear_operator_actions>>>,
-      Actions::RunEventsAndTriggers, elliptic::Actions::CheckConvergence,
+      Actions::RunEventsAndTriggers,
+      elliptic::Actions::CheckConvergence<
+          typename linear_solver::options_group>,
       Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
