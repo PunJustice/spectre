@@ -85,7 +85,7 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
     return *math_function_;
   }
 
-  const double& epsilon() const { return epsilon_; }
+  double epsilon() const { return epsilon_; }
 
   /// \cond
   explicit MathFunction(CkMigrateMessage* m);
@@ -108,9 +108,7 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
 
  private:
   std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function_;
-
- private:
-  double epsilon_;
+  double epsilon_ = std::numeric_limits::signalling_nan;
 };
 
 template <size_t Dim>
