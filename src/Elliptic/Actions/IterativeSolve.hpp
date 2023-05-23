@@ -100,7 +100,7 @@ struct IterativeSolve {
 
     // Increment SolveIteration
     size_t iteration = db::get<Poisson::Tags::SolveIteration>(box) + 1;
-    Parallel::printf(std::to_string(iteration));
+    Parallel::printf("Self-Consistent Iteration %s\n", iteration);
 
     db::mutate<fixed_sources_tag, ::Poisson::Tags::SolveIteration>(
         make_not_null(&box),

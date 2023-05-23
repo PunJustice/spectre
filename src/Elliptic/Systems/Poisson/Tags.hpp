@@ -80,7 +80,7 @@ struct Epsilon : db::SimpleTag {
   using type = double;
   using option_tags = tmpl::list<OptionTags::Epsilon>;
   static constexpr bool pass_metavariables = false;
-  static size_t create_from_options(const double epsilon) { return epsilon; }
+  static double create_from_options(const double epsilon) { return epsilon; }
 };
 
 }  // namespace Tags
