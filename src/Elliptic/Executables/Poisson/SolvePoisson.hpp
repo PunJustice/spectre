@@ -90,6 +90,12 @@ struct MultigridGroup {
   static constexpr Options::String help = "Options for the multigrid";
   using group = LinearSolverGroup;
 };
+
+struct SelfConsistentGroup {
+  static std::string name() { return "SelfConsistent"; }
+  static constexpr Options::String help =
+      "Options for the self-consistent iteration";
+};
 }  // namespace SolvePoisson::OptionTags
 
 /// \cond
