@@ -58,8 +58,7 @@ void MathFunctionVariables<DataType, Dim>::operator()(
   for (size_t d = 0; d < Dim; ++d) {
     get(*fixed_source_for_field) -= second_deriv.get(d, d);
   }
-  const double eps = epsilon;
-  get(*fixed_source_for_field) -= eps * second_deriv.get(0, 1);
+  get(*fixed_source_for_field) -= epsilon * second_deriv.get(0, 1);
 }
 
 }  // namespace detail
@@ -70,15 +69,15 @@ PUP::able::PUP_ID MathFunction<Dim>::my_PUP_ID = 0;  // NOLINT
 template <size_t Dim>
 std::unique_ptr<elliptic::analytic_data::AnalyticSolution>
 MathFunction<Dim>::get_clone() const {
-  return std::make_unique<MathFunction>(math_function_->get_clone(),
-                                        epsilon_);
+  return std::make_unique<MathFunction>(math_function_->get_clone(), epsilon_);
 }
 
 template <size_t Dim>
 MathFunction<Dim>::MathFunction(
     std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function,
     double epsilon)
-    : math_function_(std::move(math_function)), epsilon_(std::move(epsilon)) {}
+    : math_function_(std::move(math_function)), epsilon_(epsilon) {
+}
 
 template <size_t Dim>
 MathFunction<Dim>::MathFunction(CkMigrateMessage* m)
@@ -88,6 +87,7 @@ template <size_t Dim>
 void MathFunction<Dim>::pup(PUP::er& p) {
   elliptic::analytic_data::AnalyticSolution::pup(p);
   p | math_function_;
+  p | epsilon_;
 }
 
 template <size_t Dim>
