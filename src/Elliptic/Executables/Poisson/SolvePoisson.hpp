@@ -94,6 +94,12 @@ struct MultigridGroup {
   static constexpr Options::String help = "Options for the multigrid";
   using group = LinearSolverGroup;
 };
+
+struct SelfConsistentGroup {
+  static std::string name() { return "SelfConsistent"; }
+  static constexpr Options::String help =
+      "Options for the self-consistent iteration";
+};
 }  // namespace SolvePoisson::OptionTags
 
 /// \cond
@@ -250,7 +256,7 @@ struct Metavariables {
                                                 Label>;
 
   using solve_actions = tmpl::list<
-      elliptic::Actions::IterativeSolve,
+      Actions::RunEventsAndTriggers, elliptic::Actions::IterativeSolve,
       elliptic::dg::Actions::apply_operator<
           system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
           operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
