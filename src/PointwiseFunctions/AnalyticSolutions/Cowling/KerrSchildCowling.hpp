@@ -87,11 +87,31 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
   std::unique_ptr<elliptic::analytic_data::AnalyticSolution> get_clone()
       const override;
 
-  template <typename DataType, typename Frame, typename... Tags>
-  tuples::TaggedTuple<Tags...> variables(
-      const tnsr::I<DataType, 3, Frame>& x, const Mesh<3>& mesh,
-      const InverseJacobian<DataType, 3, ::Frame::ElementLogical,
+  template <typename DataType, typename... RequestedTags>
+  tuples::TaggedTuple<RequestedTags...> variables(
+      const tnsr::I<DataType, 3, Frame::Inertial>& x,
+      tmpl::list<RequestedTags...> /*meta*/) const {
+    return variables_impl<DataType>(x, std::nullopt, std::nullopt,
+                                    tmpl::list<RequestedTags...>{});
+  }
+
+  template <typename... RequestedTags>
+  tuples::TaggedTuple<RequestedTags...> variables(
+      const tnsr::I<DataVector, 3, Frame::Inertial>& x, const Mesh<3>& mesh,
+      const InverseJacobian<DataVector, 3, ::Frame::ElementLogical,
                             ::Frame::Inertial>& inv_jacobian,
+      tmpl::list<RequestedTags...> /*meta*/) const {
+    return variables_impl<DataVector>(x, mesh, inv_jacobian,
+                                      tmpl::list<RequestedTags...>{});
+  }
+
+  template <typename DataType, typename Frame, typename... Tags>
+  tuples::TaggedTuple<Tags...> variables_impl(
+      const tnsr::I<DataType, volume_dim, Frame>& x,
+      const std::optional<std::reference_wrapper<const Mesh<3>>>& mesh,
+      const std::optional<std::reference_wrapper<const InverseJacobian<
+          DataType, 3, ::Frame::ElementLogical, ::Frame::Inertial>>>&
+          inv_jacobian,
       tmpl::list<Tags...> /*meta*/) const {
     static_assert(
         tmpl2::flat_all_v<
@@ -202,9 +222,10 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
 
     IntermediateComputer(
         const KerrSchild& solution, const tnsr::I<DataType, 3, Frame>& x,
-        const Mesh<3>& mesh,
-        const InverseJacobian<DataType, 3, ::Frame::ElementLogical,
-                              ::Frame::Inertial>& inv_jacobian);
+        const std::optional<std::reference_wrapper<const Mesh<3>>>& mesh,
+        const std::optional<std::reference_wrapper<const InverseJacobian<
+            DataType, 3, ::Frame::ElementLogical, ::Frame::Inertial>>>&
+            inv_jacobian);
 
     const KerrSchild& solution() const { return solution_; }
 
@@ -384,9 +405,9 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
    private:
     const KerrSchild& solution_;
     const tnsr::I<DataType, 3, Frame>& x_;
-    const Mesh<3> mesh_;
-    const InverseJacobian<DataType, 3, ::Frame::ElementLogical,
-                          ::Frame::Inertial>
+    const std::optional<std::reference_wrapper<const Mesh<3>>>& mesh_;
+    const std::optional<std::reference_wrapper<const InverseJacobian<
+        DataType, 3, ::Frame::ElementLogical, ::Frame::Inertial>>>&
         inv_jacobian_;
     // Here null_vector_0 is simply -1, but if you have a boosted solution,
     // then null_vector_0 can be something different, so we leave it coded
