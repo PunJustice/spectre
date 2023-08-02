@@ -11,7 +11,6 @@ namespace Cowling::BoundaryConditions {
 
 template <typename System>
 using standard_boundary_conditions =
-    tmpl::list<elliptic::BoundaryConditions::AnalyticSolution<System>,
-               Robin<System::volume_dim>>;
+    tmpl::list<Robin<System::volume_dim>>;
 
 }
