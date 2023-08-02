@@ -108,7 +108,7 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
 
  private:
   std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function_;
-  double epsilon_ = std::numeric_limits::signalling_nan;
+  double epsilon_;
 };
 
 template <size_t Dim>
