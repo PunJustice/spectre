@@ -91,11 +91,6 @@ struct MultigridGroup {
   using group = LinearSolverGroup;
 };
 
-struct SelfConsistentGroup {
-  static std::string name() { return "SelfConsistent"; }
-  static constexpr Options::String help =
-      "Options for the self-consistent iteration";
-};
 }  // namespace SolveCowling::OptionTags
 
 /// \cond
@@ -132,7 +127,6 @@ struct Metavariables {
   using linear_solver_iteration_id =
       Convergence::Tags::IterationId<typename linear_solver::options_group>;
 
-  using self_consistent_iteration_id = Cowling::Tags::SolveIteration;
   // Precondition each linear solver iteration with a multigrid V-cycle
   using multigrid = LinearSolver::multigrid::Multigrid<
       volume_dim, typename linear_solver::operand_tag,
@@ -159,22 +153,18 @@ struct Metavariables {
                                          typename system::primal_fluxes>>;
 
   using analytic_solution_fields = typename system::primal_fields;
-  using error_compute = ::Tags::ErrorsCompute<analytic_solution_fields>;
-  using error_tags = db::wrap_tags_in<Tags::Error, analytic_solution_fields>;
   using observe_fields = tmpl::append<
-      analytic_solution_fields, error_tags,
+      analytic_solution_fields,
       tmpl::list<domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
                  domain::Tags::RadiallyCompressedCoordinatesCompute<
                      volume_dim, Frame::Inertial>>>;
   using observer_compute_tags =
-      tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
-                 error_compute>;
+      tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =
       tmpl::list<background_tag, initial_guess_tag,
-                 domain::Tags::RadiallyCompressedCoordinatesOptions,
-                 Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon>;
+                 domain::Tags::RadiallyCompressedCoordinatesOptions>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
@@ -184,11 +174,6 @@ struct Metavariables {
                    Cowling::Solutions::all_analytic_solutions>,
         tmpl::pair<elliptic::analytic_data::InitialGuess,
                    Cowling::Solutions::all_initial_guesses<volume_dim>>,
-        tmpl::pair<elliptic::analytic_data::AnalyticSolution,
-                   Cowling::Solutions::all_initial_guesses<volume_dim>>,
-        tmpl::pair<
-            ::MathFunction<volume_dim, Frame::Inertial>,
-            MathFunctions::all_math_functions<volume_dim, Frame::Inertial>>,
         tmpl::pair<
             elliptic::BoundaryConditions::BoundaryCondition<volume_dim>,
             Cowling::BoundaryConditions::standard_boundary_conditions<system>>,
@@ -196,7 +181,7 @@ struct Metavariables {
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
                        dg::Events::field_observations<
-                           volume_dim, self_consistent_iteration_id,
+                           volume_dim, linear_solver_iteration_id,
                            observe_fields, observer_compute_tags,
                            LinearSolver::multigrid::Tags::IsFinestGrid>>>>,
         tmpl::pair<Trigger, elliptic::Triggers::all_triggers<
@@ -268,7 +253,6 @@ struct Metavariables {
           Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename multigrid::options_group>>;
-
   // Specify all parallel components that will execute actions at some point.
   using component_list = tmpl::flatten<
       tmpl::list<dg_element_array, typename linear_solver::component_list,

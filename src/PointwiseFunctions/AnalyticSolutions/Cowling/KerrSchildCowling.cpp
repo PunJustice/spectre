@@ -57,9 +57,10 @@ KerrSchild::get_clone() const {
 template <typename DataType, typename Frame>
 KerrSchild::IntermediateComputer<DataType, Frame>::IntermediateComputer(
     const KerrSchild& solution, const tnsr::I<DataType, 3, Frame>& x,
-    const Mesh<3>& mesh,
-    const InverseJacobian<DataType, 3, ::Frame::ElementLogical,
-                          ::Frame::Inertial>& inv_jacobian)
+    const std::optional<std::reference_wrapper<const Mesh<3>>>& mesh,
+    const std::optional<std::reference_wrapper<const InverseJacobian<
+        DataType, 3, ::Frame::ElementLogical, ::Frame::Inertial>>>&
+        inv_jacobian)
     : solution_(solution), x_(x), mesh_(mesh), inv_jacobian_(inv_jacobian) {}
 
 template <typename DataType, typename Frame>
@@ -643,7 +644,8 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
   const auto& spatial_christoffel_second_kind = cache->get_var(
       *this, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
   partial_derivative(deriv_spatial_christoffel_second_kind,
-                     spatial_christoffel_second_kind, mesh_, inv_jacobian_);
+                     spatial_christoffel_second_kind, mesh_->get(),
+                     inv_jacobian_->get());
 }
 
 template <typename DataType, typename Frame>
@@ -713,8 +715,8 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
   const auto& inverse_spatial_metric = cache->get_var(
       *this, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{});
 
-  const auto deriv_extrinsic_curvature =
-      partial_derivative(extrinsic_curvature, mesh_, inv_jacobian_);
+  const auto deriv_extrinsic_curvature = partial_derivative(
+      extrinsic_curvature, mesh_->get(), inv_jacobian_->get());
   tnsr::ijj<DataType, 3, Frame> cov_deriv_extrinsic_curvature{};
   tenex::evaluate<ti::i, ti::j, ti::k>(
       make_not_null(&cov_deriv_extrinsic_curvature),
