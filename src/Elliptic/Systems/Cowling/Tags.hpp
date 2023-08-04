@@ -11,6 +11,7 @@
 #include "DataStructures/DataBox/Tag.hpp"
 #include "DataStructures/Tensor/TypeAliases.hpp"
 #include "Options/Options.hpp"
+#include "Options/String.hpp"
 
 /// \cond
 class DataVector;
