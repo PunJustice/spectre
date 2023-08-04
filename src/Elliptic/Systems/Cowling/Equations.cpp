@@ -1,7 +1,7 @@
 // Distributed under the MIT License.
 // See LICENSE.txt for details.
 
-#include "Elliptic/Systems/Poisson/Equations.hpp"
+#include "Elliptic/Systems/Cowling/Equations.hpp"
 
 #include <cstddef>
 
@@ -13,7 +13,7 @@
 #include "Utilities/GenerateInstantiations.hpp"
 #include "Utilities/MakeWithValue.hpp"
 
-namespace Poisson {
+namespace Cowling {
 
 template <size_t Dim>
 void flat_cartesian_fluxes(
@@ -109,30 +109,30 @@ void Sources<Dim, Geometry::Curved>::apply(
     const tnsr::i<DataVector, Dim>& /*christoffel_contracted*/,
     const Scalar<DataVector>& /*field*/) {}
 
-}  // namespace Poisson
+}  // namespace Cowling
 
 #define DIM(data) BOOST_PP_TUPLE_ELEM(0, data)
 
 #define INSTANTIATE(_, data)                                                   \
-  template void Poisson::flat_cartesian_fluxes<DIM(data)>(                     \
+  template void Cowling::flat_cartesian_fluxes<DIM(data)>(                     \
       const gsl::not_null<tnsr::I<DataVector, DIM(data)>*>,                    \
       const tnsr::i<DataVector, DIM(data)>&);                                  \
-  template void Poisson::curved_fluxes<DIM(data)>(                             \
+  template void Cowling::curved_fluxes<DIM(data)>(                             \
       const gsl::not_null<tnsr::I<DataVector, DIM(data)>*>,                    \
       const tnsr::II<DataVector, DIM(data)>&,                                  \
       const tnsr::i<DataVector, DIM(data)>&);                                  \
-  template void Poisson::add_curved_sources<DIM(data)>(                        \
+  template void Cowling::add_curved_sources<DIM(data)>(                        \
       const gsl::not_null<Scalar<DataVector>*>,                                \
       const tnsr::i<DataVector, DIM(data)>&,                                   \
       const tnsr::I<DataVector, DIM(data)>&);                                  \
-  template void Poisson::auxiliary_fluxes<DIM(data)>(                          \
+  template void Cowling::auxiliary_fluxes<DIM(data)>(                          \
       gsl::not_null<tnsr::Ij<DataVector, DIM(data)>*>,                         \
       const Scalar<DataVector>&);                                              \
-  template class Poisson::Fluxes<DIM(data), Poisson::Geometry::FlatCartesian>; \
-  template class Poisson::Fluxes<DIM(data), Poisson::Geometry::Curved>;        \
-  template class Poisson::Sources<DIM(data),                                   \
-                                  Poisson::Geometry::FlatCartesian>;           \
-  template class Poisson::Sources<DIM(data), Poisson::Geometry::Curved>;
+  template class Cowling::Fluxes<DIM(data), Cowling::Geometry::FlatCartesian>; \
+  template class Cowling::Fluxes<DIM(data), Cowling::Geometry::Curved>;        \
+  template class Cowling::Sources<DIM(data),                                   \
+                                  Cowling::Geometry::FlatCartesian>;           \
+  template class Cowling::Sources<DIM(data), Cowling::Geometry::Curved>;
 
 GENERATE_INSTANTIATIONS(INSTANTIATE, (1, 2, 3))
 

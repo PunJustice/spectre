@@ -93,7 +93,7 @@ struct Fluxes<Dim, Geometry::FlatCartesian> {
 template <size_t Dim>
 struct Fluxes<Dim, Geometry::Curved> {
   using argument_tags = tmpl::list<
-      gr::Tags::InverseSpatialMetric<Dim, Frame::Inertial, DataVector>>;
+      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>>;
   using volume_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, Dim>*> flux_for_field,
                     const tnsr::II<DataVector, Dim>& inv_spatial_metric,
@@ -130,7 +130,7 @@ template <size_t Dim>
 struct Sources<Dim, Geometry::Curved> {
   using argument_tags =
       tmpl::list<gr::Tags::SpatialChristoffelSecondKindContracted<
-          Dim, Frame::Inertial, DataVector>>;
+          DataVector, Dim, Frame::Inertial>>;
   static void apply(gsl::not_null<Scalar<DataVector>*> equation_for_field,
                     const tnsr::i<DataVector, Dim>& christoffel_contracted,
                     const Scalar<DataVector>& field,
