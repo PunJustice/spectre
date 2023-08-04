@@ -16,6 +16,7 @@
 #include "Elliptic/Systems/Cowling/Geometry.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
+#include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/TagsDeclarations.hpp"
 #include "Utilities/ProtocolHelpers.hpp"
 #include "Utilities/TMPL.hpp"
@@ -80,11 +81,13 @@ struct FirstOrderSystem
       ::Tags::Flux<field_gradient, tmpl::size_t<Dim>, Frame::Inertial>>;
 
   using background_fields = tmpl::list<
-      gr::Tags::InverseSpatialMetric<Dim, Frame::Inertial, DataVector>,
-      gr::Tags::SpatialChristoffelSecondKindContracted<Dim, Frame::Inertial,
-                                                       DataVector>>;
+      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>,
+      gr::Tags::SpatialChristoffelSecondKindContracted<DataVector, Dim,
+                                                       Frame::Inertial>,
+      gr::Tags::WeylElectricScalar<DataVector>,
+      gr::Tags::WeylMagneticScalar<DataVector>>;
   using inv_metric_tag =
-      gr::Tags::InverseSpatialMetric<Dim, Frame::Inertial, DataVector>;
+      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>;
 
   using fluxes_computer = Fluxes<Dim, Cowling::Geometry::Curved>;
   using sources_computer = Sources<Dim, Cowling::Geometry::Curved>;

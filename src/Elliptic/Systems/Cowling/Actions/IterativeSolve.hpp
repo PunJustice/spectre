@@ -14,12 +14,13 @@
 #include "DataStructures/Variables.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
-#include "Elliptic/Systems/Poisson/Tags.hpp"
+#include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Utilities/GetAnalyticData.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Parallel/AlgorithmExecution.hpp"
 #include "Parallel/Printf.hpp"
+#include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "Utilities/MakeWithValue.hpp"
 #include "Utilities/TMPL.hpp"
 #include "Utilities/TaggedTuple.hpp"
@@ -31,7 +32,7 @@ struct GlobalCache;
 }  // namespace Parallel
 /// \endcond
 
-namespace elliptic::Actions {
+namespace Cowling::Actions {
 
 /*!
  * \brief Inialitises flux for next iterative solve.
@@ -56,9 +57,7 @@ namespace elliptic::Actions {
  */
 struct IterativeSolve {
  private:
-  using fixed_sources_tag = ::Tags::FixedSource<::Poisson::Tags::Field>;
-
-  using analytic_sources_tag = ::Tags::AnalyticSource<::Poisson::Tags::Field>;
+  using fixed_sources_tag = ::Tags::FixedSource<::Cowling::Tags::Field>;
 
  public:
   using compute_tags = tmpl::list<>;
@@ -71,24 +70,21 @@ struct IterativeSolve {
       const Parallel::GlobalCache<Metavariables>& /*cache*/,
       const ElementId<Dim>& /*array_index*/, const ActionList /*meta*/,
       const ParallelComponent* const /*meta*/) {
-    const auto& analytic_source = db::get<analytic_sources_tag>(box);
-    const auto& previous_solve = db::get<Poisson::Tags::Field>(box);
-    const auto& mesh = db::get<domain::Tags::Mesh<Dim>>(box);
-    const auto& inverse_jacobian =
-        db::get<domain::Tags::InverseJacobian<Dim, Frame::ElementLogical,
-                                              Frame::Inertial>>(box);
-    const auto first_derivative =
-        partial_derivative(previous_solve, mesh, inverse_jacobian);
-    const auto second_derivative =
-        partial_derivative(first_derivative, mesh, inverse_jacobian);
-    const double eps = db::get<Poisson::Tags::Epsilon>(box);
+    const auto& weyl_magnetic_scalar =
+        db::get<gr::Tags::WeylMagneticScalar<DataVector>>(box);
+    const auto& weyl_electric_scalar =
+        db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
+    // const auto& previous_solve = db::get<Cowling::Tags::Field>(box);
+    const double epsilon = db::get<Cowling::Tags::Epsilon>(box);
 
     DataVector new_source_dv =
-        analytic_source[0] + eps * second_derivative.get(0, 1);
+        8. * epsilon *
+        (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
     if (db::get<elliptic::dg::Tags::Massive>(box)) {
+      const auto& mesh = db::get<domain::Tags::Mesh<Dim>>(box);
       const auto& det_inv_jacobian = db::get<
           domain::Tags::DetInvJacobian<Frame::ElementLogical, Frame::Inertial>>(
           box);
@@ -98,11 +94,12 @@ struct IterativeSolve {
 
     const Scalar<DataVector> new_source{new_source_dv};
 
-    // Increment SolveIteration
-    size_t iteration = db::get<Poisson::Tags::SolveIteration>(box) + 1;
-    Parallel::printf("Self-Consistent Iteration %s\n", iteration);
 
-    db::mutate<fixed_sources_tag, ::Poisson::Tags::SolveIteration>(
+    // Increment SolveIteration
+    size_t iteration = db::get<Cowling::Tags::SolveIteration>(box) + 1;
+    Parallel::printf("New Self-Consistent Solve Iteration!\n");
+
+    db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration>(
         [](const gsl::not_null<Scalar<DataVector>*> field,
            const gsl::not_null<size_t*> solve_iteration,
            const Scalar<DataVector> field_value, const double iteration_value) {
@@ -115,4 +112,4 @@ struct IterativeSolve {
   }
 };
 
-}  // namespace elliptic::Actions
+}  // namespace Cowling::Actions

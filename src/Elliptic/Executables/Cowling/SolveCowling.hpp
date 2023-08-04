@@ -13,13 +13,16 @@
 #include "Domain/RadiallyCompressedCoordinates.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/Actions/InitializeFields.hpp"
-#include "Elliptic/Actions/InitializeFixedSources.hpp"
+#include "Elliptic/Actions/RunEventsAndTriggers.hpp"
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/ApplyOperator.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/InitializeDomain.hpp"
 #include "Elliptic/DiscontinuousGalerkin/DgElementArray.hpp"
 #include "Elliptic/DiscontinuousGalerkin/SubdomainOperator/InitializeSubdomain.hpp"
 #include "Elliptic/DiscontinuousGalerkin/SubdomainOperator/SubdomainOperator.hpp"
+#include "Elliptic/Systems/Cowling/Actions/CheckConvergence.hpp"
+#include "Elliptic/Systems/Cowling/Actions/InitializeFixedSources.hpp"
+#include "Elliptic/Systems/Cowling/Actions/IterativeSolve.hpp"
 #include "Elliptic/Systems/Cowling/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Cowling/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
@@ -31,6 +34,7 @@
 #include "NumericalAlgorithms/Convergence/Tags.hpp"
 #include "Options/Options.hpp"
 #include "Options/Protocols/FactoryCreation.hpp"
+#include "Options/String.hpp"
 #include "Parallel/GlobalCache.hpp"
 #include "Parallel/InitializationFunctions.hpp"
 #include "Parallel/Phase.hpp"
@@ -40,7 +44,6 @@
 #include "ParallelAlgorithms/Actions/TerminatePhase.hpp"
 #include "ParallelAlgorithms/Events/Factory.hpp"
 #include "ParallelAlgorithms/Events/Tags.hpp"
-#include "ParallelAlgorithms/EventsAndTriggers/Actions/RunEventsAndTriggers.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Completion.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Event.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Trigger.hpp"
@@ -91,6 +94,12 @@ struct MultigridGroup {
   using group = LinearSolverGroup;
 };
 
+struct SelfConsistentGroup {
+  static std::string name() { return "SelfConsistent"; }
+  static constexpr Options::String help =
+      "Options for the self-consistent iteration";
+};
+
 }  // namespace SolveCowling::OptionTags
 
 /// \cond
@@ -127,6 +136,8 @@ struct Metavariables {
   using linear_solver_iteration_id =
       Convergence::Tags::IterationId<typename linear_solver::options_group>;
 
+  using self_consistent_iteration_id = Cowling::Tags::SolveIteration;
+
   // Precondition each linear solver iteration with a multigrid V-cycle
   using multigrid = LinearSolver::multigrid::Multigrid<
       volume_dim, typename linear_solver::operand_tag,
@@ -159,12 +170,15 @@ struct Metavariables {
                  domain::Tags::RadiallyCompressedCoordinatesCompute<
                      volume_dim, Frame::Inertial>>>;
   using observer_compute_tags =
-      tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>>;
+      tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
+                 ::Events::Tags::ObserverDetInvJacobianCompute<
+                     Frame::ElementLogical, Frame::Inertial>>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =
       tmpl::list<background_tag, initial_guess_tag,
-                 domain::Tags::RadiallyCompressedCoordinatesOptions>;
+                 domain::Tags::RadiallyCompressedCoordinatesOptions,
+                 Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
@@ -181,8 +195,7 @@ struct Metavariables {
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
                        dg::Events::field_observations<
-                           volume_dim, linear_solver_iteration_id,
-                           observe_fields, observer_compute_tags,
+                           volume_dim, observe_fields, observer_compute_tags,
                            LinearSolver::multigrid::Tags::IsFinestGrid>>>>,
         tmpl::pair<Trigger, elliptic::Triggers::all_triggers<
                                 typename linear_solver::options_group>>>;
@@ -206,7 +219,7 @@ struct Metavariables {
       Actions::RandomizeVariables<
           ::Tags::Variables<typename system::primal_fields>,
           RandomizeInitialGuess>,
-      elliptic::Actions::InitializeFixedSources<system, initial_guess_tag>,
+      Cowling::Actions::InitializeFixedSources<system, initial_guess_tag>,
       elliptic::dg::Actions::initialize_operator<system, background_tag>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
@@ -229,7 +242,7 @@ struct Metavariables {
                                                 Label>;
 
   using solve_actions = tmpl::list<
-      Actions::RunEventsAndTriggers,
+      Cowling::Actions::IterativeSolve,
       elliptic::dg::Actions::apply_operator<
           system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
           operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
@@ -242,7 +255,9 @@ struct Metavariables {
               smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
           ::LinearSolver::Actions::make_identity_if_skipped<
               multigrid, build_linear_operator_actions>>>,
-      Actions::RunEventsAndTriggers, Parallel::Actions::TerminatePhase>;
+      elliptic::Actions::RunEventsAndTriggers<self_consistent_iteration_id>,
+      Cowling::Actions::CheckConvergence<typename linear_solver::options_group>,
+      Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
       Metavariables,
