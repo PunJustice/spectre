@@ -49,6 +49,8 @@ void KerrSchild::pup(PUP::er& p) {
   p | zero_spin_;
 }
 
+PUP::able::PUP_ID KerrSchild::my_PUP_ID = 0;  // NOLINT
+
 std::unique_ptr<elliptic::analytic_data::AnalyticSolution>
 KerrSchild::get_clone() const {
   return std::make_unique<KerrSchild>(mass_, dimensionless_spin_, center_);
@@ -413,7 +415,7 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::I<DataType, 3, Frame>*> shift,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::Shift<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::Shift<DataType, 3, Frame> /*meta*/) const {
   if (solution_.zero_spin()) {
     const auto& x_minus_center =
         cache->get_var(*this, internal_tags::x_minus_center<DataType, Frame>{});
@@ -489,7 +491,7 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::ii<DataType, 3, Frame>*> spatial_metric,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::SpatialMetric<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::SpatialMetric<DataType, 3, Frame> /*meta*/) const {
   if (solution_.zero_spin()) {
     const auto& x_minus_center =
         cache->get_var(*this, internal_tags::x_minus_center<DataType, Frame>{});
@@ -524,7 +526,7 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::II<DataType, 3, Frame>*> inverse_spatial_metric,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::InverseSpatialMetric<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::InverseSpatialMetric<DataType, 3, Frame> /*meta*/) const {
   const auto& H = get(cache->get_var(*this, internal_tags::H<DataType>{}));
   const auto& lapse_squared =
       get(cache->get_var(*this, internal_tags::lapse_squared<DataType>{}));
@@ -587,7 +589,7 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::ii<DataType, 3, Frame>*> dt_spatial_metric,
     const gsl::not_null<CachedBuffer*> /*cache*/,
-    ::Tags::dt<gr::Tags::SpatialMetric<3, Frame, DataType>> /*meta*/) const {
+    ::Tags::dt<gr::Tags::SpatialMetric<DataType, 3, Frame>> /*meta*/) const {
   std::fill(dt_spatial_metric->begin(), dt_spatial_metric->end(), 0.);
 }
 
@@ -595,14 +597,14 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::ii<DataType, 3, Frame>*> extrinsic_curvature,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::ExtrinsicCurvature<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::ExtrinsicCurvature<DataType, 3, Frame> /*meta*/) const {
   gr::extrinsic_curvature(
       extrinsic_curvature, cache->get_var(*this, gr::Tags::Lapse<DataType>{}),
-      cache->get_var(*this, gr::Tags::Shift<3, Frame, DataType>{}),
+      cache->get_var(*this, gr::Tags::Shift<DataType, 3, Frame>{}),
       cache->get_var(*this, DerivShift<DataType, Frame>{}),
-      cache->get_var(*this, gr::Tags::SpatialMetric<3, Frame, DataType>{}),
+      cache->get_var(*this, gr::Tags::SpatialMetric<DataType, 3, Frame>{}),
       cache->get_var(*this,
-                     ::Tags::dt<gr::Tags::SpatialMetric<3, Frame, DataType>>{}),
+                     ::Tags::dt<gr::Tags::SpatialMetric<DataType, 3, Frame>>{}),
       cache->get_var(*this, DerivSpatialMetric<DataType, Frame>{}));
 }
 
@@ -611,7 +613,7 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::ijj<DataType, 3, Frame>*>
         spatial_christoffel_first_kind,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::SpatialChristoffelFirstKind<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::SpatialChristoffelFirstKind<DataType, 3, Frame> /*meta*/) const {
   const auto& d_spatial_metric =
       cache->get_var(*this, DerivSpatialMetric<DataType, Frame>{});
   gr::christoffel_first_kind<3, Frame, IndexType::Spatial, DataType>(
@@ -623,11 +625,11 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::Ijj<DataType, 3, Frame>*>
         spatial_christoffel_second_kind,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame> /*meta*/) const {
   const auto& spatial_christoffel_first_kind = cache->get_var(
-      *this, gr::Tags::SpatialChristoffelFirstKind<3, Frame, DataType>{});
+      *this, gr::Tags::SpatialChristoffelFirstKind<DataType, 3, Frame>{});
   const auto& inverse_spatial_metric = cache->get_var(
-      *this, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{});
+      *this, gr::Tags::InverseSpatialMetric<DataType, 3, Frame>{});
   raise_or_lower_first_index<DataType, SpatialIndex<3, UpLo::Lo, Frame>,
                              SpatialIndex<3, UpLo::Lo, Frame>>(
       spatial_christoffel_second_kind, spatial_christoffel_first_kind,
@@ -639,10 +641,10 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::iJkk<DataType, 3, Frame>*>
         deriv_spatial_christoffel_second_kind,
     const gsl::not_null<CachedBuffer*> cache,
-    ::Tags::deriv<gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>,
+    ::Tags::deriv<gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>,
                   tmpl::size_t<3>, ::Frame::Inertial> /*meta*/) const {
   const auto& spatial_christoffel_second_kind = cache->get_var(
-      *this, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
+      *this, gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>{});
   partial_derivative(deriv_spatial_christoffel_second_kind,
                      spatial_christoffel_second_kind, mesh_->get(),
                      inv_jacobian_->get());
@@ -653,10 +655,10 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::i<DataType, 3, Frame>*>
         spatial_christoffel_second_kind_contracted,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::SpatialChristoffelSecondKindContracted<3, Frame,
-                                                     DataType> /*meta*/) const {
+    gr::Tags::SpatialChristoffelSecondKindContracted<DataType, 3,
+                                                     Frame> /*meta*/) const {
   const auto& spatial_christoffel_second_kind = cache->get_var(
-      *this, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
+      *this, gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>{});
   for (size_t i = 0; i < 3; ++i) {
     spatial_christoffel_second_kind_contracted->get(i) = 0. * get<0>(x_);
     for (size_t j = 0; j < 3; ++j) {
@@ -670,12 +672,12 @@ template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::ii<DataType, 3, Frame>*> spatial_ricci,
     const gsl::not_null<CachedBuffer*> cache,
-    gr::Tags::SpatialRicci<3, Frame, DataType> /*meta*/) const {
+    gr::Tags::SpatialRicci<DataType, 3, Frame> /*meta*/) const {
   const auto& spatial_christoffel_second_kind = cache->get_var(
-      *this, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
+      *this, gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>{});
   const auto& deriv_spatial_christoffel_second_kind = cache->get_var(
       *this,
-      ::Tags::deriv<gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>,
+      ::Tags::deriv<gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>,
                     tmpl::size_t<3>, ::Frame::Inertial>{});
   gr::ricci_tensor(spatial_ricci, spatial_christoffel_second_kind,
                    deriv_spatial_christoffel_second_kind);
@@ -687,11 +689,11 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<CachedBuffer*> cache,
     gr::Tags::WeylElectricScalar<DataType> /*meta*/) const {
   const auto& spatial_ricci =
-      cache->get_var(*this, gr::Tags::SpatialRicci<3, Frame, DataType>{});
+      cache->get_var(*this, gr::Tags::SpatialRicci<DataType, 3, Frame>{});
   const auto& extrinsic_curvature =
-      cache->get_var(*this, gr::Tags::ExtrinsicCurvature<3, Frame, DataType>{});
+      cache->get_var(*this, gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>{});
   const auto& inverse_spatial_metric = cache->get_var(
-      *this, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{});
+      *this, gr::Tags::InverseSpatialMetric<DataType, 3, Frame>{});
 
   const auto weyl_electric = gr::weyl_electric(
       spatial_ricci, extrinsic_curvature, inverse_spatial_metric);
@@ -705,15 +707,15 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<CachedBuffer*> cache,
     gr::Tags::WeylMagneticScalar<DataType> /*meta*/) const {
   const auto& extrinsic_curvature =
-      cache->get_var(*this, gr::Tags::ExtrinsicCurvature<3, Frame, DataType>{});
+      cache->get_var(*this, gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>{});
   const auto& spatial_metric =
-      cache->get_var(*this, gr::Tags::SpatialMetric<3, Frame, DataType>{});
+      cache->get_var(*this, gr::Tags::SpatialMetric<DataType, 3, Frame>{});
   const auto& sqrt_det_spatial_metric =
       cache->get_var(*this, gr::Tags::SqrtDetSpatialMetric<DataType>{});
   const auto& spatial_christoffel_second_kind = cache->get_var(
-      *this, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
+      *this, gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>{});
   const auto& inverse_spatial_metric = cache->get_var(
-      *this, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{});
+      *this, gr::Tags::InverseSpatialMetric<DataType, 3, Frame>{});
 
   const auto deriv_extrinsic_curvature = partial_derivative(
       extrinsic_curvature, mesh_->get(), inv_jacobian_->get());
@@ -787,7 +789,7 @@ template <typename DataType, typename Frame>
 tnsr::I<DataType, 3, Frame>
 KerrSchild::IntermediateVars<DataType, Frame>::get_var(
     const IntermediateComputer<DataType, Frame>& computer,
-    ::Tags::dt<gr::Tags::Shift<3, Frame, DataType>> /*meta*/) {
+    ::Tags::dt<gr::Tags::Shift<DataType, 3, Frame>> /*meta*/) {
   const auto& H = get(get_var(computer, internal_tags::H<DataType>()));
   return make_with_value<tnsr::I<DataType, 3, Frame>>(H, 0.);
 }
@@ -796,7 +798,7 @@ template <typename DataType, typename Frame>
 tnsr::i<DataType, 3, Frame>
 KerrSchild::IntermediateVars<DataType, Frame>::get_var(
     const IntermediateComputer<DataType, Frame>& computer,
-    gr::Tags::DerivDetSpatialMetric<3, Frame, DataType> /*meta*/) {
+    gr::Tags::DerivDetSpatialMetric<DataType, 3, Frame> /*meta*/) {
   const auto& deriv_H =
       get_var(computer, internal_tags::deriv_H<DataType, Frame>{});
 
@@ -823,15 +825,15 @@ Scalar<DataType> KerrSchild::IntermediateVars<DataType, Frame>::get_var(
     return result;
   }
   return trace(
-      get_var(computer, gr::Tags::ExtrinsicCurvature<3, Frame, DataType>{}),
-      get_var(computer, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{}));
+      get_var(computer, gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>{}),
+      get_var(computer, gr::Tags::InverseSpatialMetric<DataType, 3, Frame>{}));
 }
 
 template <typename DataType, typename Frame>
 tnsr::I<DataType, 3, Frame>
 KerrSchild::IntermediateVars<DataType, Frame>::get_var(
     const IntermediateComputer<DataType, Frame>& computer,
-    gr::Tags::TraceSpatialChristoffelSecondKind<3, Frame, DataType> /*meta*/) {
+    gr::Tags::TraceSpatialChristoffelSecondKind<DataType, 3, Frame> /*meta*/) {
   if (computer.solution().zero_spin()) {
     const double m = computer.solution().mass();
     const auto& r = get(get_var(computer, internal_tags::r<DataType>{}));
@@ -847,9 +849,9 @@ KerrSchild::IntermediateVars<DataType, Frame>::get_var(
     return result;
   }
   const auto& inverse_spatial_metric =
-      get_var(computer, gr::Tags::InverseSpatialMetric<3, Frame, DataType>{});
+      get_var(computer, gr::Tags::InverseSpatialMetric<DataType, 3, Frame>{});
   const auto& spatial_christoffel_second_kind = get_var(
-      computer, gr::Tags::SpatialChristoffelSecondKind<3, Frame, DataType>{});
+      computer, gr::Tags::SpatialChristoffelSecondKind<DataType, 3, Frame>{});
   return trace_last_indices<DataType, SpatialIndex<3, UpLo::Up, Frame>,
                             SpatialIndex<3, UpLo::Lo, Frame>>(
       spatial_christoffel_second_kind, inverse_spatial_metric);
