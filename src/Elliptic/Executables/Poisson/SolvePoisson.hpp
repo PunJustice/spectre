@@ -199,8 +199,7 @@ struct Metavariables {
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
                        dg::Events::field_observations<
-                           volume_dim, self_consistent_iteration_id,
-                           observe_fields, observer_compute_tags,
+                           volume_dim, observe_fields, observer_compute_tags,
                            LinearSolver::multigrid::Tags::IsFinestGrid>>>>,
         tmpl::pair<Trigger, elliptic::Triggers::all_triggers<
                                 typename linear_solver::options_group>>,
@@ -256,6 +255,7 @@ struct Metavariables {
                                                 Label>;
 
   using solve_actions = tmpl::list<
+<<<<<<< HEAD
       PhaseControl::Actions::ExecutePhaseChange,
       typename linear_solver::template solve<
           tmpl::list<
@@ -283,6 +283,41 @@ struct Metavariables {
           build_linear_operator_actions,
           domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
           LinearSolver::multigrid::Tags::IsFinestGrid>,
+||||||| parent of 1827b6f03 (Working executable, worry about action list and equations..)
+      Actions::RunEventsAndTriggers, elliptic::Actions::IterativeSolve,
+      elliptic::dg::Actions::apply_operator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
+      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
+          system, fixed_sources_tag>,
+      typename linear_solver::template solve<tmpl::list<
+          typename multigrid::template solve<
+              build_linear_operator_actions,
+              smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
+              smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
+          ::LinearSolver::Actions::make_identity_if_skipped<
+              multigrid, build_linear_operator_actions>>>,
+      Actions::RunEventsAndTriggers,
+      elliptic::Actions::CheckConvergence<
+          typename linear_solver::options_group>,
+=======
+      elliptic::Actions::IterativeSolve,
+      elliptic::dg::Actions::apply_operator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
+      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
+          system, fixed_sources_tag>,
+      typename linear_solver::template solve<tmpl::list<
+          typename multigrid::template solve<
+              build_linear_operator_actions,
+              smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
+              smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
+          ::LinearSolver::Actions::make_identity_if_skipped<
+              multigrid, build_linear_operator_actions>>>,
+      elliptic::Actions::RunEventsAndTriggers<self_consistent_iteration_id>,
+      elliptic::Actions::CheckConvergence<
+          typename linear_solver::options_group>,
+>>>>>>> 1827b6f03 (Working executable, worry about action list and equations..)
       Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
