@@ -743,38 +743,34 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
 }
 
 template <typename DataType, typename Frame>
-tnsr::i<DataType, 3, Frame>
-KerrSchild::IntermediateVars<DataType, Frame>::get_var(
-    const IntermediateComputer<DataType, Frame>& computer,
-    DerivLapse<DataType, Frame> /*meta*/) {
-  if (computer.solution().zero_spin()) {
+void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
+    const gsl::not_null<tnsr::i<DataType, 3, Frame>*> deriv_lapse,
+    const gsl::not_null<CachedBuffer*> cache,
+    DerivLapse<DataType, Frame> /*meta*/) const {
+  if (solution().zero_spin()) {
     const auto& x_minus_center =
-        get_var(computer, internal_tags::x_minus_center<DataType, Frame>{});
-    const auto& r = get(get_var(computer, internal_tags::r<DataType>{}));
+        cache->get_var(*this, internal_tags::x_minus_center<DataType, Frame>{});
+    const auto& r = get(cache->get_var(*this, internal_tags::r<DataType>{}));
     const auto& r_squared =
-        get(get_var(computer, internal_tags::r_squared<DataType>{}));
+        get(cache->get_var(*this, internal_tags::r_squared<DataType>{}));
 
-    const auto& lapse = get(get_var(computer, gr::Tags::Lapse<DataType>{}));
+    const auto& lapse = get(cache->get_var(*this, gr::Tags::Lapse<DataType>{}));
     const auto& lapse_squared =
-        get(get_var(computer, internal_tags::lapse_squared<DataType>{}));
-
-    tnsr::i<DataType, 3, Frame> d_lapse(get_size(r));
+        get(cache->get_var(*this, internal_tags::lapse_squared<DataType>{}));
     for (size_t i = 0; i < 3; ++i) {
-      d_lapse.get(i) = computer.solution().mass() * x_minus_center.get(i) *
-                       lapse * lapse_squared / r_squared / r;
+      deriv_lapse->get(i) = solution().mass() * x_minus_center.get(i) * lapse *
+                            lapse_squared / r_squared / r;
     }
-    return d_lapse;
-  }
-  tnsr::i<DataType, 3, Frame> result{};
-  const auto& deriv_H =
-      get_var(computer, internal_tags::deriv_H<DataType, Frame>{});
-  const auto& deriv_lapse_multiplier =
-      get(get_var(computer, internal_tags::deriv_lapse_multiplier<DataType>{}));
+  } else {
+    const auto& deriv_H =
+        cache->get_var(*this, internal_tags::deriv_H<DataType, Frame>{});
+    const auto& deriv_lapse_multiplier = get(cache->get_var(
+        *this, internal_tags::deriv_lapse_multiplier<DataType>{}));
 
-  for (size_t i = 0; i < 3; ++i) {
-    result.get(i) = deriv_lapse_multiplier * deriv_H.get(i);
+    for (size_t i = 0; i < 3; ++i) {
+      deriv_lapse->get(i) = deriv_lapse_multiplier * deriv_H.get(i);
+    }
   }
-  return result;
 }
 
 template <typename DataType, typename Frame>

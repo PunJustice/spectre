@@ -215,7 +215,7 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
       gr::Tags::SpatialRicci<DataType, 3, Frame>,
       gr::Tags::WeylElectricScalar<DataType>,
       gr::Tags::WeylMagneticScalar<DataType>,
-      gr::Tags::SqrtDetSpatialMetric<DataType>>;
+      gr::Tags::SqrtDetSpatialMetric<DataType>, DerivLapse<DataType, Frame>>;
 
   template <typename DataType, typename Frame = ::Frame::Inertial>
   class IntermediateComputer {
@@ -404,6 +404,11 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
         const gsl::not_null<CachedBuffer*> cache,
         gr::Tags::SqrtDetSpatialMetric<DataType> /*meta*/) const;
 
+    void operator()(
+        const gsl::not_null<tnsr::i<DataType, 3, Frame>*> deriv_lapse,
+        const gsl::not_null<CachedBuffer*> cache,
+        DerivLapse<DataType, Frame> /*meta*/) const;
+
    private:
     const KerrSchild& solution_;
     const tnsr::I<DataType, 3, Frame>& x_;
@@ -423,10 +428,6 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
     using CachedBuffer = KerrSchild::CachedBuffer<DataType, Frame>;
     using CachedBuffer::CachedBuffer;
     using CachedBuffer::get_var;
-
-    tnsr::i<DataType, 3, Frame> get_var(
-        const IntermediateComputer<DataType, Frame>& computer,
-        DerivLapse<DataType, Frame> /*meta*/);
 
     Scalar<DataType> get_var(
         const IntermediateComputer<DataType, Frame>& computer,
