@@ -55,7 +55,9 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, Dim>*> flux_for_field,
 template <size_t Dim>
 void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
                         const tnsr::i<DataVector, Dim>& christoffel_contracted,
-                        const tnsr::I<DataVector, Dim>& flux_for_field);
+                        const tnsr::I<DataVector, Dim>& flux_for_field,
+                        const tnsr::i<DataVector, Dim>& deriv_lapse,
+                        const Scalar<DataVector>& lapse);
 
 /*!
  * \brief Compute the fluxes \f$F^i_j=\delta^i_j u(x)\f$ for the auxiliary
@@ -130,15 +132,21 @@ template <size_t Dim>
 struct Sources<Dim, Geometry::Curved> {
   using argument_tags =
       tmpl::list<gr::Tags::SpatialChristoffelSecondKindContracted<
-          DataVector, Dim, Frame::Inertial>>;
+                     DataVector, Dim, Frame::Inertial>,
+                 ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<Dim>,
+                               Frame::Inertial>,
+                 gr::Tags::Lapse<DataVector>>;
   static void apply(gsl::not_null<Scalar<DataVector>*> equation_for_field,
                     const tnsr::i<DataVector, Dim>& christoffel_contracted,
+                    const tnsr::i<DataVector, Dim>& deriv_lapse,
+                    const Scalar<DataVector>& lapse,
                     const Scalar<DataVector>& field,
                     const tnsr::I<DataVector, Dim>& field_flux);
   static void apply(
       gsl::not_null<tnsr::i<DataVector, Dim>*> equation_for_field_gradient,
       const tnsr::i<DataVector, Dim>& christoffel_contracted,
-      const Scalar<DataVector>& field);
+      const tnsr::i<DataVector, Dim>& deriv_lapse,
+      const Scalar<DataVector>& lapse, const Scalar<DataVector>& field);
 };
 
 }  // namespace Cowling
