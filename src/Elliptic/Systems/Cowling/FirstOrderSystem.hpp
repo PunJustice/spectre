@@ -85,7 +85,9 @@ struct FirstOrderSystem
       gr::Tags::SpatialChristoffelSecondKindContracted<DataVector, Dim,
                                                        Frame::Inertial>,
       gr::Tags::WeylElectricScalar<DataVector>,
-      gr::Tags::WeylMagneticScalar<DataVector>>;
+      gr::Tags::WeylMagneticScalar<DataVector>, gr::Tags::Lapse<DataVector>,
+      ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
+                    Frame::Inertial>>;
   using inv_metric_tag =
       gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>;
 
