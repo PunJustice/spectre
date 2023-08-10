@@ -12,6 +12,7 @@
 #include "DataStructures/DataBox/PrefixHelpers.hpp"
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Variables.hpp"
+#include "Domain/Structure/ElementId.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
@@ -68,12 +69,13 @@ struct IterativeSolve {
       db::DataBox<DbTagsList>& box,
       const tuples::TaggedTuple<InboxTags...>& /*inboxes*/,
       const Parallel::GlobalCache<Metavariables>& /*cache*/,
-      const ElementId<Dim>& /*array_index*/, const ActionList /*meta*/,
+      const ElementId<Dim>& element_id, const ActionList /*meta*/,
       const ParallelComponent* const /*meta*/) {
     const auto& weyl_magnetic_scalar =
         db::get<gr::Tags::WeylMagneticScalar<DataVector>>(box);
     const auto& weyl_electric_scalar =
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
+
     // const auto& previous_solve = db::get<Cowling::Tags::Field>(box);
     const double epsilon = db::get<Cowling::Tags::Epsilon>(box);
 
@@ -94,10 +96,13 @@ struct IterativeSolve {
 
     const Scalar<DataVector> new_source{new_source_dv};
 
-
     // Increment SolveIteration
     size_t iteration = db::get<Cowling::Tags::SolveIteration>(box) + 1;
-    Parallel::printf("New Self-Consistent Solve Iteration!\n");
+
+    if (is_zeroth_element(element_id)) {
+      Parallel::printf(MakeString{}
+                       << "Self-Consistent Iteration: " << iteration << "\n");
+    }
 
     db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration>(
         [](const gsl::not_null<Scalar<DataVector>*> field,
