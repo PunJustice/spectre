@@ -176,11 +176,17 @@ struct Metavariables {
                  gr::Tags::SpatialChristoffelSecondKindContracted<
                      DataVector, volume_dim, Frame::Inertial>,
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 ::Tags::deriv<::Cowling::Tags::Field, tmpl::size_t<3>,
                                Frame::Inertial>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
-                     Frame::ElementLogical, Frame::Inertial>>;
+                     Frame::ElementLogical, Frame::Inertial>,
+                 ::Tags::DerivTensorCompute<
+                     ::Cowling::Tags::Field,
+                     domain::Tags::InverseJacobian<
+                         volume_dim, Frame::ElementLogical, Frame::Inertial>>>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =
