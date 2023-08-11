@@ -38,11 +38,18 @@ struct MaxIterations {
 /*!
  * \brief Epsilon for self-consistent iterations.
  */
-struct Epsilon {
-  static std::string name() { return "Epsilon"; }
+struct Epsilon1 {
+  static std::string name() { return "Epsilon1"; }
   using type = double;
   static constexpr Options::String help{
-      "Epsilon for self-consistent iterations."};
+      "Epsilon1 for self-consistent iterations."};
+};
+
+struct Epsilon2 {
+  static std::string name() { return "Epsilon2"; }
+  using type = double;
+  static constexpr Options::String help{
+      "Epsilon2 for self-consistent iterations."};
 };
 
 }  // namespace OptionTags
@@ -75,11 +82,21 @@ struct MaxIterations : db::SimpleTag {
 };
 
 /*!
- * \brief Epsilon for self-consistent iterations.
+ * \brief Epsilon1 for self-consistent iterations.
  */
-struct Epsilon : db::SimpleTag {
+struct Epsilon1 : db::SimpleTag {
   using type = double;
-  using option_tags = tmpl::list<OptionTags::Epsilon>;
+  using option_tags = tmpl::list<OptionTags::Epsilon1>;
+  static constexpr bool pass_metavariables = false;
+  static double create_from_options(const double epsilon) { return epsilon; }
+};
+
+/*!
+ * \brief Epsilon2 for self-consistent iterations.
+ */
+struct Epsilon2 : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::Epsilon2>;
   static constexpr bool pass_metavariables = false;
   static double create_from_options(const double epsilon) { return epsilon; }
 };
