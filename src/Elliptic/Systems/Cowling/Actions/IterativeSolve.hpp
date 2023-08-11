@@ -77,11 +77,14 @@ struct IterativeSolve {
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
 
     const auto& previous_solve = db::get<Cowling::Tags::Field>(box);
-    const double epsilon = db::get<Cowling::Tags::Epsilon>(box);
+    const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
+    const double epsilon2 = db::get<Cowling::Tags::Epsilon2>(box);
 
     DataVector new_source_dv =
-        8. * epsilon * previous_solve.get() *
-        (weyl_electric_scalar.get() - weyl_magnetic_scalar.get()) / 4.;
+        (epsilon1 * previous_solve.get() / 4. +
+         epsilon2 * previous_solve.get() * previous_solve.get() *
+             previous_solve.get() / 4.) *
+        8. * (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
