@@ -81,7 +81,7 @@ struct IterativeSolve {
 
     DataVector new_source_dv =
         8. * epsilon * previous_solve.get() *
-        (weyl_electric_scalar.get() - weyl_magnetic_scalar.get()) / 4;
+        (weyl_electric_scalar.get() - weyl_magnetic_scalar.get()) / 4.;
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
