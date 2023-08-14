@@ -193,7 +193,7 @@ struct Metavariables {
       tmpl::list<background_tag, initial_guess_tag,
                  domain::Tags::RadiallyCompressedCoordinatesOptions,
                  Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
-                 Cowling::Tags::Epsilon2>;
+                 Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
@@ -258,11 +258,11 @@ struct Metavariables {
 
   using solve_actions = tmpl::list<
       Cowling::Actions::IterativeSolve,
+      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
+          system, fixed_sources_tag>,
       elliptic::dg::Actions::apply_operator<
           system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
           operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
-      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
-          system, fixed_sources_tag>,
       typename linear_solver::template solve<tmpl::list<
           typename multigrid::template solve<
               build_linear_operator_actions,

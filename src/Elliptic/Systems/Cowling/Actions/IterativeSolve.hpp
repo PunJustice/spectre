@@ -79,12 +79,16 @@ struct IterativeSolve {
     const auto& previous_solve = db::get<Cowling::Tags::Field>(box);
     const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
     const double epsilon2 = db::get<Cowling::Tags::Epsilon2>(box);
+    const double epsilon4 = db::get<Cowling::Tags::Epsilon4>(box);
 
     DataVector new_source_dv =
-        (epsilon1 * previous_solve.get() / 4. +
-         epsilon2 * previous_solve.get() * previous_solve.get() *
+        (epsilon2 * previous_solve.get() / 4. +
+         epsilon4 * previous_solve.get() * previous_solve.get() *
              previous_solve.get() / 4.) *
         8. * (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
+
+    new_source_dv += 8. * epsilon1 *
+                     (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
