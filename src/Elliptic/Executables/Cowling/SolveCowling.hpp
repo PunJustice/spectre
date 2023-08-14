@@ -193,7 +193,7 @@ struct Metavariables {
       tmpl::list<background_tag, initial_guess_tag,
                  domain::Tags::RadiallyCompressedCoordinatesOptions,
                  Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
-                 Cowling::Tags::Epsilon2>;
+                 Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
