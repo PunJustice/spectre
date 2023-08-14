@@ -52,6 +52,13 @@ struct Epsilon2 {
       "Epsilon2 for self-consistent iterations."};
 };
 
+struct Epsilon4 {
+  static std::string name() { return "Epsilon2"; }
+  using type = double;
+  static constexpr Options::String help{
+      "Epsilon4 for self-consistent iterations."};
+};
+
 }  // namespace OptionTags
 namespace Tags {
 
@@ -97,6 +104,16 @@ struct Epsilon1 : db::SimpleTag {
 struct Epsilon2 : db::SimpleTag {
   using type = double;
   using option_tags = tmpl::list<OptionTags::Epsilon2>;
+  static constexpr bool pass_metavariables = false;
+  static double create_from_options(const double epsilon) { return epsilon; }
+};
+
+/*!
+ * \brief Epsilon4 for self-consistent iterations.
+ */
+struct Epsilon4 : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::Epsilon4>;
   static constexpr bool pass_metavariables = false;
   static double create_from_options(const double epsilon) { return epsilon; }
 };
