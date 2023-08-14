@@ -53,7 +53,7 @@ struct Epsilon2 {
 };
 
 struct Epsilon4 {
-  static std::string name() { return "Epsilon2"; }
+  static std::string name() { return "Epsilon4"; }
   using type = double;
   static constexpr Options::String help{
       "Epsilon4 for self-consistent iterations."};
