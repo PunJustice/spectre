@@ -50,7 +50,7 @@ class Inverser : public elliptic::analytic_data::AnalyticSolution {
   tuples::TaggedTuple<Tags::Field> variables(
       const tnsr::I<DataType, Dim>& x, tmpl::list<Tags::Field> /*meta*/) const {
     DataVector r = magnitude(x).get();
-    DataVector result = 1 / r;
+    DataVector result = 0.8 / r;
 
     return Scalar<DataVector>{result};
   }
