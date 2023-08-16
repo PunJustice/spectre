@@ -39,7 +39,7 @@ void add_curved_sources(
     const tnsr::I<DataVector, Dim>& flux_for_field,
     const tnsr::i<DataVector, Dim>& deriv_lapse,
     const Scalar<DataVector>& lapse) {
-  get(*source_for_field) = get(dot_product(deriv_lapse, flux_for_field));
+  get(*source_for_field) -= get(dot_product(deriv_lapse, flux_for_field));
   get(*source_for_field) /= get(lapse);
   get(*source_for_field) -=
       get(dot_product(christoffel_contracted, flux_for_field));
