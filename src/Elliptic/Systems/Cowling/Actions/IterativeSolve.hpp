@@ -106,7 +106,7 @@ struct IterativeSolve {
     // Increment SolveIteration
     size_t iteration = db::get<Cowling::Tags::SolveIteration>(box) + 1;
 
-    if (is_zeroth_element(element_id)) {
+    if (is_zeroth_element(element_id, 0)) {
       Parallel::printf(MakeString{}
                        << "Self-Consistent Iteration: " << iteration << "\n");
     }
