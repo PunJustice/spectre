@@ -17,6 +17,7 @@
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Utilities/GetAnalyticData.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Parallel/AlgorithmExecution.hpp"
@@ -58,7 +59,7 @@ namespace Cowling::Actions {
  */
 struct IterativeSolve {
  private:
-  using fixed_sources_tag = ::Tags::FixedSource<::Cowling::Tags::Field>;
+  using fixed_sources_tag = ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>;
 
  public:
   using compute_tags = tmpl::list<>;
@@ -76,7 +77,7 @@ struct IterativeSolve {
     const auto& weyl_electric_scalar =
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
 
-    const auto& previous_solve = db::get<Cowling::Tags::Field>(box);
+    const auto& previous_solve = db::get<::CurvedScalarWave::Tags::Psi>(box);
     const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
     const double epsilon2 = db::get<Cowling::Tags::Epsilon2>(box);
     const double epsilon4 = db::get<Cowling::Tags::Epsilon4>(box);

@@ -28,6 +28,7 @@
 #include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Tags.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "IO/Observer/Actions/RegisterEvents.hpp"
 #include "IO/Observer/Helpers.hpp"
 #include "IO/Observer/ObserverComponent.hpp"
@@ -170,23 +171,28 @@ struct Metavariables {
       tmpl::list<domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
                  domain::Tags::RadiallyCompressedCoordinatesCompute<
                      volume_dim, Frame::Inertial>,
-                 ::Tags::FixedSource<::Cowling::Tags::Field>,
+                 ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>,
                  gr::Tags::WeylElectricScalar<DataVector>,
                  gr::Tags::WeylMagneticScalar<DataVector>,
                  gr::Tags::SpatialChristoffelSecondKindContracted<
                      DataVector, volume_dim, Frame::Inertial>,
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
                                Frame::Inertial>,
-                 ::Tags::deriv<::Cowling::Tags::Field, tmpl::size_t<3>,
-                               Frame::Inertial>>>;
+                 ::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
+                 ::CurvedScalarWave::Tags::Pi,
+                 ::CurvedScalarWave::Tags::Phi<3>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
                      Frame::ElementLogical, Frame::Inertial>,
                  ::Tags::DerivTensorCompute<
-                     ::Cowling::Tags::Field,
+                     ::CurvedScalarWave::Tags::Psi,
                      domain::Tags::InverseJacobian<
-                         volume_dim, Frame::ElementLogical, Frame::Inertial>>>;
+                         volume_dim, Frame::ElementLogical, Frame::Inertial>>,
+                 Cowling::Tags::MoveDerivToPhi>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =
