@@ -78,7 +78,9 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
       gr::Tags::InverseSpatialMetric<DataType, 3, Frame>,
       gr::Tags::SpatialChristoffelSecondKindContracted<DataType, 3, Frame>,
       gr::Tags::WeylElectricScalar<DataType>,
-      gr::Tags::WeylMagneticScalar<DataType>>>;
+      gr::Tags::WeylMagneticScalar<DataType>,
+      gr::Tags::SpatialMetric<DataType, 3, Frame>,
+      gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>>>;
 
   KerrSchild() = default;
   KerrSchild(const KerrSchild& /*rhs*/) = default;

@@ -9,6 +9,7 @@
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "Elliptic/Systems/Poisson/Tags.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
@@ -50,11 +51,13 @@ class Zero : public elliptic::analytic_data::AnalyticSolution {
   tuples::TaggedTuple<RequestedTags...> variables(
       const tnsr::I<DataType, Dim>& x,
       tmpl::list<RequestedTags...> /*meta*/) const {
-    using supported_tags = tmpl::list<
-        Tags::Field,
-        ::Tags::deriv<Tags::Field, tmpl::size_t<Dim>, Frame::Inertial>,
-        ::Tags::Flux<Tags::Field, tmpl::size_t<Dim>, Frame::Inertial>,
-        ::Tags::FixedSource<Tags::Field>>;
+    using supported_tags =
+        tmpl::list<::CurvedScalarWave::Tags::Psi,
+                   ::Tags::deriv<::CurvedScalarWave::Tags::Psi,
+                                 tmpl::size_t<Dim>, Frame::Inertial>,
+                   ::Tags::Flux<::CurvedScalarWave::Tags::Psi,
+                                tmpl::size_t<Dim>, Frame::Inertial>,
+                   ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>>;
     static_assert(tmpl::size<tmpl::list_difference<tmpl::list<RequestedTags...>,
                                                    supported_tags>>::value == 0,
                   "The requested tag is not supported");
