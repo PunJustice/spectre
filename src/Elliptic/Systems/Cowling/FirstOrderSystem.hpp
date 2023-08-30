@@ -90,7 +90,8 @@ struct FirstOrderSystem
       ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
                     Frame::Inertial>,
       gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
-      gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>>;
+      gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
+      gr::Tags::Shift<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
       gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>;
 
