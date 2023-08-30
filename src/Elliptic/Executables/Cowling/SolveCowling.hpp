@@ -182,8 +182,9 @@ struct Metavariables {
                                Frame::Inertial>,
                  gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
                  gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
-                 ::CurvedScalarWave::Tags::Pi,
-                 ::CurvedScalarWave::Tags::Phi<3>>>;
+                 ::CurvedScalarWave::Tags::Pi, ::CurvedScalarWave::Tags::Phi<3>,
+                 gr::Tags::Lapse<DataVector>,
+                 gr::Tags::Shift<DataVector, 3, Frame::Inertial>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
