@@ -16,6 +16,7 @@
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Utilities/GetAnalyticData.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
 #include "Parallel/AlgorithmExecution.hpp"
 #include "ParallelAlgorithms/Initialization/MutateAssign.hpp"
@@ -60,7 +61,8 @@ struct InitializeFixedSources {
   using const_global_cache_tags =
       tmpl::list<elliptic::dg::Tags::Massive, BackgroundTag>;
   using simple_tags =
-      tmpl::list<fixed_sources_tag, Cowling::Tags::SolveIteration>;
+      tmpl::list<fixed_sources_tag, Cowling::Tags::SolveIteration,
+                 ::CurvedScalarWave::Tags::Pi>;
   using compute_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
@@ -83,6 +85,8 @@ struct InitializeFixedSources {
         typename fixed_sources_tag::tags_list>(background, box,
                                                inertial_coords);
 
+    const auto pi = make_with_value<Scalar<DataVector>>(inertial_coords, 0.);
+
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
     if (db::get<elliptic::dg::Tags::Massive>(box)) {
@@ -96,7 +100,7 @@ struct InitializeFixedSources {
 
     // Here we set the number of iterative solves done so far to 0.
     ::Initialization::mutate_assign<simple_tags>(
-        make_not_null(&box), std::move(fixed_sources), 0_st);
+        make_not_null(&box), std::move(fixed_sources), 0_st, pi);
 
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }
