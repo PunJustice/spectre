@@ -123,7 +123,7 @@ struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
  public:
   using base = ::CurvedScalarWave::Tags::Phi<3>;
   using return_type = typename base::type;
-  static constexpr void function(
+  static void function(
       gsl::not_null<return_type*> result,
       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
     *result = deriv;
