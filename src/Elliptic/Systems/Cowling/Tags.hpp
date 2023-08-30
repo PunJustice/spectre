@@ -10,6 +10,8 @@
 
 #include "DataStructures/DataBox/Tag.hpp"
 #include "DataStructures/Tensor/TypeAliases.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
+#include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "Options/String.hpp"
 
@@ -117,7 +119,19 @@ struct Epsilon4 : db::SimpleTag {
   static constexpr bool pass_metavariables = false;
   static double create_from_options(const double epsilon) { return epsilon; }
 };
-
+struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
+ public:
+  using base = ::CurvedScalarWave::Tags::Phi<3>;
+  using return_type = typename base::type;
+  static constexpr void function(
+      gsl::not_null<return_type*> result,
+      const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
+    *result = deriv;
+  }
+  using argument_tags =
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>>;
+};
 }  // namespace Tags
 
 }  // namespace Cowling

@@ -9,7 +9,7 @@
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Tensor/EagerMath/Magnitude.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
-#include "Elliptic/Systems/Cowling/Tags.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
@@ -45,19 +45,21 @@ class Inverser : public elliptic::analytic_data::AnalyticSolution {
   /// \endcond
 
   template <typename DataType>
-  tuples::TaggedTuple<Tags::Field> variables(
-      const tnsr::I<DataType, Dim>& x, tmpl::list<Tags::Field> /*meta*/) const {
+  tuples::TaggedTuple<::CurvedScalarWave::Tags::Psi> variables(
+      const tnsr::I<DataType, Dim>& x,
+      tmpl::list<::CurvedScalarWave::Tags::Psi> /*meta*/) const {
     DataVector r = magnitude(x).get();
     DataVector result = 0.8 / r;
     return Scalar<DataVector>{result};
   }
 
   template <typename DataType>
-  tuples::TaggedTuple<
-      ::Tags::deriv<Tags::Field, tmpl::size_t<3>, Frame::Inertial>>
-  variables(const tnsr::I<DataType, Dim>& x,
-            tmpl::list<::Tags::deriv<Tags::Field, tmpl::size_t<3>,
-                                     Frame::Inertial>> /*meta*/) const {
+  tuples::TaggedTuple<::Tags::deriv<::CurvedScalarWave::Tags::Psi,
+                                    tmpl::size_t<3>, Frame::Inertial>>
+  variables(
+      const tnsr::I<DataType, Dim>& x,
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>> /*meta*/) const {
     DataVector r = magnitude(x).get();
     DataVector dx = -0.8 * get<0>(x) / (r * r * r);
     DataVector dy = -0.8 * get<1>(x) / (r * r * r);
@@ -69,11 +71,13 @@ class Inverser : public elliptic::analytic_data::AnalyticSolution {
   tuples::TaggedTuple<RequestedTags...> variables(
       const tnsr::I<DataType, Dim>& x,
       tmpl::list<RequestedTags...> /*meta*/) const {
-    using supported_tags = tmpl::list<
-        Tags::Field,
-        ::Tags::deriv<Tags::Field, tmpl::size_t<Dim>, Frame::Inertial>,
-        ::Tags::Flux<Tags::Field, tmpl::size_t<Dim>, Frame::Inertial>,
-        ::Tags::FixedSource<Tags::Field>>;
+    using supported_tags =
+        tmpl::list<::CurvedScalarWave::Tags::Psi,
+                   ::Tags::deriv<::CurvedScalarWave::Tags::Psi,
+                                 tmpl::size_t<Dim>, Frame::Inertial>,
+                   ::Tags::Flux<::CurvedScalarWave::Tags::Psi,
+                                tmpl::size_t<Dim>, Frame::Inertial>,
+                   ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>>;
     static_assert(tmpl::size<tmpl::list_difference<tmpl::list<RequestedTags...>,
                                                    supported_tags>>::value == 0,
                   "The requested tag is not supported");
