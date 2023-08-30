@@ -15,6 +15,7 @@
 #include "Elliptic/Systems/Cowling/Equations.hpp"
 #include "Elliptic/Systems/Cowling/Geometry.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/TagsDeclarations.hpp"
@@ -63,7 +64,7 @@ template <size_t Dim>
 struct FirstOrderSystem
     : tt::ConformsTo<elliptic::protocols::FirstOrderSystem> {
  private:
-  using field = ::Cowling::Tags::Field;
+  using field = ::CurvedScalarWave::Tags::Psi;
   using field_gradient =
       ::Tags::deriv<field, tmpl::size_t<Dim>, Frame::Inertial>;
 
@@ -87,7 +88,9 @@ struct FirstOrderSystem
       gr::Tags::WeylElectricScalar<DataVector>,
       gr::Tags::WeylMagneticScalar<DataVector>, gr::Tags::Lapse<DataVector>,
       ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                    Frame::Inertial>>;
+                    Frame::Inertial>,
+      gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
+      gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
       gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>;
 
