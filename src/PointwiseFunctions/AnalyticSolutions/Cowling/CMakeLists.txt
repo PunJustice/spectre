@@ -17,6 +17,7 @@ spectre_target_headers(
   HEADERS
   Factory.hpp
   KerrSchildCowling.hpp
+  Gaussian.hpp
   Inverser.hpp
   Zero.hpp
   )
