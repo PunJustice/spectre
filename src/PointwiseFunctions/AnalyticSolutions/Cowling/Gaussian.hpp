@@ -14,6 +14,7 @@
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "Options/String.hpp"
+#include "Parallel/Printf.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
 #include "Utilities/MakeWithValue.hpp"
 #include "Utilities/Serialization/CharmPupable.hpp"
@@ -37,7 +38,12 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
     static constexpr Options::String help = "Center of Gaussian.";
   };
 
-  using options = tmpl::list<Amplitude, Width, Center>;
+  struct Falloff {
+    using type = double;
+    static constexpr Options::String help = "Amplitude of 1/r falloff.";
+  };
+
+  using options = tmpl::list<Amplitude, Width, Center, Falloff>;
   static constexpr Options::String help{
       "Gaussian initial guess for scalar-profile solves."};
 
@@ -49,10 +55,13 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
   ~Gaussian() override = default;
   std::unique_ptr<elliptic::analytic_data::AnalyticSolution> get_clone()
       const override {
-    return std::make_unique<Gaussian>(amplitude_, width_, center_);
+    return std::make_unique<Gaussian>(amplitude_, width_, center_, falloff_);
   }
-  Gaussian(double amplitude, double width, double center)
-      : amplitude_(amplitude), width_(width), center_(center) {}
+  Gaussian(double amplitude, double width, double center, double falloff)
+      : amplitude_(amplitude),
+        width_(width),
+        center_(center),
+        falloff_(falloff) {}
 
   /// \cond
   explicit Gaussian(CkMigrateMessage* m)
@@ -66,7 +75,10 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
       const tnsr::I<DataType, 3>& x,
       tmpl::list<::CurvedScalarWave::Tags::Psi> /*meta*/) const {
     DataVector r = magnitude(x).get();
-    DataVector result = amplitude_ * exp(-pow(r - center_, 2) / width_);
+    DataVector result =
+        amplitude_ * exp(-pow(r - center_, 2) / width_) + falloff_ / r;
+    Parallel::printf("%s\n", result);
+
     return Scalar<DataVector>{result};
   }
 
@@ -78,12 +90,15 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
       tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
                                Frame::Inertial>> /*meta*/) const {
     DataVector r = magnitude(x).get();
-    DataVector dx = -amplitude_ * (2 * (r - center_) / width_) * get<0>(x) *
-                    exp(-pow(r - center_, 2) / width_) / r;
-    DataVector dy = -amplitude_ * (2 * (r - center_) / width_) * get<1>(x) *
-                    exp(-pow(r - center_, 2) / width_) / r;
-    DataVector dz = -amplitude_ * (2 * (r - center_) / width_) * get<2>(x) *
-                    exp(-pow(r - center_, 2) / width_) / r;
+    DataVector dx = (falloff_ + *get<0>(x) / r) -
+                    amplitude_ * (2 * (r - center_) / width_) * get<0>(x) *
+                        exp(-pow(r - center_, 2) / width_) / r;
+    DataVector dy = (falloff_ + *get<1>(x) / r) -
+                    amplitude_ * (2 * (r - center_) / width_) * get<1>(x) *
+                        exp(-pow(r - center_, 2) / width_) / r;
+    DataVector dz = (falloff_ + *get<2>(x) / r) -
+                    amplitude_ * (2 * (r - center_) / width_) * get<2>(x) *
+                        exp(-pow(r - center_, 2) / width_) / r;
     return tnsr::i<DataType, 3>{{{dx, dy, dz}}};
   }
 
@@ -108,12 +123,14 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
     p | amplitude_;
     p | width_;
     p | center_;
+    p | falloff_;
   }
 
  private:
   double amplitude_;
   double width_;
   double center_;
+  double falloff_;
 };
 
 /// \cond
