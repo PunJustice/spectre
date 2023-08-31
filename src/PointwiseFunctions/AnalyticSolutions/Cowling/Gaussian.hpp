@@ -14,7 +14,6 @@
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "Options/String.hpp"
-#include "Parallel/Printf.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
 #include "Utilities/MakeWithValue.hpp"
 #include "Utilities/Serialization/CharmPupable.hpp"
@@ -77,8 +76,6 @@ class Gaussian : public elliptic::analytic_data::AnalyticSolution {
     DataVector r = magnitude(x).get();
     DataVector result =
         amplitude_ * exp(-pow(r - center_, 2) / width_) + falloff_ / r;
-    Parallel::printf("%s\n", result);
-
     return Scalar<DataVector>{result};
   }
 
