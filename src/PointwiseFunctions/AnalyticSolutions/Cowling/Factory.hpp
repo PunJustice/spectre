@@ -5,6 +5,7 @@
 
 #include <cstddef>
 
+#include "PointwiseFunctions/AnalyticSolutions/Cowling/Gaussian.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Inverser.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/KerrSchildCowling.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Zero.hpp"
@@ -13,5 +14,6 @@
 namespace Cowling::Solutions {
 using all_analytic_solutions = tmpl::append<tmpl::list<KerrSchild>>;
 template <size_t Dim>
-using all_initial_guesses = tmpl::append<tmpl::list<Zero<Dim>, Inverser<Dim>>>;
+using all_initial_guesses =
+    tmpl::append<tmpl::list<Zero<Dim>, Inverser<Dim>, Gaussian>>;
 }  // namespace Cowling::Solutions
