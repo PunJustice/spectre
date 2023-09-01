@@ -68,34 +68,30 @@ struct MortarDataInboxTag
 // Initializes all quantities the DG operator needs on internal and external
 // faces, as well as the mortars between neighboring elements. Also initializes
 // the variable-independent background fields in the PDEs.
-template <typename System, typename BackgroundTag>
+template <typename System>
 struct InitializeFacesMortarsAndBackground {
  private:
   static constexpr size_t Dim = System::volume_dim;
   static constexpr bool has_background_fields =
       not std::is_same_v<typename System::background_fields, tmpl::list<>>;
-  static_assert(
-      not(has_background_fields and std::is_same_v<BackgroundTag, void>),
-      "The system has background fields that need initialization. Supply a "
-      "'BackgroundTag' to 'elliptic::dg::Actions::initialize_operator'.");
+  //   static_assert(
+  //       not(has_background_fields and std::is_same_v<BackgroundTag, void>),
+  //       "The system has background fields that need initialization. Supply a
+  //       "
+  //       "'BackgroundTag' to 'elliptic::dg::Actions::initialize_operator'.");
 
   using InitializeFacesAndMortars =
       elliptic::dg::InitializeFacesAndMortars<Dim,
                                               typename System::inv_metric_tag>;
-  using InitializeBackground =
-      elliptic::dg::InitializeBackground<Dim,
-                                         typename System::background_fields>;
+  //   using InitializeBackground =
+  //       elliptic::dg::InitializeBackground<Dim,
+  //                                          typename
+  //                                          System::background_fields>;
 
  public:
-  using simple_tags = tmpl::append<
-      typename InitializeFacesAndMortars::return_tags,
-      tmpl::conditional_t<has_background_fields,
-                          typename InitializeBackground::return_tags,
-                          tmpl::list<>>>;
+  using simple_tags = typename InitializeFacesAndMortars::return_tags;
   using compute_tags = tmpl::list<>;
-  using const_global_cache_tags =
-      tmpl::conditional_t<has_background_fields, tmpl::list<BackgroundTag>,
-                          tmpl::list<>>;
+  using const_global_cache_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
             typename ArrayIndex, typename ActionList,
@@ -106,31 +102,29 @@ struct InitializeFacesMortarsAndBackground {
       const Parallel::GlobalCache<Metavariables>& /*cache*/,
       const ArrayIndex& /*array_index*/, ActionList /*meta*/,
       const ParallelComponent* const /*meta*/) {
-    if constexpr (has_background_fields) {
-      const auto& background = db::get<BackgroundTag>(box);
-      using background_classes =
-          tmpl::at<typename Metavariables::factory_creation::factory_classes,
-                   std::decay_t<decltype(background)>>;
-      // Initialize faces and mortars
-      db::mutate_apply<typename InitializeFacesAndMortars::return_tags,
-                       typename InitializeFacesAndMortars::argument_tags>(
-          InitializeFacesAndMortars{}, make_not_null(&box),
-          db::get<domain::Tags::InitialExtents<Dim>>(box),
-          db::get<domain::Tags::FunctionsOfTime>(box), background,
-          background_classes{});
-      // Initialize background fields
-      db::mutate_apply<typename InitializeBackground::return_tags,
-                       typename InitializeBackground::argument_tags>(
-          InitializeBackground{}, make_not_null(&box), background,
-          background_classes{});
-    } else {
-      // Initialize faces and mortars
-      db::mutate_apply<typename InitializeFacesAndMortars::return_tags,
-                       typename InitializeFacesAndMortars::argument_tags>(
-          InitializeFacesAndMortars{}, make_not_null(&box),
-          db::get<domain::Tags::InitialExtents<Dim>>(box),
-          db::get<domain::Tags::FunctionsOfTime>(box));
-    }
+    // if constexpr (has_background_fields) {
+    //   const auto& background = db::get<BackgroundTag>(box);
+    //   using background_classes =
+    //       tmpl::at<typename Metavariables::factory_creation::factory_classes,
+    //                std::decay_t<decltype(background)>>;
+    // Initialize faces and mortars
+    db::mutate_apply<typename InitializeFacesAndMortars::return_tags,
+                     typename InitializeFacesAndMortars::argument_tags>(
+        InitializeFacesAndMortars{}, make_not_null(&box),
+        db::get<domain::Tags::InitialExtents<Dim>>(box), background,
+        background_classes{});
+    // Initialize background fields
+    //   db::mutate_apply<typename InitializeBackground::return_tags,
+    //                    typename InitializeBackground::argument_tags>(
+    //       InitializeBackground{}, make_not_null(&box), background,
+    //       background_classes{});
+    // } else {
+    //   // Initialize faces and mortars
+    //   db::mutate_apply<typename InitializeFacesAndMortars::return_tags,
+    //                    typename InitializeFacesAndMortars::argument_tags>(
+    //       InitializeFacesAndMortars{}, make_not_null(&box),
+    //       db::get<domain::Tags::InitialExtents<Dim>>(box));
+    // }
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }
 };
@@ -204,27 +198,27 @@ struct PrepareAndSendMortarData<
     const auto& boundary_conditions =
         db::get<domain::Tags::ExternalBoundaryConditions<Dim>>(box).at(
             element_id.block_id());
-    const auto apply_boundary_condition =
-        [&box, &boundary_conditions, &element_id](
-            const Direction<Dim>& direction, const auto... fields_and_fluxes) {
-          ASSERT(
-              boundary_conditions.contains(direction),
-              "No boundary condition is available in block "
-                  << element_id.block_id() << " in direction " << direction
-                  << ". Make sure you are setting up boundary conditions when "
-                     "creating the domain.");
-          ASSERT(dynamic_cast<const BoundaryConditionsBase*>(
-                     boundary_conditions.at(direction).get()) != nullptr,
-                 "The boundary condition in block "
-                     << element_id.block_id() << " in direction " << direction
-                     << " has an unexpected type. Make sure it derives off the "
-                        "'boundary_conditions_base' class set in the system.");
-          const auto& boundary_condition =
-              dynamic_cast<const BoundaryConditionsBase&>(
-                  *boundary_conditions.at(direction));
-          elliptic::apply_boundary_condition<Linearized>(
-              boundary_condition, box, direction, fields_and_fluxes...);
-        };
+    const auto apply_boundary_condition = [&box, &boundary_conditions,
+                                           &element_id](
+                                              const Direction<Dim>& direction,
+                                              const auto... fields_and_fluxes) {
+      ASSERT(boundary_conditions.contains(direction),
+             "No boundary condition is available in block "
+                 << element_id.block_id() << " in direction " << direction
+                 << ". Make sure you are setting up boundary conditions when "
+                    "creating the domain.");
+      ASSERT(dynamic_cast<const BoundaryConditionsBase*>(
+                 boundary_conditions.at(direction).get()) != nullptr,
+             "The boundary condition in block "
+                 << element_id.block_id() << " in direction " << direction
+                 << " has an unexpected type. Make sure it derives off the "
+                    "'boundary_conditions_base' class set in the system.");
+      const auto& boundary_condition =
+          dynamic_cast<const BoundaryConditionsBase&>(
+              *boundary_conditions.at(direction));
+      elliptic::apply_boundary_condition<Linearized>(
+          boundary_condition, box, direction, fields_and_fluxes...);
+    };
 
     // Can't `db::get` the arguments for the boundary conditions within
     // `db::mutate`, so we extract the data to mutate and move it back in when
@@ -298,8 +292,7 @@ struct PrepareAndSendMortarData<
         // Make a copy of the local boundary data on the mortar to send to the
         // neighbor
         auto remote_boundary_data_on_mortar =
-            get<all_mortar_data_tag>(box).at(mortar_id).local_data(
-                temporal_id);
+            get<all_mortar_data_tag>(box).at(mortar_id).local_data(temporal_id);
         // Reorient the data to the neighbor orientation if necessary
         if (not orientation.is_aligned()) {
           remote_boundary_data_on_mortar.orient_on_slice(
@@ -464,9 +457,9 @@ struct ReceiveMortarDataAndApplyOperator<
  *
  * \see elliptic::dg::Actions::apply_operator
  */
-template <typename System, typename BackgroundTag = void>
-using initialize_operator = tmpl::list<
-    detail::InitializeFacesMortarsAndBackground<System, BackgroundTag>>;
+template <typename System>
+using initialize_operator =
+    tmpl::list<detail::InitializeFacesMortarsAndBackground<System>>;
 
 /*!
  * \brief Apply the DG operator to the `PrimalFieldsTag` and write the result to
@@ -550,27 +543,27 @@ struct ImposeInhomogeneousBoundaryConditionsOnSource<
     const auto& boundary_conditions =
         db::get<domain::Tags::ExternalBoundaryConditions<Dim>>(box).at(
             element_id.block_id());
-    const auto apply_boundary_condition =
-        [&box, &boundary_conditions, &element_id](
-            const Direction<Dim>& direction, const auto... fields_and_fluxes) {
-          ASSERT(
-              boundary_conditions.contains(direction),
-              "No boundary condition is available in block "
-                  << element_id.block_id() << " in direction " << direction
-                  << ". Make sure you are setting up boundary conditions when "
-                     "creating the domain.");
-          ASSERT(dynamic_cast<const BoundaryConditionsBase*>(
-                     boundary_conditions.at(direction).get()) != nullptr,
-                 "The boundary condition in block "
-                     << element_id.block_id() << " in direction " << direction
-                     << " has an unexpected type. Make sure it derives off the "
-                        "'boundary_conditions_base' class set in the system.");
-          const auto& boundary_condition =
-              dynamic_cast<const BoundaryConditionsBase&>(
-                  *boundary_conditions.at(direction));
-          elliptic::apply_boundary_condition<false>(
-              boundary_condition, box, direction, fields_and_fluxes...);
-        };
+    const auto apply_boundary_condition = [&box, &boundary_conditions,
+                                           &element_id](
+                                              const Direction<Dim>& direction,
+                                              const auto... fields_and_fluxes) {
+      ASSERT(boundary_conditions.contains(direction),
+             "No boundary condition is available in block "
+                 << element_id.block_id() << " in direction " << direction
+                 << ". Make sure you are setting up boundary conditions when "
+                    "creating the domain.");
+      ASSERT(dynamic_cast<const BoundaryConditionsBase*>(
+                 boundary_conditions.at(direction).get()) != nullptr,
+             "The boundary condition in block "
+                 << element_id.block_id() << " in direction " << direction
+                 << " has an unexpected type. Make sure it derives off the "
+                    "'boundary_conditions_base' class set in the system.");
+      const auto& boundary_condition =
+          dynamic_cast<const BoundaryConditionsBase&>(
+              *boundary_conditions.at(direction));
+      elliptic::apply_boundary_condition<false>(
+          boundary_condition, box, direction, fields_and_fluxes...);
+    };
 
     // Can't `db::get` the arguments for the boundary conditions within
     // `db::mutate`, so we extract the data to mutate and move it back in when
