@@ -11,6 +11,7 @@ set(LIBS_TO_LINK
   EllipticDgSubdomainOperator
   Events
   EventsAndTriggers
+  Importers
   Informer
   LinearOperators
   MathFunctions
