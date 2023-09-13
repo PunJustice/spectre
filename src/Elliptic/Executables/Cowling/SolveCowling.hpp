@@ -221,7 +221,8 @@ struct Metavariables {
                  ::Tags::DerivTensorCompute<
                      ::CurvedScalarWave::Tags::Psi,
                      domain::Tags::InverseJacobian<
-                         volume_dim, Frame::ElementLogical, Frame::Inertial>>,
+                         volume_dim, Frame::ElementLogical, Frame::Inertial>,
+                     ::domain::Tags::Mesh<Dim>>,
                  Cowling::Tags::MoveDerivToPhi>;
 
   // Collect all items to store in the cache.
