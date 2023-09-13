@@ -26,9 +26,14 @@
 #include "Elliptic/Systems/Cowling/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Cowling/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
+#include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "Elliptic/Tags.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
 #include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
+#include "IO/Importers/Actions/ReadVolumeData.hpp"
+#include "IO/Importers/Actions/ReceiveVolumeData.hpp"
+#include "IO/Importers/Actions/RegisterWithElementDataReader.hpp"
+#include "IO/Importers/ElementDataReader.hpp"
 #include "IO/Observer/Actions/RegisterEvents.hpp"
 #include "IO/Observer/Helpers.hpp"
 #include "IO/Observer/ObserverComponent.hpp"
@@ -242,10 +247,6 @@ struct Metavariables {
           ::Tags::Variables<typename system::primal_fields>,
           RandomizeInitialGuess>,
       Cowling::Actions::InitializeFixedSources<system, initial_guess_tag>,
-      elliptic::dg::Actions::initialize_operator<system, background_tag>,
-      elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
-          system, background_tag, typename schwarz_smoother::options_group>,
-      // Apply the DG operator to the initial guess
       Parallel::Actions::TerminatePhase>;
 
   using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
@@ -256,12 +257,28 @@ struct Metavariables {
       tmpl::list<observers::Actions::RegisterEventsWithObservers,
                  typename schwarz_smoother::register_element,
                  typename multigrid::register_element,
+                 importers::Actions::RegisterWithElementDataReader,
                  Parallel::Actions::TerminatePhase>;
 
   template <typename Label>
   using smooth_actions =
       typename schwarz_smoother::template solve<build_linear_operator_actions,
                                                 Label>;
+
+  using import_fields =
+      tmp::list<gr::Tags::SpatialMetric<DataVector, 3>,
+                gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+                Tags::ConformalFactor<DataVector>,
+                Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
+  using import_actions = tmpl::list<
+      importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
+      importers::Actions::ReceiveVolumeData<import_fields>,
+      Cowling::Actions::ProcessData,
+      elliptic::dg::Actions::initialize_operator<system>,
+      elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
+          system, background_tag, typename schwarz_smoother::options_group>,
+      Parallel::Actions::TerminatePhase>;
 
   using solve_actions = tmpl::list<
       Cowling::Actions::IterativeSolve,
@@ -296,7 +313,8 @@ struct Metavariables {
                  typename multigrid::component_list,
                  typename schwarz_smoother::component_list,
                  observers::Observer<Metavariables>,
-                 observers::ObserverWriter<Metavariables>>>;
+                 observers::ObserverWriter<Metavariables>,
+                 importers::ElementDataReader<Metavariables>>>;
 
   static constexpr std::array<Parallel::Phase, 4> default_phase_order{
       {Parallel::Phase::Initialization, Parallel::Phase::Register,
