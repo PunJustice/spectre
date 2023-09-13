@@ -74,10 +74,28 @@
 #include "Utilities/TMPL.hpp"
 
 /// \cond
+
 namespace PUP {
 class er;
 }  // namespace PUP
 /// \endcond
+
+struct InitialiseImportedData {
+ private:
+ public:
+  using simple_tags = tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
+
+  template <typename DbTagsList, typename... InboxTags, typename Metavariables,
+            size_t Dim, typename ActionList, typename ParallelComponent>
+  static Parallel::iterable_action_return_t apply(
+      db::DataBox<DbTagsList>& /*box*/,
+      const tuples::TaggedTuple<InboxTags...>& /*inboxes*/,
+      const Parallel::GlobalCache<Metavariables>& /*cache*/,
+      const ElementId<Dim>& /*array_index*/, const ActionList /*meta*/,
+      const ParallelComponent* const /*meta*/) {
+    return {Parallel::AlgorithmExecution::Continue, std::nullopt};
+  }
+};
 
 namespace SolveCowling::OptionTags {
 struct LinearSolverGroup {
@@ -108,6 +126,11 @@ struct SelfConsistentGroup {
 };
 
 }  // namespace SolveCowling::OptionTags
+
+struct OptionsGroup {
+  static std::string name() { return "Importers"; }
+  static constexpr Options::String help = "Numeric volume data";
+};
 
 /// \cond
 template <size_t Dim>
@@ -247,7 +270,7 @@ struct Metavariables {
           ::Tags::Variables<typename system::primal_fields>,
           RandomizeInitialGuess>,
       Cowling::Actions::InitializeFixedSources<system, initial_guess_tag>,
-      Parallel::Actions::TerminatePhase>;
+      InitialiseImportedData, Parallel::Actions::TerminatePhase>;
 
   using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
       system, true, linear_solver_iteration_id, vars_tag, fluxes_vars_tag,
@@ -265,17 +288,20 @@ struct Metavariables {
       typename schwarz_smoother::template solve<build_linear_operator_actions,
                                                 Label>;
 
-  using import_fields =
-      tmp::list<gr::Tags::SpatialMetric<DataVector, 3>,
-                gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
-                gr::Tags::ExtrinsicCurvature<DataVector, 3>,
-                Tags::ConformalFactor<DataVector>,
-                Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
+  //   using import_fields = tmpl::list<
+  //       gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+  //       gr::Tags::Shift<DataVector, 3>,
+  //       gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+  //       Xcts::Tags::ConformalFactor<DataVector>,
+  //       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
+
+  using import_fields = tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
+
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
       importers::Actions::ReceiveVolumeData<import_fields>,
-      Cowling::Actions::ProcessData,
-      elliptic::dg::Actions::initialize_operator<system>,
+      //   Cowling::Actions::ProcessData,
+      elliptic::dg::Actions::initialize_operator<system, background_tag>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
       Parallel::Actions::TerminatePhase>;
@@ -304,6 +330,8 @@ struct Metavariables {
           Parallel::PhaseActions<Parallel::Phase::Initialization,
                                  initialization_actions>,
           Parallel::PhaseActions<Parallel::Phase::Register, register_actions>,
+          Parallel::PhaseActions<Parallel::Phase::ImportInitialData,
+                                 import_actions>,
           Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename multigrid::options_group>>;
@@ -316,9 +344,10 @@ struct Metavariables {
                  observers::ObserverWriter<Metavariables>,
                  importers::ElementDataReader<Metavariables>>>;
 
-  static constexpr std::array<Parallel::Phase, 4> default_phase_order{
+  static constexpr std::array<Parallel::Phase, 5> default_phase_order{
       {Parallel::Phase::Initialization, Parallel::Phase::Register,
-       Parallel::Phase::Solve, Parallel::Phase::Exit}};
+       Parallel::Phase::ImportInitialData, Parallel::Phase::Solve,
+       Parallel::Phase::Exit}};
 
   // NOLINTNEXTLINE(google-runtime-references)
   void pup(PUP::er& /*p*/) {}
