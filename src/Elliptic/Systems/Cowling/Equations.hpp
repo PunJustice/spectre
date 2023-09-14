@@ -133,23 +133,24 @@ struct Sources<Dim, Geometry::FlatCartesian> {
 template <size_t Dim>
 struct Sources<Dim, Geometry::Curved> {
   using argument_tags =
-      tmpl::list<gr::Tags::SpatialChristoffelSecondKindContracted<
-                     DataVector, Dim, Frame::Inertial>,
+      tmpl::list<Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
+                                                            Frame::Inertial>,
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<Dim>,
                                Frame::Inertial>,
                  gr::Tags::Lapse<DataVector>,
                  ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
                                tmpl::size_t<Dim>, Frame::Inertial>>;
-  static void apply(gsl::not_null<Scalar<DataVector>*> equation_for_field,
-                    const tnsr::i<DataVector, Dim>& christoffel_contracted,
-                    const tnsr::i<DataVector, Dim>& deriv_lapse,
-                    const Scalar<DataVector>& lapse,
-                    const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
-                    const Scalar<DataVector>& field,
-                    const tnsr::I<DataVector, Dim>& field_flux);
+  static void apply(
+      gsl::not_null<Scalar<DataVector>*> equation_for_field,
+      const tnsr::i<DataVector, Dim>& conformal_christoffel_contracted,
+      const tnsr::i<DataVector, Dim>& deriv_lapse,
+      const Scalar<DataVector>& lapse,
+      const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
+      const Scalar<DataVector>& field,
+      const tnsr::I<DataVector, Dim>& field_flux);
   static void apply(
       gsl::not_null<tnsr::i<DataVector, Dim>*> equation_for_field_gradient,
-      const tnsr::i<DataVector, Dim>& christoffel_contracted,
+      const tnsr::i<DataVector, Dim>& conformal_christoffel_contracted,
       const tnsr::i<DataVector, Dim>& deriv_lapse,
       const Scalar<DataVector>& lapse,
       const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
