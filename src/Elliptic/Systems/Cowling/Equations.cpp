@@ -35,7 +35,7 @@ void curved_fluxes(
 template <size_t Dim>
 void add_curved_sources(
     const gsl::not_null<Scalar<DataVector>*> source_for_field,
-    const tnsr::i<DataVector, Dim>& christoffel_contracted,
+    const tnsr::i<DataVector, Dim>& conformal_christoffel_contracted,
     const tnsr::I<DataVector, Dim>& flux_for_field,
     const tnsr::i<DataVector, Dim>& deriv_lapse,
     const Scalar<DataVector>& lapse,
@@ -43,7 +43,7 @@ void add_curved_sources(
   get(*source_for_field) -=
       get(dot_product(deriv_lapse, flux_for_field)) / get(lapse);
   get(*source_for_field) -=
-      get(dot_product(christoffel_contracted, flux_for_field));
+      get(dot_product(conformal_christoffel_contracted, flux_for_field));
   get(*source_for_field) -=
       2 * get(dot_product(conformal_factor_deriv, flux_for_field));
 }
@@ -97,14 +97,14 @@ void Sources<Dim, Geometry::FlatCartesian>::apply(
 template <size_t Dim>
 void Sources<Dim, Geometry::Curved>::apply(
     const gsl::not_null<Scalar<DataVector>*> equation_for_field,
-    const tnsr::i<DataVector, Dim>& christoffel_contracted,
+    const tnsr::i<DataVector, Dim>& conformal_christoffel_contracted,
     const tnsr::i<DataVector, Dim>& deriv_lapse,
     const Scalar<DataVector>& lapse,
     const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
     const Scalar<DataVector>& /*field*/,
     const tnsr::I<DataVector, Dim>& field_flux) {
-  add_curved_sources(equation_for_field, christoffel_contracted, field_flux,
-                     deriv_lapse, lapse, conformal_factor_deriv);
+  add_curved_sources(equation_for_field, conformal_christoffel_contracted,
+                     field_flux, deriv_lapse, lapse, conformal_factor_deriv);
 }
 
 template <size_t Dim>
