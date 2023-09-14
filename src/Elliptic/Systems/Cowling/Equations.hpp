@@ -7,6 +7,7 @@
 
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "Elliptic/Systems/Cowling/Geometry.hpp"
+#include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "Utilities/Gsl.hpp"
 #include "Utilities/MakeWithValue.hpp"
@@ -57,7 +58,8 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
                         const tnsr::i<DataVector, Dim>& christoffel_contracted,
                         const tnsr::I<DataVector, Dim>& flux_for_field,
                         const tnsr::i<DataVector, Dim>& deriv_lapse,
-                        const Scalar<DataVector>& lapse);
+                        const Scalar<DataVector>& lapse,
+                        const tnsr::i<DataVector, Dim>& conformal_factor_deriv);
 
 /*!
  * \brief Compute the fluxes \f$F^i_j=\delta^i_j u(x)\f$ for the auxiliary
@@ -135,18 +137,23 @@ struct Sources<Dim, Geometry::Curved> {
                      DataVector, Dim, Frame::Inertial>,
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<Dim>,
                                Frame::Inertial>,
-                 gr::Tags::Lapse<DataVector>>;
+                 gr::Tags::Lapse<DataVector>,
+                 ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
+                               tmpl::size_t<Dim>, Frame::Inertial>>;
   static void apply(gsl::not_null<Scalar<DataVector>*> equation_for_field,
                     const tnsr::i<DataVector, Dim>& christoffel_contracted,
                     const tnsr::i<DataVector, Dim>& deriv_lapse,
                     const Scalar<DataVector>& lapse,
+                    const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
                     const Scalar<DataVector>& field,
                     const tnsr::I<DataVector, Dim>& field_flux);
   static void apply(
       gsl::not_null<tnsr::i<DataVector, Dim>*> equation_for_field_gradient,
       const tnsr::i<DataVector, Dim>& christoffel_contracted,
       const tnsr::i<DataVector, Dim>& deriv_lapse,
-      const Scalar<DataVector>& lapse, const Scalar<DataVector>& field);
+      const Scalar<DataVector>& lapse,
+      const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
+      const Scalar<DataVector>& field);
 };
 
 }  // namespace Cowling
