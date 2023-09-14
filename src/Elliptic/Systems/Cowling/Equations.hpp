@@ -43,7 +43,7 @@ void flat_cartesian_fluxes(
  */
 template <size_t Dim>
 void curved_fluxes(gsl::not_null<tnsr::I<DataVector, Dim>*> flux_for_field,
-                   const tnsr::II<DataVector, Dim>& inv_spatial_metric,
+                   const tnsr::II<DataVector, Dim>& inv_conformal_metric,
                    const tnsr::i<DataVector, Dim>& field_gradient);
 
 /*!
@@ -97,13 +97,13 @@ struct Fluxes<Dim, Geometry::FlatCartesian> {
 template <size_t Dim>
 struct Fluxes<Dim, Geometry::Curved> {
   using argument_tags = tmpl::list<
-      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>>;
+      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
   using volume_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, Dim>*> flux_for_field,
-                    const tnsr::II<DataVector, Dim>& inv_spatial_metric,
+                    const tnsr::II<DataVector, Dim>& inv_conformal_metric,
                     const tnsr::i<DataVector, Dim>& field_gradient);
   static void apply(gsl::not_null<tnsr::Ij<DataVector, Dim>*> flux_for_gradient,
-                    const tnsr::II<DataVector, Dim>& inv_spatial_metric,
+                    const tnsr::II<DataVector, Dim>& inv_conformal_metric,
                     const Scalar<DataVector>& field);
 };
 
