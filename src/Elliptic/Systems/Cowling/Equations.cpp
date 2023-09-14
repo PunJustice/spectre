@@ -38,11 +38,14 @@ void add_curved_sources(
     const tnsr::i<DataVector, Dim>& christoffel_contracted,
     const tnsr::I<DataVector, Dim>& flux_for_field,
     const tnsr::i<DataVector, Dim>& deriv_lapse,
-    const Scalar<DataVector>& lapse) {
+    const Scalar<DataVector>& lapse,
+    const tnsr::i<DataVector, Dim>& conformal_factor_deriv) {
   get(*source_for_field) -=
       get(dot_product(deriv_lapse, flux_for_field)) / get(lapse);
   get(*source_for_field) -=
       get(dot_product(christoffel_contracted, flux_for_field));
+  get(*source_for_field) -=
+      2 * get(dot_product(conformal_factor_deriv, flux_for_field));
 }
 
 template <size_t Dim>
@@ -96,10 +99,12 @@ void Sources<Dim, Geometry::Curved>::apply(
     const gsl::not_null<Scalar<DataVector>*> equation_for_field,
     const tnsr::i<DataVector, Dim>& christoffel_contracted,
     const tnsr::i<DataVector, Dim>& deriv_lapse,
-    const Scalar<DataVector>& lapse, const Scalar<DataVector>& /*field*/,
+    const Scalar<DataVector>& lapse,
+    const tnsr::i<DataVector, Dim>& conformal_factor_deriv,
+    const Scalar<DataVector>& /*field*/,
     const tnsr::I<DataVector, Dim>& field_flux) {
   add_curved_sources(equation_for_field, christoffel_contracted, field_flux,
-                     deriv_lapse, lapse);
+                     deriv_lapse, lapse, conformal_factor_deriv);
 }
 
 template <size_t Dim>
@@ -114,7 +119,9 @@ void Sources<Dim, Geometry::Curved>::apply(
         tnsr::i<DataVector, Dim>*> /*equation_for_field_gradient*/,
     const tnsr::i<DataVector, Dim>& /*christoffel_contracted*/,
     const tnsr::i<DataVector, Dim>& /*deriv_lapse*/,
-    const Scalar<DataVector>& /*lapse*/, const Scalar<DataVector>& /*field*/) {}
+    const Scalar<DataVector>& /*lapse*/,
+    const tnsr::i<DataVector, Dim>& /*conformal_factor_deriv*/,
+    const Scalar<DataVector>& /*field*/) {}
 
 }  // namespace Cowling
 
@@ -132,7 +139,8 @@ void Sources<Dim, Geometry::Curved>::apply(
       const gsl::not_null<Scalar<DataVector>*>,                                \
       const tnsr::i<DataVector, DIM(data)>&,                                   \
       const tnsr::I<DataVector, DIM(data)>&,                                   \
-      const tnsr::i<DataVector, DIM(data)>&, const Scalar<DataVector>&);       \
+      const tnsr::i<DataVector, DIM(data)>&, const Scalar<DataVector>&,        \
+      const tnsr::i<DataVector, DIM(data)>&);                                  \
   template void Cowling::auxiliary_fluxes<DIM(data)>(                          \
       gsl::not_null<tnsr::Ij<DataVector, DIM(data)>*>,                         \
       const Scalar<DataVector>&);                                              \
