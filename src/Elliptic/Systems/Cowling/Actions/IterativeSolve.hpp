@@ -16,6 +16,7 @@
 #include "Domain/Tags.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
+#include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "Elliptic/Utilities/GetAnalyticData.hpp"
 #include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
@@ -76,6 +77,8 @@ struct IterativeSolve {
         db::get<gr::Tags::WeylMagneticScalar<DataVector>>(box);
     const auto& weyl_electric_scalar =
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
+    const auto& conformal_factor =
+        db::get<Xcts::Tags::ConformalFactor<DataVector>>;
 
     const auto& previous_solve = db::get<::CurvedScalarWave::Tags::Psi>(box);
     const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
