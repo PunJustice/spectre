@@ -68,9 +68,9 @@ void Fluxes<Dim, Geometry::FlatCartesian>::apply(
 template <size_t Dim>
 void Fluxes<Dim, Geometry::Curved>::apply(
     const gsl::not_null<tnsr::I<DataVector, Dim>*> flux_for_field,
-    const tnsr::II<DataVector, Dim>& inv_spatial_metric,
+    const tnsr::II<DataVector, Dim>& inv_conformal_metric,
     const tnsr::i<DataVector, Dim>& field_gradient) {
-  curved_fluxes(flux_for_field, inv_spatial_metric, field_gradient);
+  curved_fluxes(flux_for_field, inv_conformal_metric, field_gradient);
 }
 
 template <size_t Dim>
@@ -83,7 +83,7 @@ void Fluxes<Dim, Geometry::FlatCartesian>::apply(
 template <size_t Dim>
 void Fluxes<Dim, Geometry::Curved>::apply(
     const gsl::not_null<tnsr::Ij<DataVector, Dim>*> flux_for_gradient,
-    const tnsr::II<DataVector, Dim>& /*inv_spatial_metric*/,
+    const tnsr::II<DataVector, Dim>& /*inv_conformal_metric*/,
     const Scalar<DataVector>& field) {
   auxiliary_fluxes(flux_for_gradient, field);
 }
