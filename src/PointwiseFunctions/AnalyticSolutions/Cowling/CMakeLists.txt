@@ -34,4 +34,7 @@ target_link_libraries(
   Interpolation
   Utilities
   GeneralRelativity
+  XctsAnalyticData
+  XctsSolutions
+  GeneralRelativitySolutions
   )
