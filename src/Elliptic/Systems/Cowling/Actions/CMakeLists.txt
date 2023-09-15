@@ -7,4 +7,5 @@ spectre_target_headers(
   HEADERS
   IterativeSolve.hpp
   CheckConvergence.hpp
+  ProcessData.hpp
   )
