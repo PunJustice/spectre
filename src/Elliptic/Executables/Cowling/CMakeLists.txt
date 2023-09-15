@@ -23,6 +23,11 @@ set(LIBS_TO_LINK
   ParallelSchwarz
   Cowling
   CowlingBoundaryConditions
+  Xcts
+  XctsAnalyticData
+  XctsSolutions
+  GeneralRelativity
+  GeneralRelativitySolutions
   CowlingSolutions
   Utilities
   )

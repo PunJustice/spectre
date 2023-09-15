@@ -23,6 +23,7 @@
 #include "Elliptic/Systems/Cowling/Actions/CheckConvergence.hpp"
 #include "Elliptic/Systems/Cowling/Actions/InitializeFixedSources.hpp"
 #include "Elliptic/Systems/Cowling/Actions/IterativeSolve.hpp"
+#include "Elliptic/Systems/Cowling/Actions/ProcessData.hpp"
 #include "Elliptic/Systems/Cowling/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Cowling/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
@@ -59,7 +60,9 @@
 #include "ParallelAlgorithms/LinearSolver/Multigrid/Multigrid.hpp"
 #include "ParallelAlgorithms/LinearSolver/Schwarz/Schwarz.hpp"
 #include "ParallelAlgorithms/LinearSolver/Tags.hpp"
+#include "PointwiseFunctions/AnalyticData/Xcts/Binary.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Factory.hpp"
+#include "PointwiseFunctions/AnalyticSolutions/Xcts/Factory.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/Background.hpp"
@@ -83,7 +86,12 @@ class er;
 struct InitialiseImportedData {
  private:
  public:
-  using simple_tags = tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
+  using simple_tags = tmpl::list<
+      gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+      gr::Tags::Shift<DataVector, 3>,
+      gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+      Xcts::Tags::ConformalFactor<DataVector>,
+      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
             size_t Dim, typename ActionList, typename ParallelComponent>
@@ -232,12 +240,17 @@ struct Metavariables {
                  Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
                  Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
 
+  using analytic_solutions_and_data = tmpl::push_back<
+      Cowling::Solutions::all_analytic_solutions,
+      Xcts::AnalyticData::Binary<elliptic::analytic_data::AnalyticSolution,
+                                 Cowling::Solutions::all_analytic_solutions>>;
+
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
     using factory_classes = tmpl::map<
         tmpl::pair<DomainCreator<volume_dim>, domain_creators<volume_dim>>,
         tmpl::pair<elliptic::analytic_data::Background,
-                   Cowling::Solutions::all_analytic_solutions>,
+                   analytic_solutions_and_data>,
         tmpl::pair<elliptic::analytic_data::InitialGuess,
                    Cowling::Solutions::all_initial_guesses<volume_dim>>,
         tmpl::pair<
@@ -290,19 +303,20 @@ struct Metavariables {
       typename schwarz_smoother::template solve<build_linear_operator_actions,
                                                 Label>;
 
-  //   using import_fields = tmpl::list<
-  //       gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
-  //       gr::Tags::Shift<DataVector, 3>,
-  //       gr::Tags::ExtrinsicCurvature<DataVector, 3>,
-  //       Xcts::Tags::ConformalFactor<DataVector>,
-  //       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
+  using import_fields = tmpl::list<
+      gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+      gr::Tags::Shift<DataVector, 3>,
+      gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+      Xcts::Tags::ConformalFactor<DataVector>,
+      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
 
-  using import_fields = tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
+  //   using import_fields =
+  //   tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
       importers::Actions::ReceiveVolumeData<import_fields>,
-      //   Cowling::Actions::ProcessData,
+      Cowling::Actions::ProcessData,
       elliptic::dg::Actions::initialize_operator<system, background_tag>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
