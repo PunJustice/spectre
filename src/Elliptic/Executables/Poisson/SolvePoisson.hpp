@@ -11,11 +11,9 @@
 #include "Domain/Creators/Factory3D.hpp"
 #include "Domain/RadiallyCompressedCoordinates.hpp"
 #include "Domain/Tags.hpp"
-#include "Elliptic/Actions/CheckConvergence.hpp"
 #include "Elliptic/Actions/InitializeAnalyticSolution.hpp"
 #include "Elliptic/Actions/InitializeFields.hpp"
 #include "Elliptic/Actions/InitializeFixedSources.hpp"
-#include "Elliptic/Actions/IterativeSolve.hpp"
 #include "Elliptic/Actions/RunEventsAndTriggers.hpp"
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/ApplyOperator.hpp"
@@ -25,7 +23,6 @@
 #include "Elliptic/DiscontinuousGalerkin/SubdomainOperator/SubdomainOperator.hpp"
 #include "Elliptic/Systems/Poisson/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Poisson/FirstOrderSystem.hpp"
-#include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "Elliptic/Tags.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
 #include "IO/Observer/Actions/RegisterEvents.hpp"
@@ -90,12 +87,6 @@ struct MultigridGroup {
   static constexpr Options::String help = "Options for the multigrid";
   using group = LinearSolverGroup;
 };
-
-struct SelfConsistentGroup {
-  static std::string name() { return "SelfConsistent"; }
-  static constexpr Options::String help =
-      "Options for the self-consistent iteration";
-};
 }  // namespace SolvePoisson::OptionTags
 
 /// \cond
@@ -132,8 +123,6 @@ struct Metavariables {
       true, fixed_sources_tag, LinearSolver::multigrid::Tags::IsFinestGrid>;
   using linear_solver_iteration_id =
       Convergence::Tags::IterationId<typename linear_solver::options_group>;
-
-  using self_consistent_iteration_id = Poisson::Tags::SolveIteration;
   // Precondition each linear solver iteration with a multigrid V-cycle
   using multigrid = LinearSolver::multigrid::Multigrid<
       volume_dim, typename linear_solver::operand_tag,
@@ -177,14 +166,13 @@ struct Metavariables {
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
-                     Frame::ElementLogical, Frame::Inertial>,
+                   Frame::ElementLogical, Frame::Inertial>,
                  error_compute>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =
       tmpl::list<background_tag, initial_guess_tag,
-                 domain::Tags::RadiallyCompressedCoordinatesOptions,
-                 Poisson::Tags::MaxIterations, Poisson::Tags::Epsilon>;
+                 domain::Tags::RadiallyCompressedCoordinatesOptions>;
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
@@ -241,7 +229,12 @@ struct Metavariables {
       elliptic::dg::Actions::initialize_operator<system>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
+      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
+          system, fixed_sources_tag>,
       // Apply the DG operator to the initial guess
+      elliptic::dg::Actions::apply_operator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
       Parallel::Actions::TerminatePhase>;
 
   using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
@@ -262,17 +255,7 @@ struct Metavariables {
                                                 Label>;
 
   using solve_actions = tmpl::list<
-<<<<<<< HEAD
       PhaseControl::Actions::ExecutePhaseChange,
-      typename linear_solver::template solve<
-          tmpl::list<
-              typename multigrid::template solve<
-                  build_linear_operator_actions,
-                  smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
-                  smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
-              ::LinearSolver::Actions::make_identity_if_skipped<
-                  multigrid, build_linear_operator_actions>>,
-          elliptic::Actions::RunEventsAndTriggers<linear_solver_iteration_id>>,
       typename linear_solver::template solve<
           tmpl::list<
               typename multigrid::template solve<
@@ -290,41 +273,6 @@ struct Metavariables {
           build_linear_operator_actions,
           domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
           LinearSolver::multigrid::Tags::IsFinestGrid>,
-||||||| parent of 1827b6f03 (Working executable, worry about action list and equations..)
-      Actions::RunEventsAndTriggers, elliptic::Actions::IterativeSolve,
-      elliptic::dg::Actions::apply_operator<
-          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
-          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
-      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
-          system, fixed_sources_tag>,
-      typename linear_solver::template solve<tmpl::list<
-          typename multigrid::template solve<
-              build_linear_operator_actions,
-              smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
-              smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
-          ::LinearSolver::Actions::make_identity_if_skipped<
-              multigrid, build_linear_operator_actions>>>,
-      Actions::RunEventsAndTriggers,
-      elliptic::Actions::CheckConvergence<
-          typename linear_solver::options_group>,
-=======
-      elliptic::Actions::IterativeSolve,
-      elliptic::dg::Actions::apply_operator<
-          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
-          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
-      elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
-          system, fixed_sources_tag>,
-      typename linear_solver::template solve<tmpl::list<
-          typename multigrid::template solve<
-              build_linear_operator_actions,
-              smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
-              smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
-          ::LinearSolver::Actions::make_identity_if_skipped<
-              multigrid, build_linear_operator_actions>>>,
-      elliptic::Actions::RunEventsAndTriggers<self_consistent_iteration_id>,
-      elliptic::Actions::CheckConvergence<
-          typename linear_solver::options_group>,
->>>>>>> 1827b6f03 (Working executable, worry about action list and equations..)
       Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
