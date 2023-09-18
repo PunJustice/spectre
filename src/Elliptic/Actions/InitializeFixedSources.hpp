@@ -14,7 +14,6 @@
 #include "Domain/Structure/ElementId.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Tags.hpp"
-#include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "Elliptic/Utilities/GetAnalyticData.hpp"
 #include "NumericalAlgorithms/DiscontinuousGalerkin/ApplyMassMatrix.hpp"
 #include "Parallel/AlgorithmExecution.hpp"
@@ -56,14 +55,10 @@ struct InitializeFixedSources {
   using fixed_sources_tag = ::Tags::Variables<
       db::wrap_tags_in<::Tags::FixedSource, typename System::primal_fields>>;
 
-  using analytic_sources_tag = ::Tags::Variables<
-      db::wrap_tags_in<::Tags::AnalyticSource, typename System::primal_fields>>;
-
  public:
   using const_global_cache_tags =
       tmpl::list<elliptic::dg::Tags::Massive, BackgroundTag>;
-  using simple_tags = tmpl::list<fixed_sources_tag, analytic_sources_tag,
-                                 Poisson::Tags::SolveIteration>;
+  using simple_tags = tmpl::list<fixed_sources_tag>;
   using compute_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
@@ -78,20 +73,14 @@ struct InitializeFixedSources {
         get<domain::Tags::Coordinates<Dim, Frame::Inertial>>(box);
     const auto& background = db::get<BackgroundTag>(box);
 
-    // Stores the analytic source, that doesn't change between iterations.
-    // Setting our initial guess to be zero, this is equal to the fixed source
-    // for the first solve. This will be updated each iteration with a different
-    // action.
+    // Retrieve the fixed-sources of the elliptic system from the background,
+    // which (along with the boundary conditions) define the problem we want to
+    // solve.
     auto fixed_sources = elliptic::util::get_analytic_data<
         typename fixed_sources_tag::tags_list>(background, box,
                                                inertial_coords);
 
-    // For an initial guess of 0, the first fixed_source is simply the analytic
-    // source.
-    auto analytic_sources = fixed_sources;
-
-    // Apply DG mass matrix to the fixed sources if the DG operator is
-    // massive
+    // Apply DG mass matrix to the fixed sources if the DG operator is massive
     if (db::get<elliptic::dg::Tags::Massive>(box)) {
       const auto& mesh = db::get<domain::Tags::Mesh<Dim>>(box);
       const auto& det_inv_jacobian = db::get<
@@ -101,11 +90,8 @@ struct InitializeFixedSources {
       ::dg::apply_mass_matrix(make_not_null(&fixed_sources), mesh);
     }
 
-    // Here we set the number of iterative solves done so far to 0.
-    ::Initialization::mutate_assign<simple_tags>(
-        make_not_null(&box), std::move(fixed_sources),
-        std::move(analytic_sources), 0_st);
-
+    ::Initialization::mutate_assign<simple_tags>(make_not_null(&box),
+                                                 std::move(fixed_sources));
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }
 };
