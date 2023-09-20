@@ -51,13 +51,11 @@ struct ReceiveVolumeData {
     auto& element_data = received_data->second;
     tmpl::for_each<FieldTagsList>([&box, &element_data](auto tag_v) {
       using tag = tmpl::type_from<decltype(tag_v)>;
-      // db::mutate<tag>(
-      //     [&element_data](const gsl::not_null<typename tag::type*> value) {
-      //       *value = std::move(tuples::get<tag>(element_data));
-      //     },
-      //     make_not_null(&box));
-      ::Initialization::mutate_assign<tmpl::list<tag>>(
-          make_not_null(&box), tuples::get<tag>(element_data));
+      db::mutate<tag>(
+          [&element_data](const gsl::not_null<typename tag::type*> value) {
+            *value = std::move(tuples::get<tag>(element_data));
+          },
+          make_not_null(&box));
     });
     inbox.erase(received_data);
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
