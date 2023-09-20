@@ -23,7 +23,7 @@
 #include "Elliptic/Systems/Cowling/Actions/CheckConvergence.hpp"
 #include "Elliptic/Systems/Cowling/Actions/InitializeFixedSources.hpp"
 #include "Elliptic/Systems/Cowling/Actions/IterativeSolve.hpp"
-#include "Elliptic/Systems/Cowling/Actions/ProcessData.hpp"
+#include "Elliptic/Systems/Cowling/Actions/ProcessVolumeData.hpp"
 #include "Elliptic/Systems/Cowling/BoundaryConditions/Factory.hpp"
 #include "Elliptic/Systems/Cowling/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
@@ -58,6 +58,7 @@
 #include "ParallelAlgorithms/LinearSolver/Gmres/Gmres.hpp"
 #include "ParallelAlgorithms/LinearSolver/Multigrid/ElementsAllocator.hpp"
 #include "ParallelAlgorithms/LinearSolver/Multigrid/Multigrid.hpp"
+#include "ParallelAlgorithms/LinearSolver/Schwarz/Actions/CommunicateOverlapFields.hpp"
 #include "ParallelAlgorithms/LinearSolver/Schwarz/Schwarz.hpp"
 #include "ParallelAlgorithms/LinearSolver/Tags.hpp"
 #include "PointwiseFunctions/AnalyticData/Xcts/Binary.hpp"
@@ -82,28 +83,6 @@ namespace PUP {
 class er;
 }  // namespace PUP
 /// \endcond
-
-struct InitialiseImportedData {
- private:
- public:
-  using simple_tags = tmpl::list<
-      gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
-      gr::Tags::Shift<DataVector, 3>,
-      gr::Tags::ExtrinsicCurvature<DataVector, 3>,
-      Xcts::Tags::ConformalFactor<DataVector>,
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
-
-  template <typename DbTagsList, typename... InboxTags, typename Metavariables,
-            size_t Dim, typename ActionList, typename ParallelComponent>
-  static Parallel::iterable_action_return_t apply(
-      db::DataBox<DbTagsList>& /*box*/,
-      const tuples::TaggedTuple<InboxTags...>& /*inboxes*/,
-      const Parallel::GlobalCache<Metavariables>& /*cache*/,
-      const ElementId<Dim>& /*array_index*/, const ActionList /*meta*/,
-      const ParallelComponent* const /*meta*/) {
-    return {Parallel::AlgorithmExecution::Continue, std::nullopt};
-  }
-};
 
 namespace SolveCowling::OptionTags {
 struct LinearSolverGroup {
@@ -209,19 +188,7 @@ struct Metavariables {
                      volume_dim, Frame::Inertial>,
                  ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>,
                  gr::Tags::WeylElectricScalar<DataVector>,
-                 gr::Tags::WeylMagneticScalar<DataVector>,
-                 gr::Tags::SpatialChristoffelSecondKindContracted<
-                     DataVector, volume_dim, Frame::Inertial>,
-                 ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                               Frame::Inertial>,
-                 ::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
-                               Frame::Inertial>,
-                 gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
-                 gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
-                 ::CurvedScalarWave::Tags::Pi, ::CurvedScalarWave::Tags::Phi<3>,
-                 gr::Tags::Lapse<DataVector>,
-                 gr::Tags::Shift<DataVector, 3, Frame::Inertial>,
-                 Xcts::Tags::ConformalFactor<DataVector>>>;
+                 gr::Tags::WeylMagneticScalar<DataVector>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
@@ -240,8 +207,7 @@ struct Metavariables {
                  Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
                  Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
 
-  using analytic_solutions_and_data = tmpl::push_back<
-      Cowling::Solutions::all_analytic_solutions,
+  using analytic_solutions_and_data = tmpl::list<
       Xcts::AnalyticData::Binary<elliptic::analytic_data::AnalyticSolution,
                                  Cowling::Solutions::all_analytic_solutions>>;
 
@@ -253,6 +219,8 @@ struct Metavariables {
                    analytic_solutions_and_data>,
         tmpl::pair<elliptic::analytic_data::InitialGuess,
                    Cowling::Solutions::all_initial_guesses<volume_dim>>,
+        tmpl::pair<elliptic::analytic_data::AnalyticSolution,
+                   Cowling::Solutions::all_analytic_solutions>,
         tmpl::pair<
             elliptic::BoundaryConditions::BoundaryCondition<volume_dim>,
             Cowling::BoundaryConditions::standard_boundary_conditions<system>>,
@@ -285,7 +253,7 @@ struct Metavariables {
           ::Tags::Variables<typename system::primal_fields>,
           RandomizeInitialGuess>,
       Cowling::Actions::InitializeFixedSources<system, initial_guess_tag>,
-      InitialiseImportedData, Parallel::Actions::TerminatePhase>;
+      Parallel::Actions::TerminatePhase>;
 
   using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
       system, true, linear_solver_iteration_id, vars_tag, fluxes_vars_tag,
@@ -310,16 +278,25 @@ struct Metavariables {
       Xcts::Tags::ConformalFactor<DataVector>,
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
 
-  //   using import_fields =
-  //   tmpl::list<Xcts::Tags::ConformalFactor<DataVector>>;
+  using communicated_overlap_tags =
+      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
+                               tmpl::size_t<3>, Frame::Inertial>,
+                 ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
+                               Frame::Inertial>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
-      importers::Actions::ReceiveVolumeData<import_fields>,
-      Cowling::Actions::ProcessData,
+      Cowling::Actions::ProcessVolumeData<import_fields>,
       elliptic::dg::Actions::initialize_operator<system, background_tag>,
       elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
           system, background_tag, typename schwarz_smoother::options_group>,
+      LinearSolver::Schwarz::Actions::SendOverlapFields<
+          communicated_overlap_tags, typename schwarz_smoother::options_group,
+          false>,
+      LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
+          3, communicated_overlap_tags,
+          typename schwarz_smoother::options_group>,
       Parallel::Actions::TerminatePhase>;
 
   using solve_actions = tmpl::list<
