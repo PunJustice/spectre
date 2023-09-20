@@ -30,11 +30,18 @@ target_link_libraries(
   MathFunctions
   Options
   Cowling
+  Hydro
   Serialization
   Interpolation
+  Spectral
   Utilities
   GeneralRelativity
+  InitialDataUtilities
+  Xcts
   XctsAnalyticData
   XctsSolutions
+  XctsPointwiseFunctions
+  ElasticityPointwiseFunctions
+  GeneralRelativity
   GeneralRelativitySolutions
   )
