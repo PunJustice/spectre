@@ -4,11 +4,15 @@
 set(LIBS_TO_LINK
   Convergence
   CoordinateMaps
+  DataStructures
   DiscontinuousGalerkin
+  Domain
   DomainCreators
   Elliptic
   EllipticDg
   EllipticDgSubdomainOperator
+  EllipticSubdomainPreconditioners
+  ErrorHandling
   Events
   EventsAndTriggers
   Importers
