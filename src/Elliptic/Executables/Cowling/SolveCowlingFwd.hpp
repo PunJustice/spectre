@@ -6,6 +6,5 @@
 #include <cstddef>
 
 /// \cond
-template <size_t Dim>
 struct Metavariables;
 /// \endcond
