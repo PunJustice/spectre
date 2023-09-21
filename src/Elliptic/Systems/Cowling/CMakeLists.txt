@@ -17,7 +17,6 @@ spectre_target_headers(
   HEADERS
   Equations.hpp
   FirstOrderSystem.hpp
-  Geometry.hpp
   Tags.hpp
   )
 

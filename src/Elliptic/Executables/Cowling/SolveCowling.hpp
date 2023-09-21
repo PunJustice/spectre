@@ -6,8 +6,6 @@
 #include <cstddef>
 
 #include "DataStructures/DataBox/PrefixHelpers.hpp"
-#include "Domain/Creators/Factory1D.hpp"
-#include "Domain/Creators/Factory2D.hpp"
 #include "Domain/Creators/Factory3D.hpp"
 #include "Domain/Creators/RegisterDerivedWithCharm.hpp"
 #include "Domain/RadiallyCompressedCoordinates.hpp"
@@ -120,10 +118,9 @@ struct OptionsGroup {
 };
 
 /// \cond
-template <size_t Dim>
 struct Metavariables {
-  static constexpr size_t volume_dim = Dim;
-  using system = Cowling::FirstOrderSystem<Dim>;
+  static constexpr size_t volume_dim = 3;
+  using system = Cowling::FirstOrderSystem;
 
   using background_tag =
       elliptic::Tags::Background<elliptic::analytic_data::Background>;
@@ -197,7 +194,7 @@ struct Metavariables {
                      ::CurvedScalarWave::Tags::Psi,
                      domain::Tags::InverseJacobian<
                          volume_dim, Frame::ElementLogical, Frame::Inertial>,
-                     ::domain::Tags::Mesh<Dim>>,
+                     ::domain::Tags::Mesh<volume_dim>>,
                  Cowling::Tags::MoveDerivToPhi>;
 
   // Collect all items to store in the cache.
@@ -221,9 +218,8 @@ struct Metavariables {
                    Cowling::Solutions::all_initial_guesses<volume_dim>>,
         tmpl::pair<elliptic::analytic_data::AnalyticSolution,
                    Cowling::Solutions::all_analytic_solutions>,
-        tmpl::pair<
-            elliptic::BoundaryConditions::BoundaryCondition<volume_dim>,
-            Cowling::BoundaryConditions::standard_boundary_conditions<system>>,
+        tmpl::pair<elliptic::BoundaryConditions::BoundaryCondition<volume_dim>,
+                   Cowling::BoundaryConditions::standard_boundary_conditions>,
         tmpl::pair<Event,
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
@@ -271,19 +267,22 @@ struct Metavariables {
       typename schwarz_smoother::template solve<build_linear_operator_actions,
                                                 Label>;
 
-  using import_fields = tmpl::list<
-      gr::Tags::SpatialMetric<DataVector, 3>, gr::Tags::Lapse<DataVector>,
-      gr::Tags::Shift<DataVector, 3>,
-      gr::Tags::ExtrinsicCurvature<DataVector, 3>,
-      Xcts::Tags::ConformalFactor<DataVector>,
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>;
+  using import_fields =
+      tmpl::list<gr::Tags::SpatialMetric<DataVector, volume_dim>,
+                 gr::Tags::Lapse<DataVector>,
+                 gr::Tags::Shift<DataVector, volume_dim>,
+                 gr::Tags::ExtrinsicCurvature<DataVector, volume_dim>,
+                 Xcts::Tags::ConformalFactor<DataVector>,
+                 Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
+                                                    Frame::Inertial>>;
 
   using communicated_overlap_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+      tmpl::list<gr::Tags::Lapse<DataVector>,
+                 gr::Tags::Shift<DataVector, volume_dim>,
                  ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                               tmpl::size_t<3>, Frame::Inertial>,
-                 ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                               Frame::Inertial>>;
+                               tmpl::size_t<volume_dim>, Frame::Inertial>,
+                 ::Tags::deriv<gr::Tags::Lapse<DataVector>,
+                               tmpl::size_t<volume_dim>, Frame::Inertial>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
@@ -295,7 +294,7 @@ struct Metavariables {
           communicated_overlap_tags, typename schwarz_smoother::options_group,
           false>,
       LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
-          3, communicated_overlap_tags,
+          volume_dim, communicated_overlap_tags,
           typename schwarz_smoother::options_group>,
       Parallel::Actions::TerminatePhase>;
 

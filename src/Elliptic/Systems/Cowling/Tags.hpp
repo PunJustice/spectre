@@ -65,13 +65,6 @@ struct Epsilon4 {
 namespace Tags {
 
 /*!
- * \brief The scalar field \f$u(x)\f$ to solve for
- */
-struct Field : db::SimpleTag {
-  using type = Scalar<DataVector>;
-};
-
-/*!
  * \brief The number of self consistent iterations done.
  */
 struct SolveIteration : db::SimpleTag {
