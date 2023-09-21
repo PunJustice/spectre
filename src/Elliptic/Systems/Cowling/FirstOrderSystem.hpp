@@ -13,7 +13,6 @@
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
 #include "Elliptic/Protocols/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Cowling/Equations.hpp"
-#include "Elliptic/Systems/Cowling/Geometry.hpp"
 #include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
@@ -60,16 +59,16 @@ namespace Cowling {
  * \f}
  *
  */
-template <size_t Dim>
+
 struct FirstOrderSystem
     : tt::ConformsTo<elliptic::protocols::FirstOrderSystem> {
  private:
   using field = ::CurvedScalarWave::Tags::Psi;
   using field_gradient =
-      ::Tags::deriv<field, tmpl::size_t<Dim>, Frame::Inertial>;
+      ::Tags::deriv<field, tmpl::size_t<3>, Frame::Inertial>;
 
  public:
-  static constexpr size_t volume_dim = Dim;
+  static constexpr size_t volume_dim = 3;
 
   using primal_fields = tmpl::list<field>;
   using auxiliary_fields = tmpl::list<field_gradient>;
@@ -77,9 +76,9 @@ struct FirstOrderSystem
   // We just use the standard `Flux` prefix because the fluxes don't have
   // symmetries and we don't need to give them a particular meaning.
   using primal_fluxes =
-      tmpl::list<::Tags::Flux<field, tmpl::size_t<Dim>, Frame::Inertial>>;
+      tmpl::list<::Tags::Flux<field, tmpl::size_t<3>, Frame::Inertial>>;
   using auxiliary_fluxes = tmpl::list<
-      ::Tags::Flux<field_gradient, tmpl::size_t<Dim>, Frame::Inertial>>;
+      ::Tags::Flux<field_gradient, tmpl::size_t<3>, Frame::Inertial>>;
 
   using background_fields = tmpl::list<
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
@@ -88,10 +87,10 @@ struct FirstOrderSystem
   using inv_metric_tag =
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>;
 
-  using fluxes_computer = Fluxes<Dim, Cowling::Geometry::Curved>;
-  using sources_computer = Sources<Dim, Cowling::Geometry::Curved>;
+  using fluxes_computer = Fluxes;
+  using sources_computer = Sources;
 
   using boundary_conditions_base =
-      elliptic::BoundaryConditions::BoundaryCondition<Dim>;
+      elliptic::BoundaryConditions::BoundaryCondition<3>;
 };
 }  // namespace Cowling
