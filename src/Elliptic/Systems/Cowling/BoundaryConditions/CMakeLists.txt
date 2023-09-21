@@ -1,22 +1,12 @@
 # Distributed under the MIT License.
 # See LICENSE.txt for details.
 
-set(LIBRARY CowlingBoundaryConditions)
-
-add_spectre_library(${LIBRARY})
-
-spectre_target_sources(
-  ${LIBRARY}
-  PRIVATE
-  Robin.cpp
-  )
-
 spectre_target_headers(
   ${LIBRARY}
   INCLUDE_DIRECTORY ${CMAKE_SOURCE_DIR}/src
   HEADERS
   Factory.hpp
-  Robin.hpp
+  DoNothing.hpp
   )
 
 target_link_libraries(
@@ -26,5 +16,6 @@ target_link_libraries(
   Elliptic
   Options
   Parallel
+  PoissonBoundaryConditions
   Utilities
   )

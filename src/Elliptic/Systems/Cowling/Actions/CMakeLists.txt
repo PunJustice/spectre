@@ -8,5 +8,4 @@ spectre_target_headers(
   IterativeSolve.hpp
   CheckConvergence.hpp
   ProcessVolumeData.hpp
-  ProcessData.hpp
   )
