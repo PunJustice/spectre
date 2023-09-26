@@ -279,6 +279,7 @@ struct Metavariables {
   using communicated_overlap_tags =
       tmpl::list<gr::Tags::Lapse<DataVector>,
                  gr::Tags::Shift<DataVector, volume_dim>,
+                 Xcts::Tags::ConformalFactor<DataVector>,
                  ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
                                tmpl::size_t<volume_dim>, Frame::Inertial>,
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>,
