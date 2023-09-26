@@ -9,7 +9,11 @@
 
 #include "DataStructures/DataBox/DataBox.hpp"
 #include "DataStructures/Tensor/EagerMath/Determinant.hpp"
+#include "DataStructures/Tensor/Slice.hpp"
+#include "Domain/Structure/Direction.hpp"
+#include "Domain/Structure/DirectionMap.hpp"
 #include "Domain/Tags.hpp"
+#include "Domain/Tags/Faces.hpp"
 #include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "IO/Importers/Tags.hpp"
@@ -42,7 +46,12 @@ template <typename FieldTagsList>
 struct ProcessVolumeData {
   using inbox_tags = tmpl::list<importers::Tags::VolumeData<FieldTagsList>>;
 
-  using simple_tags = tmpl::list<
+  using flux_tags =
+      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>>;
+
+  using faces_tags = domain::make_faces_tags<3, flux_tags>;
+
+  using imported_and_derived_fields = tmpl::list<
       gr::Tags::WeylElectricScalar<DataVector>,
       gr::Tags::WeylMagneticScalar<DataVector>, gr::Tags::Lapse<DataVector>,
       ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
@@ -50,6 +59,9 @@ struct ProcessVolumeData {
       gr::Tags::Shift<DataVector, 3>, Xcts::Tags::ConformalFactor<DataVector>,
       ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>, tmpl::size_t<3>,
                     Frame::Inertial>>;
+
+  using simple_tags =
+      tmpl::flatten<tmpl::list<imported_and_derived_fields, faces_tags>>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
             typename ArrayIndex, typename ActionList,
@@ -132,9 +144,24 @@ struct ProcessVolumeData {
     const auto weyl_magnetic_scalar =
         gr::weyl_magnetic_scalar(weyl_magnetic, inv_spatial_metric);
 
-    ::Initialization::mutate_assign<simple_tags>(
+    ::Initialization::mutate_assign<imported_and_derived_fields>(
         make_not_null(&box), weyl_electric_scalar, weyl_magnetic_scalar, lapse,
         deriv_lapse, shift, conformal_factor, deriv_conformal_factor);
+
+    DirectionMap<3, Scalar<DataVector>> sliced_lapse;
+    DirectionMap<3, tnsr::I<DataVector, 3, Frame::Inertial>> sliced_shift;
+
+    for (const auto& direction : Direction<3>::all_directions()) {
+      data_on_slice(make_not_null(&(sliced_lapse)[direction]), lapse,
+                    mesh.extents(), direction.dimension(),
+                    index_to_slice_at(mesh.extents(), direction));
+      data_on_slice(make_not_null(&(sliced_shift)[direction]), shift,
+                    mesh.extents(), direction.dimension(),
+                    index_to_slice_at(mesh.extents(), direction));
+    }
+
+    ::Initialization::mutate_assign<faces_tags>(make_not_null(&box),
+                                               sliced_lapse, sliced_shift);
 
     inbox.erase(received_data);
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};

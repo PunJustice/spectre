@@ -10,6 +10,7 @@
 #include "Domain/Creators/RegisterDerivedWithCharm.hpp"
 #include "Domain/RadiallyCompressedCoordinates.hpp"
 #include "Domain/Tags.hpp"
+#include "Domain/Tags/Faces.hpp"
 #include "Elliptic/Actions/InitializeFields.hpp"
 #include "Elliptic/Actions/RunEventsAndTriggers.hpp"
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
@@ -276,13 +277,14 @@ struct Metavariables {
                  Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
                                                     Frame::Inertial>>;
 
-  using communicated_overlap_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>,
-                 gr::Tags::Shift<DataVector, volume_dim>,
-                 ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                               tmpl::size_t<volume_dim>, Frame::Inertial>,
-                 ::Tags::deriv<gr::Tags::Lapse<DataVector>,
-                               tmpl::size_t<volume_dim>, Frame::Inertial>>;
+  using communicated_overlap_tags = tmpl::flatten<tmpl::list<
+      gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, volume_dim>,
+      ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
+                    tmpl::size_t<volume_dim>, Frame::Inertial>,
+      ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<volume_dim>,
+                    Frame::Inertial>,
+      domain::make_faces_tags<3, tmpl::list<gr::Tags::Lapse<DataVector>,
+                                            gr::Tags::Shift<DataVector, 3>>>>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
