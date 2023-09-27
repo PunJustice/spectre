@@ -105,10 +105,9 @@ struct SelfConsistentGroup {
 }  // namespace SolveCowling::OptionTags
 
 /// \cond
-template <size_t Dim>
 struct Metavariables {
-  static constexpr size_t volume_dim = Dim;
-  using system = Cowling::FirstOrderSystem<Dim>;
+  static constexpr size_t volume_dim = 3;
+  using system = Cowling::FirstOrderSystem;
 
   using background_tag =
       elliptic::Tags::Background<elliptic::analytic_data::Background>;

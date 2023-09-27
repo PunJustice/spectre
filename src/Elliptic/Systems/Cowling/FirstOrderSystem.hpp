@@ -60,16 +60,15 @@ namespace Cowling {
  * \f}
  *
  */
-template <size_t Dim>
 struct FirstOrderSystem
     : tt::ConformsTo<elliptic::protocols::FirstOrderSystem> {
  private:
   using field = ::CurvedScalarWave::Tags::Psi;
   using field_gradient =
-      ::Tags::deriv<field, tmpl::size_t<Dim>, Frame::Inertial>;
+      ::Tags::deriv<field, tmpl::size_t<3>, Frame::Inertial>;
 
  public:
-  static constexpr size_t volume_dim = Dim;
+  static constexpr size_t volume_dim = 3;
 
   using primal_fields = tmpl::list<field>;
   using auxiliary_fields = tmpl::list<field_gradient>;
@@ -77,13 +76,13 @@ struct FirstOrderSystem
   // We just use the standard `Flux` prefix because the fluxes don't have
   // symmetries and we don't need to give them a particular meaning.
   using primal_fluxes =
-      tmpl::list<::Tags::Flux<field, tmpl::size_t<Dim>, Frame::Inertial>>;
+      tmpl::list<::Tags::Flux<field, tmpl::size_t<3>, Frame::Inertial>>;
   using auxiliary_fluxes = tmpl::list<
-      ::Tags::Flux<field_gradient, tmpl::size_t<Dim>, Frame::Inertial>>;
+      ::Tags::Flux<field_gradient, tmpl::size_t<3>, Frame::Inertial>>;
 
   using background_fields = tmpl::list<
-      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>,
-      gr::Tags::SpatialChristoffelSecondKindContracted<DataVector, Dim,
+      gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
+      gr::Tags::SpatialChristoffelSecondKindContracted<DataVector, 3,
                                                        Frame::Inertial>,
       gr::Tags::WeylElectricScalar<DataVector>,
       gr::Tags::WeylMagneticScalar<DataVector>, gr::Tags::Lapse<DataVector>,
@@ -93,12 +92,12 @@ struct FirstOrderSystem
       gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
       gr::Tags::Shift<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
-      gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame::Inertial>;
+      gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>;
 
-  using fluxes_computer = Fluxes<Dim, Cowling::Geometry::Curved>;
-  using sources_computer = Sources<Dim, Cowling::Geometry::Curved>;
+  using fluxes_computer = Fluxes;
+  using sources_computer = Sources;
 
   using boundary_conditions_base =
-      elliptic::BoundaryConditions::BoundaryCondition<Dim>;
+      elliptic::BoundaryConditions::BoundaryCondition<3>;
 };
 }  // namespace Cowling
