@@ -54,9 +54,8 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
  *
  * \see Cowling::FirstOrderSystem
  */
-void auxiliary_fluxes(
-    gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
-    const Scalar<DataVector>& field);
+void auxiliary_fluxes(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
+                      const Scalar<DataVector>& field);
 
 /*!
  * \brief Compute the fluxes \f$F^i_A\f$ for the curved-space Cowling equation
@@ -65,14 +64,19 @@ void auxiliary_fluxes(
  * \see Cowling::FirstOrderSystem
  */
 struct Fluxes {
-  using argument_tags = tmpl::list<
-      gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>>;
+  using argument_tags =
+      tmpl::list<gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
   using volume_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_spatial_metric,
+                    const tnsr::I<DataVector, 3>& shift,
+                    const Scalar<DataVector>& lapse,
                     const tnsr::i<DataVector, 3>& field_gradient);
   static void apply(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
                     const tnsr::II<DataVector, 3>& inv_spatial_metric,
+                    const tnsr::I<DataVector, 3>& shift,
+                    const Scalar<DataVector>& lapse,
                     const Scalar<DataVector>& field);
 };
 

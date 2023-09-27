@@ -21,7 +21,6 @@ set(LIBS_TO_LINK
   ParallelMultigrid
   ParallelSchwarz
   Cowling
-  CowlingBoundaryConditions
   CowlingSolutions
   Utilities
   )
