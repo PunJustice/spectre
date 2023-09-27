@@ -47,7 +47,8 @@ struct ProcessVolumeData {
   using inbox_tags = tmpl::list<importers::Tags::VolumeData<FieldTagsList>>;
 
   using flux_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>>;
+      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 Xcts::Tags::ConformalFactor<DataVector>>;
 
   using faces_tags = domain::make_faces_tags<3, flux_tags>;
 
@@ -150,6 +151,7 @@ struct ProcessVolumeData {
 
     DirectionMap<3, Scalar<DataVector>> sliced_lapse;
     DirectionMap<3, tnsr::I<DataVector, 3, Frame::Inertial>> sliced_shift;
+    DirectionMap<3, Scalar<DataVector>> sliced_conformal_factor;
 
     for (const auto& direction : Direction<3>::all_directions()) {
       data_on_slice(make_not_null(&(sliced_lapse)[direction]), lapse,
@@ -158,10 +160,14 @@ struct ProcessVolumeData {
       data_on_slice(make_not_null(&(sliced_shift)[direction]), shift,
                     mesh.extents(), direction.dimension(),
                     index_to_slice_at(mesh.extents(), direction));
+      data_on_slice(make_not_null(&(sliced_conformal_factor)[direction]),
+                    conformal_factor, mesh.extents(), direction.dimension(),
+                    index_to_slice_at(mesh.extents(), direction));
     }
 
     ::Initialization::mutate_assign<faces_tags>(make_not_null(&box),
-                                               sliced_lapse, sliced_shift);
+                                                sliced_lapse, sliced_shift,
+                                                sliced_conformal_factor);
 
     inbox.erase(received_data);
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};

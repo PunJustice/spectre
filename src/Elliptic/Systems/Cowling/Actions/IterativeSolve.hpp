@@ -77,8 +77,6 @@ struct IterativeSolve {
         db::get<gr::Tags::WeylMagneticScalar<DataVector>>(box);
     const auto& weyl_electric_scalar =
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
-    const auto& conformal_factor =
-        db::get<Xcts::Tags::ConformalFactor<DataVector>>(box);
 
     const auto& previous_solve = db::get<::CurvedScalarWave::Tags::Psi>(box);
     const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
@@ -93,9 +91,6 @@ struct IterativeSolve {
 
     new_source_dv += 8. * epsilon1 *
                      (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
-
-    new_source_dv *= conformal_factor.get() * conformal_factor.get() *
-                     conformal_factor.get() * conformal_factor.get();
 
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
