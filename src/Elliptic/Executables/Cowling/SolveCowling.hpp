@@ -193,7 +193,7 @@ struct Metavariables {
                      domain::Tags::InverseJacobian<
                          volume_dim, Frame::ElementLogical, Frame::Inertial>,
                      domain::Tags::Mesh<volume_dim>>,
-                 Cowling::Tags::MoveDerivToPhi>;
+                 Cowling::Tags::MoveDerivToPhi, Cowling::Tags::UpdatePi>;
 
   // Collect all items to store in the cache.
   using const_global_cache_tags =

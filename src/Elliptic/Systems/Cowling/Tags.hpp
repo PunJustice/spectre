@@ -9,11 +9,13 @@
 #include <string>
 
 #include "DataStructures/DataBox/Tag.hpp"
+#include "DataStructures/Tensor/EagerMath/DotProduct.hpp"
 #include "DataStructures/Tensor/TypeAliases.hpp"
 #include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "Options/String.hpp"
+#include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 
 /// \cond
 class DataVector;
@@ -123,15 +125,33 @@ struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
  public:
   using base = ::CurvedScalarWave::Tags::Phi<3>;
   using return_type = typename base::type;
-  static void function(
-      gsl::not_null<return_type*> result,
-      const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
     *result = deriv;
   }
+
   using argument_tags =
       tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
                                Frame::Inertial>>;
 };
+
+struct UpdatePi : ::CurvedScalarWave::Tags::Pi, db::ComputeTag {
+ public:
+  using base = ::CurvedScalarWave::Tags::Pi;
+  using return_type = typename base::type;
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv,
+                       const tnsr::I<DataVector, 3>& shift,
+                       const Scalar<DataVector>& lapse) {
+    result->get() = get(dot_product(shift, deriv)) / get(lapse);
+  }
+
+  using argument_tags =
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
+};
+
 }  // namespace Tags
 
 }  // namespace Cowling
