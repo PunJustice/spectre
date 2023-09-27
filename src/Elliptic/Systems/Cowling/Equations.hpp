@@ -33,6 +33,7 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                    const tnsr::II<DataVector, 3>& inv_conformal_metric,
                    const tnsr::I<DataVector, 3>& shift,
                    const Scalar<DataVector>& lapse,
+                   const Scalar<DataVector>& conformal_factor,
                    const tnsr::i<DataVector, 3>& field_gradient);
 
 /*!
@@ -47,6 +48,7 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
                         const tnsr::I<DataVector, 3>& flux_for_field,
                         const tnsr::i<DataVector, 3>& deriv_lapse,
                         const Scalar<DataVector>& lapse,
+                        const Scalar<DataVector>& conformal_factor,
                         const tnsr::i<DataVector, 3>& conformal_factor_deriv);
 
 /*!
@@ -68,18 +70,20 @@ void auxiliary_fluxes(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
 struct Fluxes {
   using argument_tags = tmpl::list<
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      gr::Tags::Shift<DataVector, 3>,
-      gr::Tags::Lapse<DataVector>>;
+      gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+      Xcts::Tags::ConformalFactor<DataVector>>;
   using volume_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
+                    const Scalar<DataVector>& conformal_factor,
                     const tnsr::i<DataVector, 3>& field_gradient);
   static void apply(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
+                    const Scalar<DataVector>& conformal_factor,
                     const Scalar<DataVector>& field);
 };
 
@@ -96,6 +100,7 @@ struct Sources {
                  ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
                                Frame::Inertial>,
                  gr::Tags::Lapse<DataVector>,
+                 Xcts::Tags::ConformalFactor<DataVector>,
                  ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
                                tmpl::size_t<3>, Frame::Inertial>>;
   static void apply(
@@ -103,6 +108,7 @@ struct Sources {
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const tnsr::i<DataVector, 3>& deriv_lapse,
       const Scalar<DataVector>& lapse,
+      const Scalar<DataVector>& conformal_factor,
       const tnsr::i<DataVector, 3>& conformal_factor_deriv,
       const Scalar<DataVector>& field,
       const tnsr::I<DataVector, 3>& field_flux);
@@ -111,6 +117,7 @@ struct Sources {
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const tnsr::i<DataVector, 3>& deriv_lapse,
       const Scalar<DataVector>& lapse,
+      const Scalar<DataVector>& conformal_factor,
       const tnsr::i<DataVector, 3>& conformal_factor_deriv,
       const Scalar<DataVector>& field);
 };
