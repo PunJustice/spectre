@@ -33,6 +33,8 @@ namespace Cowling {
  */
 void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                    const tnsr::II<DataVector, 3>& inv_spatial_metric,
+                   const tnsr::I<DataVector, 3>& shift,
+                   const Scalar<DataVector>& lapse,
                    const tnsr::i<DataVector, 3>& field_gradient);
 
 /*!
