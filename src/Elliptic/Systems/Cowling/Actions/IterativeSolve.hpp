@@ -119,14 +119,18 @@ struct IterativeSolve {
                        << "Self-Consistent Iteration: " << iteration << "\n");
     }
 
-    db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration>(
+    db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration,
+               Cowling::Tags::PreviousSolve>(
         [](const gsl::not_null<Scalar<DataVector>*> field,
            const gsl::not_null<size_t*> solve_iteration,
-           const Scalar<DataVector> field_value, const double iteration_value) {
+           const gsl::not_null<Scalar<DataVector>*> previous_solve,
+           const Scalar<DataVector> field_value, const double iteration_value,
+           const Scalar<DataVector> solve_value) {
           *field = field_value;
           *solve_iteration = iteration_value;
+          *previous_solve = solve_value;
         },
-        make_not_null(&box), new_source, iteration);
+        make_not_null(&box), new_source, iteration, previous_solve);
 
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }
