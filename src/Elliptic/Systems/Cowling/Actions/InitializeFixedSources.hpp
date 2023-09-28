@@ -61,7 +61,8 @@ struct InitializeFixedSources {
   using const_global_cache_tags =
       tmpl::list<elliptic::dg::Tags::Massive, BackgroundTag>;
   using simple_tags =
-      tmpl::list<fixed_sources_tag, Cowling::Tags::SolveIteration>;
+      tmpl::list<fixed_sources_tag, Cowling::Tags::SolveIteration,
+                 Cowling::Tags::PreviousSolve>;
   using compute_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,
@@ -95,9 +96,13 @@ struct InitializeFixedSources {
       ::dg::apply_mass_matrix(make_not_null(&fixed_sources), mesh);
     }
 
+    const auto& previous_solve =
+        make_with_value<Scalar<DataVector>>(inertial_coords.get(0), 0.);
+
     // Here we set the number of iterative solves done so far to 0.
-    ::Initialization::mutate_assign<simple_tags>(
-        make_not_null(&box), std::move(fixed_sources), 0_st);
+    ::Initialization::mutate_assign<simple_tags>(make_not_null(&box),
+                                                 std::move(fixed_sources), 0_st,
+                                                 std::move(previous_solve));
 
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }

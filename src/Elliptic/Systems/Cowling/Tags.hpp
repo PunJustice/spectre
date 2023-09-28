@@ -62,6 +62,12 @@ struct Epsilon4 {
   static constexpr Options::String help{
       "Epsilon4 for self-consistent iterations."};
 };
+struct DampingParameter : db::SimpleTag {
+  static std::string name() { return "DampingParameter"; }
+  using type = double;
+  static constexpr Options::String help{
+      "Damping parameter for self-consistent iterations."};
+};
 
 }  // namespace OptionTags
 namespace Tags {
@@ -71,6 +77,25 @@ namespace Tags {
  */
 struct Field : db::SimpleTag {
   using type = Scalar<DataVector>;
+};
+
+/*!
+ * \brief The previous solve, for damping in self-consistent solves.
+ */
+struct PreviousSolve : db::SimpleTag {
+  using type = Scalar<DataVector>;
+};
+
+/*!
+ * \brief Damping parameter for self-consistent solve.
+ */
+struct DampingParameter : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::DampingParameter>;
+  static constexpr bool pass_metavariables = false;
+  static size_t create_from_options(const double damping_parameter){
+    return damping_parameter;
+  }
 };
 
 /*!
