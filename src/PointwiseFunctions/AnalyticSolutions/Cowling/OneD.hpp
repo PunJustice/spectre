@@ -85,16 +85,18 @@ class OneD : public elliptic::analytic_data::AnalyticSolution {
     }
     in.close();
 
-    in.open(gridpath_);
+    std::ifstream in2;
+
+    in2.open(gridpath_);
     std::vector<double> grid(resolution_);
 
-    if (in.is_open()) {
+    if (in2.is_open()) {
       size_t i = 0;
       while (in >> element) {
         grid[i++] = element;
       }
     }
-    in.close();
+    in2.close();
 
     const intrp::BarycentricRational interpolant(grid, scalar, 3);
     DataVector result = radius;
