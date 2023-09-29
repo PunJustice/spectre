@@ -9,11 +9,12 @@
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Inverser.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/KerrSchildCowling.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Zero.hpp"
+#include "PointwiseFunctions/AnalyticSolutions/Cowling/OneD.hpp"
 #include "Utilities/TMPL.hpp"
 
 namespace Cowling::Solutions {
 using all_analytic_solutions = tmpl::append<tmpl::list<KerrSchild>>;
 template <size_t Dim>
 using all_initial_guesses =
-    tmpl::append<tmpl::list<Zero<Dim>, Inverser<Dim>, Gaussian>>;
+    tmpl::append<tmpl::list<Zero<Dim>, Inverser<Dim>, Gaussian, OneD>>;
 }  // namespace Cowling::Solutions
