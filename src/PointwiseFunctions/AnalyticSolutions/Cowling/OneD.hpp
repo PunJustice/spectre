@@ -92,7 +92,7 @@ class OneD : public elliptic::analytic_data::AnalyticSolution {
 
     if (in2.is_open()) {
       size_t i = 0;
-      while (in >> element) {
+      while (in2 >> element) {
         grid[i++] = element;
       }
     }
