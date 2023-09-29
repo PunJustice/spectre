@@ -97,7 +97,7 @@ class OneD : public elliptic::analytic_data::AnalyticSolution {
     in.close();
 
     const intrp::BarycentricRational interpolant(grid, scalar, 3);
-    DataVector result;
+    DataVector result = radius;
     size_t i = 0;
     for (double r : radius) {
       result[i++] = interpolant(r);
