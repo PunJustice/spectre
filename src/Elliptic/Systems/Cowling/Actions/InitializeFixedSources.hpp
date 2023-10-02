@@ -96,8 +96,7 @@ struct InitializeFixedSources {
       ::dg::apply_mass_matrix(make_not_null(&fixed_sources), mesh);
     }
 
-    const auto& previous_solve =
-        make_with_value<Scalar<DataVector>>(inertial_coords.get(0), 0.);
+    const auto previous_solve = db::get<CurvedScalarWave::Tags::Psi>(box);
 
     // Here we set the number of iterative solves done so far to 0.
     ::Initialization::mutate_assign<simple_tags>(make_not_null(&box),
