@@ -93,7 +93,7 @@ struct DampingParameter : db::SimpleTag {
   using type = double;
   using option_tags = tmpl::list<OptionTags::DampingParameter>;
   static constexpr bool pass_metavariables = false;
-  static size_t create_from_options(const double damping_parameter){
+  static double create_from_options(const double damping_parameter){
     return damping_parameter;
   }
 };
