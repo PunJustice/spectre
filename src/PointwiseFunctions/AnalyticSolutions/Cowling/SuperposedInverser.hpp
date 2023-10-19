@@ -84,20 +84,6 @@ class SuperposedInverser : public elliptic::analytic_data::AnalyticSolution {
     return Scalar<DataVector>{result};
   }
 
-  template <typename DataType>
-  tuples::TaggedTuple<::Tags::deriv<::CurvedScalarWave::Tags::Psi,
-                                    tmpl::size_t<3>, Frame::Inertial>>
-  variables(
-      const tnsr::I<DataType, Dim>& x,
-      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
-                               Frame::Inertial>> /*meta*/) const {
-    DataVector r = magnitude(x).get();
-    DataVector dx = -amplitude_ * get<0>(x) / (r * r * r);
-    DataVector dy = -amplitude_ * get<1>(x) / (r * r * r);
-    DataVector dz = -amplitude_ * get<2>(x) / (r * r * r);
-    return tnsr::i<DataType, Dim>{{{dx, dy, dz}}};
-  }
-
   template <typename DataType, typename... RequestedTags>
   tuples::TaggedTuple<RequestedTags...> variables(
       const tnsr::I<DataType, Dim>& x,
