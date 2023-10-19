@@ -19,6 +19,7 @@ spectre_target_headers(
   KerrSchildCowling.hpp
   Gaussian.hpp
   Inverser.hpp
+  SuperposedInverser.hpp
   Zero.hpp
   )
 
