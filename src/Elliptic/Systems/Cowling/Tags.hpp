@@ -14,6 +14,7 @@
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
 #include "Options/String.hpp"
+#include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 
 /// \cond
 class DataVector;
@@ -60,6 +61,12 @@ struct Epsilon4 {
   static constexpr Options::String help{
       "Epsilon4 for self-consistent iterations."};
 };
+struct DampingParameter : db::SimpleTag {
+  static std::string name() { return "DampingParameter"; }
+  using type = double;
+  static constexpr Options::String help{
+      "Damping parameter for self-consistent iterations."};
+};
 
 }  // namespace OptionTags
 namespace Tags {
@@ -69,6 +76,25 @@ namespace Tags {
  */
 struct SolveIteration : db::SimpleTag {
   using type = size_t;
+};
+
+/*!
+ * \brief The previous solve, for damping in self-consistent solves.
+ */
+struct PreviousSolve : db::SimpleTag {
+  using type = Scalar<DataVector>;
+};
+
+/*!
+ * \brief Damping parameter for self-consistent solve.
+ */
+struct DampingParameter : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::DampingParameter>;
+  static constexpr bool pass_metavariables = false;
+  static double create_from_options(const double damping_parameter) {
+    return damping_parameter;
+  }
 };
 
 /*!
@@ -116,14 +142,30 @@ struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
  public:
   using base = ::CurvedScalarWave::Tags::Phi<3>;
   using return_type = typename base::type;
-  static void function(
-      gsl::not_null<return_type*> result,
-      const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv) {
     *result = deriv;
   }
+
   using argument_tags =
       tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
                                Frame::Inertial>>;
+};
+
+struct UpdatePi : ::CurvedScalarWave::Tags::Pi, db::ComputeTag {
+ public:
+  using base = ::CurvedScalarWave::Tags::Pi;
+  using return_type = typename base::type;
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv,
+                       const tnsr::I<DataVector, 3>& shift,
+                       const Scalar<DataVector>& lapse) {
+    result->get() = get(dot_product(shift, deriv)) / get(lapse);
+  }
+  using argument_tags =
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
 };
 }  // namespace Tags
 

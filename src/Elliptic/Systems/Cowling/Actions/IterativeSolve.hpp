@@ -79,14 +79,21 @@ struct IterativeSolve {
         db::get<gr::Tags::WeylElectricScalar<DataVector>>(box);
 
     const auto& previous_solve = db::get<::CurvedScalarWave::Tags::Psi>(box);
+    const auto& previous_previous_solve =
+        db::get<Cowling::Tags::PreviousSolve>(box);
+    const double damping_parameter =
+        db::get<Cowling::Tags::DampingParameter>(box);
     const double epsilon1 = db::get<Cowling::Tags::Epsilon1>(box);
     const double epsilon2 = db::get<Cowling::Tags::Epsilon2>(box);
     const double epsilon4 = db::get<Cowling::Tags::Epsilon4>(box);
 
+    const auto update_field =
+        damping_parameter * get(previous_solve) +
+        (1. - damping_parameter) * get(previous_previous_solve);
+
     DataVector new_source_dv =
-        (epsilon2 * previous_solve.get() / 4. +
-         epsilon4 * previous_solve.get() * previous_solve.get() *
-             previous_solve.get() / 4.) *
+        (epsilon2 * update_field / 4. +
+         epsilon4 * update_field * update_field * update_field / 4.) *
         8. * (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
 
     new_source_dv += 8. * epsilon1 *
@@ -113,14 +120,18 @@ struct IterativeSolve {
                        << "Self-Consistent Iteration: " << iteration << "\n");
     }
 
-    db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration>(
+    db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration,
+               Cowling::Tags::PreviousSolve>(
         [](const gsl::not_null<Scalar<DataVector>*> field,
            const gsl::not_null<size_t*> solve_iteration,
-           const Scalar<DataVector> field_value, const double iteration_value) {
+           const gsl::not_null<Scalar<DataVector>*> previous_solve_field,
+           const Scalar<DataVector> field_value, const double iteration_value,
+           const Scalar<DataVector> solve_value) {
           *field = field_value;
           *solve_iteration = iteration_value;
+          *previous_solve_field = solve_value;
         },
-        make_not_null(&box), new_source, iteration);
+        make_not_null(&box), new_source, iteration, previous_solve);
 
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }
