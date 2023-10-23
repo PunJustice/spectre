@@ -209,7 +209,8 @@ struct Metavariables {
                  Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
                  Cowling::Tags::DampingParameter>;
 
-  using analytic_solutions_and_data = tmpl::list<
+  using analytic_solutions_and_data = tmpl::push_back<
+      Cowling::Solutions::all_analytic_solutions,
       Xcts::AnalyticData::Binary<elliptic::analytic_data::AnalyticSolution,
                                  Cowling::Solutions::all_analytic_solutions>>;
 
