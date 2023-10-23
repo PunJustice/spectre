@@ -140,7 +140,7 @@ struct Epsilon4 : db::SimpleTag {
 };
 
 struct Flux : db::SimpleTag {
-  using type = tnsr::II<DataVectpr, 3, Frame::Inertial>;
+  using type = tnsr::II<DataVector, 3, Frame::Inertial>;
 };
 struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
  public:
