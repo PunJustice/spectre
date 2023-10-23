@@ -76,7 +76,7 @@ class SuperposedInverser : public elliptic::analytic_data::AnalyticSolution {
       tmpl::list<::CurvedScalarWave::Tags::Psi> /*meta*/) const {
     DataVector rminusra =
         sqrt((get<0>(x) - locationa_) * (get<0>(x) - locationa_) +
-             get<1>(x) * get<1>(x) + get<2>(x)*get<2>(x));
+             get<1>(x) * get<1>(x) + get<2>(x) * get<2>(x));
     DataVector rminusrb =
         sqrt((get<0>(x) - locationb_) * (get<0>(x) - locationb_) +
              get<1>(x) * get<1>(x) + get<2>(x) * get<2>(x));
