@@ -138,6 +138,10 @@ struct Epsilon4 : db::SimpleTag {
   static constexpr bool pass_metavariables = false;
   static double create_from_options(const double epsilon) { return epsilon; }
 };
+
+struct Flux : db::SimpleTag {
+  using type = tnsr::II<DataVectpr, 3, Frame::Inertial>;
+};
 struct MoveDerivToPhi : ::CurvedScalarWave::Tags::Phi<3>, db::ComputeTag {
  public:
   using base = ::CurvedScalarWave::Tags::Phi<3>;
@@ -167,6 +171,24 @@ struct UpdatePi : ::CurvedScalarWave::Tags::Pi, db::ComputeTag {
                                Frame::Inertial>,
                  gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
 };
+
+// struct ComputeFlux : Cowling::Tags::Flux, db::ComputeTag {
+//  public:
+//   using base = ::Cowling::Tags::Flux;
+//   using return_type = typename base::type;
+//   static void function(
+//       gsl::not_null<return_type*> result,
+//       const tnsr::II<DataVector, 3, Frame::Inertial>&
+//       inverse_conformal_metric, const tnsr::I<DataVector, 3>& shift, const
+//       Scalar<DataVector>& lapse const Scalar<DataVector>&
+//           conformal_factor) {
+//     result->get() = get(dot_product(shift, deriv)) / get(lapse) / get(lapse);
+//   }
+//   using argument_tags = tmpl::list<
+//       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+//       gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+//       Xcts::Tags::ConformalFactor<DataVector>>;
+// };
 }  // namespace Tags
 
 }  // namespace Cowling

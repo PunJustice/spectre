@@ -43,7 +43,7 @@ void add_curved_sources(
   get(*source_for_field) -=
       get(dot_product(conformal_christoffel_contracted, flux_for_field));
   get(*source_for_field) -=
-      6 * get(dot_product(conformal_factor_deriv, flux_for_field)) /
+      6. * get(dot_product(conformal_factor_deriv, flux_for_field)) /
       get(conformal_factor);
 }
 
