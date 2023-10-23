@@ -1,7 +1,19 @@
 # Distributed under the MIT License.
 # See LICENSE.txt for details.
 
-set(LIBS_TO_LINK
+
+set(EXECUTABLE SolveCowling)
+
+add_spectre_executable(
+  ${EXECUTABLE}
+  EXCLUDE_FROM_ALL
+  SolveCowling.cpp
+  )
+
+target_link_libraries(
+  ${EXECUTABLE}
+  PRIVATE
+  Charmxx::main
   Convergence
   CoordinateMaps
   DataStructures
@@ -33,13 +45,5 @@ set(LIBS_TO_LINK
   GeneralRelativitySolutions
   CowlingSolutions
   Utilities
-  )
-
-add_spectre_parallel_executable(
-  SolveCowling
-  SolveCowling
-  Elliptic/Executables/Cowling
-  "Metavariables"
-  "${LIBS_TO_LINK}"
   )
 

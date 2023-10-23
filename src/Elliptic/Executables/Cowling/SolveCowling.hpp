@@ -350,15 +350,4 @@ struct Metavariables {
   // NOLINTNEXTLINE(google-runtime-references)
   void pup(PUP::er& /*p*/) {}
 };
-
-static const std::vector<void (*)()> charm_init_node_funcs{
-    &setup_error_handling,
-    &setup_memory_allocation_failure_reporting,
-    &disable_openblas_multithreading,
-    &domain::creators::register_derived_with_charm,
-    &register_derived_classes_with_charm<
-        metavariables::schwarz_smoother::subdomain_solver>,
-    &register_factory_classes_with_charm<metavariables>};
-static const std::vector<void (*)()> charm_init_proc_funcs{
-    &enable_floating_point_exceptions};
 /// \endcond
