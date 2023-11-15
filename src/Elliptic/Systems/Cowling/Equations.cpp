@@ -37,7 +37,10 @@ void add_curved_sources(
     const tnsr::I<DataVector, 3>& flux_for_field,
     const tnsr::i<DataVector, 3>& deriv_lapse, const Scalar<DataVector>& lapse,
     const Scalar<DataVector>& conformal_factor,
-    const tnsr::i<DataVector, 3>& conformal_factor_deriv) {
+    const tnsr::i<DataVector, 3>& conformal_factor_deriv,
+    const Scalar<DataVector>& previous_solve, const double& epsilon2,
+    const double& epsilon4, const Scalar<DataVector>& weyl_magnetic,
+    const Scalar<DataVector>& weyl_electric, const Scalar<DataVector>& field) {
   get(*source_for_field) -=
       get(dot_product(deriv_lapse, flux_for_field)) / get(lapse);
   get(*source_for_field) -=
@@ -45,6 +48,7 @@ void add_curved_sources(
   get(*source_for_field) -=
       6. * get(dot_product(conformal_factor_deriv, flux_for_field)) /
       get(conformal_factor);
+  get(*source_for_field) = ;
 }
 
 void auxiliary_fluxes(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
@@ -81,11 +85,14 @@ void Sources::apply(
     const tnsr::i<DataVector, 3>& deriv_lapse, const Scalar<DataVector>& lapse,
     const Scalar<DataVector>& conformal_factor,
     const tnsr::i<DataVector, 3>& conformal_factor_deriv,
-    const Scalar<DataVector>& /*field*/,
+    const Scalar<DataVector>& previous_solve, const double& epsilon2,
+    const double& epsilon4, const Scalar<DataVector>& weyl_magnetic,
+    const Scalar<DataVector>& weyl_electric, const Scalar<DataVector>& field,
     const tnsr::I<DataVector, 3>& field_flux) {
   add_curved_sources(equation_for_field, conformal_christoffel_contracted,
                      field_flux, deriv_lapse, lapse, conformal_factor,
-                     conformal_factor_deriv);
+                     conformal_factor_deriv, previous_solve, epsilon2, epsilon4,
+                     weyl_magnetic, weyl_electric, field);
 }
 
 void Sources::apply(
@@ -96,6 +103,9 @@ void Sources::apply(
     const Scalar<DataVector>& /*lapse*/,
     const Scalar<DataVector>& /*conformal_factor*/,
     const tnsr::i<DataVector, 3>& /*conformal_factor_deriv*/,
+    const Scalar<DataVector>& /*previous_solve*/, const double& /*epsilon2*/,
+    const double& /*epsilon4*/, const Scalar<DataVector>& /*weyl_magnetic*/,
+    const Scalar<DataVector>& /*weyl_electric*/,
     const Scalar<DataVector>& /*field*/) {}
 
 }  // namespace Cowling
