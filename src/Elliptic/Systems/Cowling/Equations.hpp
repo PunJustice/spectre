@@ -37,6 +37,19 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                    const tnsr::i<DataVector, 3>& field_gradient);
 
 /*!
+ * \brief Compute the fluxes \f$F^i=\gamma^{ij}\partial_j u(x)\f$
+ * for the curved-space Cowling equation on a spatial metric \f$\gamma_{ij}\f$
+ * on a face normal.
+ */
+void face_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
+                 const tnsr::II<DataVector, 3>& inv_conformal_metric,
+                 const tnsr::I<DataVector, 3>& shift,
+                 const Scalar<DataVector>& lapse,
+                 const Scalar<DataVector>& conformal_factor,
+                 const tnsr::i<DataVector, 3>& face_normal,
+                 const Scalar<DataVector>& field);
+
+/*!
  * \brief Add the sources \f$S=-\Gamma^i_{ij}v^j\f$
  * for the curved-space Cowling equation on a spatial metric \f$\gamma_{ij}\f$.
  *
@@ -50,15 +63,6 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
                         const Scalar<DataVector>& lapse,
                         const Scalar<DataVector>& conformal_factor,
                         const tnsr::i<DataVector, 3>& conformal_factor_deriv);
-
-/*!
- * \brief Compute the fluxes \f$F^i_j=\delta^i_j u(x)\f$ for the auxiliary
- * field in the first-order formulation of the Cowling equation.
- *
- * \see Cowling::FirstOrderSystem
- */
-void auxiliary_fluxes(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
-                      const Scalar<DataVector>& field);
 
 /*!
  * \brief Compute the fluxes \f$F^i_A\f$ for the curved-space Cowling equation
@@ -78,12 +82,15 @@ struct Fluxes {
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
                     const Scalar<DataVector>& conformal_factor,
+                    const Scalar<DataVector>& field,
                     const tnsr::i<DataVector, 3>& field_gradient);
-  static void apply(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
+  static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
                     const Scalar<DataVector>& conformal_factor,
+                    const tnsr::i<DataVector, 3>& face_normal,
+                    const tnsr::I<DataVector, 3>& face_normal_vector,
                     const Scalar<DataVector>& field);
 };
 
@@ -112,14 +119,5 @@ struct Sources {
       const tnsr::i<DataVector, 3>& conformal_factor_deriv,
       const Scalar<DataVector>& field,
       const tnsr::I<DataVector, 3>& field_flux);
-  static void apply(
-      gsl::not_null<tnsr::i<DataVector, 3>*> equation_for_field_gradient,
-      const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
-      const tnsr::i<DataVector, 3>& deriv_lapse,
-      const Scalar<DataVector>& lapse,
-      const Scalar<DataVector>& conformal_factor,
-      const tnsr::i<DataVector, 3>& conformal_factor_deriv,
-      const Scalar<DataVector>& field);
 };
-
 }  // namespace Cowling
