@@ -82,9 +82,23 @@ struct ProcessVolumeData {
     }
     auto& element_data = received_data->second;
 
-    const auto& lapse = tuples::get<gr::Tags::Lapse<DataVector>>(element_data);
-    const auto& shift =
+    const auto& coords =
+        db::get<domain::Tags::Coordinates<3, Frame::Inertial>>(box);
+    DataVector r = magnitude(coords).get();
+
+    const auto& full_shift =
         tuples::get<gr::Tags::Shift<DataVector, 3>>(element_data);
+    const auto& shift_excess =
+        tuples::get<Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>(
+            element_data);
+    tnsr::I<DataVector, 3> shift;
+    for (size_t i = 0; i < 3; i++) {
+      auto shift_background =
+          full_shift.get(i) - (1 - tanh(r - 40)) * shift_excess.get(i) / 2;
+      shift.get(i) = shift_excess.get(i) + shift_background;
+    }
+
+    const auto& lapse = tuples::get<gr::Tags::Lapse<DataVector>>(element_data);
     const auto spatial_metric =
         tuples::get<gr::Tags::SpatialMetric<DataVector, 3>>(element_data);
     const auto& extrinsic_curvature =

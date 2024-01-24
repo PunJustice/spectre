@@ -277,14 +277,14 @@ struct Metavariables {
       typename schwarz_smoother::template solve<build_linear_operator_actions,
                                                 Label>;
 
-  using import_fields =
-      tmpl::list<gr::Tags::SpatialMetric<DataVector, volume_dim>,
-                 gr::Tags::Lapse<DataVector>,
-                 gr::Tags::Shift<DataVector, volume_dim>,
-                 gr::Tags::ExtrinsicCurvature<DataVector, volume_dim>,
-                 Xcts::Tags::ConformalFactor<DataVector>,
-                 Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
-                                                    Frame::Inertial>>;
+  using import_fields = tmpl::list<
+      gr::Tags::SpatialMetric<DataVector, volume_dim>,
+      gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, volume_dim>,
+      gr::Tags::ExtrinsicCurvature<DataVector, volume_dim>,
+      Xcts::Tags::ConformalFactor<DataVector>,
+      Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
+                                         Frame::Inertial>,
+      Xcts::Tags::ShiftExcess<DataVector, volume_dim, Frame::Inertial>>;
 
   using communicated_overlap_tags = tmpl::flatten<tmpl::list<
       gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, volume_dim>,
