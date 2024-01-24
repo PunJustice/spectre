@@ -92,7 +92,7 @@ struct ProcessVolumeData {
         tuples::get<Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>(
             element_data);
     tnsr::I<DataVector, 3> shift;
-    DataVector sjoft_background;
+    DataVector shift_background;
     for (size_t i = 0; i < 3; i++) {
       shift_background = full_shift.get(i) - shift_excess.get(i);
       shift.get(i) =
