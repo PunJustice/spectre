@@ -207,7 +207,8 @@ struct Metavariables {
                  domain::Tags::RadiallyCompressedCoordinatesOptions,
                  Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
                  Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
-                 Cowling::Tags::DampingParameter>;
+                 Cowling::Tags::DampingParameter,
+                 Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate>;
 
   using analytic_solutions_and_data = tmpl::push_back<
       Cowling::Solutions::all_analytic_solutions,
