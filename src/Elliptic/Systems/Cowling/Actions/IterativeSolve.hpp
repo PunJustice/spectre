@@ -129,8 +129,8 @@ struct IterativeSolve {
                                deriv_update_field(ti::j) / lapse() / lapse());
     for (size_t i = 0; i < 3; i++) {
       shift_term.get(i) =
-          (1 - (1 - tanh((r - rolloff_location) * rolloff_rate))) *
-          shift_term.get(i) / 2;
+          (1 - (1 - tanh((r - rolloff_location) * rolloff_rate)) / 2) *
+          shift_term.get(i);
     }
     const auto final_shift_term =
         partial_derivative(shift_term, mesh, inv_jacobian);
