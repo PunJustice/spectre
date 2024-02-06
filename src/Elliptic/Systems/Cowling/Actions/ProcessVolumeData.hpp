@@ -170,8 +170,12 @@ struct ProcessVolumeData {
       data_on_slice(make_not_null(&(sliced_shift)[direction]), shift,
                     mesh.extents(), direction.dimension(),
                     index_to_slice_at(mesh.extents(), direction));
-      sliced_rolloff_location[direction] = rolloff_location;
-      sliced_rolloff_rate[direction] = rolloff_rate;
+      data_on_slice(make_not_null(&(sliced_conformal_factor)[direction]),
+                    conformal_factor, mesh.extents(), direction.dimension(),
+                    index_to_slice_at(mesh.extents(), direction));
+      sliced_rolloff_location.insert(
+          std::make_pair(direction, rolloff_location));
+      sliced_rolloff_rate.insert(std::make_pair(direction, rolloff_rate));
     }
 
     ::Initialization::mutate_assign<faces_tags>(
