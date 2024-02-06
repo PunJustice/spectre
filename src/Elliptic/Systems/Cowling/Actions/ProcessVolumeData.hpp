@@ -51,7 +51,9 @@ struct ProcessVolumeData {
       tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
                  Xcts::Tags::ConformalFactor<DataVector>>;
 
-  using faces_tags = domain::make_faces_tags<3, flux_tags>;
+  using faces_tags = domain::make_faces_tags<
+      3, tmpl::flatten<tmpl::list<flux_tags, Cowling::Tags::RolloffLocation,
+                                  Cowling::Tags::RolloffRate>>>;
 
   using imported_and_derived_fields = tmpl::list<
       gr::Tags::WeylElectricScalar<DataVector>,
@@ -83,29 +85,7 @@ struct ProcessVolumeData {
     }
     auto& element_data = received_data->second;
 
-    const auto& coords =
-        db::get<domain::Tags::Coordinates<3, Frame::Inertial>>(box);
-    DataVector r = magnitude(coords).get();
-
-    const auto& full_shift =
-        tuples::get<gr::Tags::Shift<DataVector, 3>>(element_data);
-    const auto& shift_excess =
-        tuples::get<Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>(
-            element_data);
-    tnsr::I<DataVector, 3> shift;
-    DataVector shift_background;
-
-    const double rolloff_location =
-        db::get<Cowling::Tags::RolloffLocation>(box);
-
-    const double rolloff_rate = db::get<Cowling::Tags::RolloffRate>(box);
-
-    for (size_t i = 0; i < 3; i++) {
-      shift_background = full_shift.get(i) - shift_excess.get(i);
-      shift.get(i) = shift_excess.get(i) +
-                     (1 - tanh((r - rolloff_location) * rolloff_rate)) *
-                         shift_background / 2;
-    }
+    auto shift = tuples::get<gr::Tags::Shift<DataVector, 3>>(element_data);
 
     const auto& lapse = tuples::get<gr::Tags::Lapse<DataVector>>(element_data);
     const auto spatial_metric =
@@ -172,9 +152,16 @@ struct ProcessVolumeData {
         make_not_null(&box), weyl_electric_scalar, weyl_magnetic_scalar, lapse,
         deriv_lapse, shift, conformal_factor, deriv_conformal_factor);
 
+    const double rolloff_location =
+        db::get<Cowling::Tags::RolloffLocation>(box);
+
+    const double rolloff_rate = db::get<Cowling::Tags::RolloffRate>(box);
+
     DirectionMap<3, Scalar<DataVector>> sliced_lapse;
     DirectionMap<3, tnsr::I<DataVector, 3, Frame::Inertial>> sliced_shift;
     DirectionMap<3, Scalar<DataVector>> sliced_conformal_factor;
+    DirectionMap<3, double> sliced_rolloff_location;
+    DirectionMap<3, double> sliced_rolloff_rate;
 
     for (const auto& direction : Direction<3>::all_directions()) {
       data_on_slice(make_not_null(&(sliced_lapse)[direction]), lapse,
@@ -183,14 +170,13 @@ struct ProcessVolumeData {
       data_on_slice(make_not_null(&(sliced_shift)[direction]), shift,
                     mesh.extents(), direction.dimension(),
                     index_to_slice_at(mesh.extents(), direction));
-      data_on_slice(make_not_null(&(sliced_conformal_factor)[direction]),
-                    conformal_factor, mesh.extents(), direction.dimension(),
-                    index_to_slice_at(mesh.extents(), direction));
+      sliced_rolloff_location[direction] = rolloff_location;
+      sliced_rolloff_rate[direction] = rolloff_rate;
     }
 
-    ::Initialization::mutate_assign<faces_tags>(make_not_null(&box),
-                                                sliced_lapse, sliced_shift,
-                                                sliced_conformal_factor);
+    ::Initialization::mutate_assign<faces_tags>(
+        make_not_null(&box), sliced_lapse, sliced_shift,
+        sliced_conformal_factor, sliced_rolloff_location, sliced_rolloff_rate);
 
     inbox.erase(received_data);
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};

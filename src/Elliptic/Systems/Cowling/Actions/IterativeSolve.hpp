@@ -11,6 +11,8 @@
 #include "DataStructures/DataBox/DataBox.hpp"
 #include "DataStructures/DataBox/PrefixHelpers.hpp"
 #include "DataStructures/DataBox/Prefixes.hpp"
+#include "DataStructures/Tensor/EagerMath/DotProduct.hpp"
+#include "DataStructures/Tensor/EagerMath/Magnitude.hpp"
 #include "DataStructures/Variables.hpp"
 #include "Domain/Structure/ElementId.hpp"
 #include "Domain/Tags.hpp"
@@ -91,6 +93,8 @@ struct IterativeSolve {
         damping_parameter * get(previous_solve) +
         (1. - damping_parameter) * get(previous_previous_solve);
 
+    const Scalar<DataVector> update_field_scalar{update_field};
+
     DataVector new_source_dv =
         (epsilon2 * update_field / 4. +
          epsilon4 * update_field * update_field * update_field / 4.) *
@@ -99,10 +103,44 @@ struct IterativeSolve {
     new_source_dv += 8. * epsilon1 *
                      (weyl_electric_scalar.get() - weyl_magnetic_scalar.get());
 
+    const double rolloff_location =
+        db::get<Cowling::Tags::RolloffLocation>(box);
+
+    const double rolloff_rate = db::get<Cowling::Tags::RolloffRate>(box);
+
+    const auto& coords =
+        db::get<domain::Tags::Coordinates<3, Frame::Inertial>>(box);
+    DataVector r = magnitude(coords).get();
+
+    const auto& lapse = db::get<gr::Tags::Lapse<DataVector>>(box);
+    const auto& shift = db::get<gr::Tags::Shift<DataVector, 3>>(box);
+
+    const auto& mesh = db::get<domain::Tags::Mesh<3>>(box);
+    const auto& inv_jacobian =
+        db::get<domain::Tags::InverseJacobian<3, Frame::ElementLogical,
+                                              Frame::Inertial>>(box);
+
+    const auto deriv_update_field =
+        partial_derivative(update_field_scalar, mesh, inv_jacobian);
+
+    tnsr::I<DataVector, 3, Frame::Inertial> shift_term;
+    tenex::evaluate<ti::I>(make_not_null(&shift_term),
+                           shift(ti::I) * shift(ti::J) *
+                               deriv_update_field(ti::j) / lapse() / lapse());
+    for (size_t i = 0; i < 3; i++) {
+      shift_term.get(i) =
+          (1 - (1 - tanh((r - rolloff_location) * rolloff_rate))) *
+          shift_term.get(i) / 2;
+    }
+    const auto final_shift_term =
+        partial_derivative(shift_term, mesh, inv_jacobian);
+    for (size_t i = 0; i < 3; i++) {
+      new_source_dv -= final_shift_term.get(i, i);
+    }
+
     // Apply DG mass matrix to the fixed sources if the DG operator is
     // massive
     if (db::get<elliptic::dg::Tags::Massive>(box)) {
-      const auto& mesh = db::get<domain::Tags::Mesh<Dim>>(box);
       const auto& det_inv_jacobian = db::get<
           domain::Tags::DetInvJacobian<Frame::ElementLogical, Frame::Inertial>>(
           box);

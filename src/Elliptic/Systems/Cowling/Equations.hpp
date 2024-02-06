@@ -6,6 +6,8 @@
 #include <cstddef>
 
 #include "DataStructures/Tensor/Tensor.hpp"
+#include "Domain/Tags.hpp"
+#include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "Utilities/Gsl.hpp"
@@ -33,7 +35,8 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                    const tnsr::II<DataVector, 3>& inv_conformal_metric,
                    const tnsr::I<DataVector, 3>& shift,
                    const Scalar<DataVector>& lapse,
-                   const Scalar<DataVector>& conformal_factor,
+                   const double rolloff_location, const double rolloff_rate,
+                   DataVector& r, const Scalar<DataVector>& conformal_factor,
                    const tnsr::i<DataVector, 3>& field_gradient);
 
 /*!
@@ -44,7 +47,8 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
 void face_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                  const tnsr::II<DataVector, 3>& inv_conformal_metric,
                  const tnsr::I<DataVector, 3>& shift,
-                 const Scalar<DataVector>& lapse,
+                 const Scalar<DataVector>& lapse, const double rolloff_location,
+                 const double rolloff_rate, DataVector& r,
                  const Scalar<DataVector>& conformal_factor,
                  const tnsr::i<DataVector, 3>& face_normal,
                  const Scalar<DataVector>& field);
@@ -75,12 +79,16 @@ struct Fluxes {
   using argument_tags = tmpl::list<
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
       gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>,
+      Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate,
+      domain::Tags::Coordinates<3, Frame::Inertial>,
       Xcts::Tags::ConformalFactor<DataVector>>;
   using volume_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
+                    const double rolloff_location, const double rolloff_rate,
+                    const tnsr::I<DataVector, 3>& coords,
                     const Scalar<DataVector>& conformal_factor,
                     const Scalar<DataVector>& field,
                     const tnsr::i<DataVector, 3>& field_gradient);
@@ -88,6 +96,8 @@ struct Fluxes {
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
                     const Scalar<DataVector>& lapse,
+                    const double rolloff_location, const double rolloff_rate,
+                    const tnsr::I<DataVector, 3>& coords,
                     const Scalar<DataVector>& conformal_factor,
                     const tnsr::i<DataVector, 3>& face_normal,
                     const tnsr::I<DataVector, 3>& face_normal_vector,

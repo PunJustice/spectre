@@ -294,10 +294,12 @@ struct Metavariables {
                     tmpl::size_t<volume_dim>, Frame::Inertial>,
       ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<volume_dim>,
                     Frame::Inertial>,
+      Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate,
       domain::make_faces_tags<
-          3, tmpl::list<gr::Tags::Lapse<DataVector>,
-                        gr::Tags::Shift<DataVector, 3>,
-                        Xcts::Tags::ConformalFactor<DataVector>>>>>;
+          3, tmpl::list<
+                 gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 Xcts::Tags::ConformalFactor<DataVector>,
+                 Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate>>>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
