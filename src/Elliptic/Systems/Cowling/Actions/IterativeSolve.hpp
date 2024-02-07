@@ -159,15 +159,17 @@ struct IterativeSolve {
     }
 
     db::mutate<fixed_sources_tag, ::Cowling::Tags::SolveIteration,
-               Cowling::Tags::PreviousSolve>(
-        [](const gsl::not_null<Scalar<DataVector>*> field,
+               Cowling::Tags::PreviousSolve, ::CurvedScalarWave::Tags::Psi>(
+        [](const gsl::not_null<Scalar<DataVector>*> fixed_source,
            const gsl::not_null<size_t*> solve_iteration,
            const gsl::not_null<Scalar<DataVector>*> previous_solve_field,
-           const Scalar<DataVector> field_value, const double iteration_value,
-           const Scalar<DataVector> solve_value) {
-          *field = field_value;
+           const gsl::not_null<Scalar<DataVector>*> field,
+           const Scalar<DataVector> fixed_source_value,
+           const double iteration_value, const Scalar<DataVector> solve_value) {
+          *fixed_source = fixed_source_value;
           *solve_iteration = iteration_value;
           *previous_solve_field = solve_value;
+          *field = solve_value;
         },
         make_not_null(&box), new_source, iteration,
         Scalar<DataVector>{update_field});
