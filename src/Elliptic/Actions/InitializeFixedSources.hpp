@@ -61,8 +61,7 @@ struct InitializeFixedSources : tt::ConformsTo<::amr::protocols::Projector> {
  public:  // Iterable action
   using const_global_cache_tags =
       tmpl::list<elliptic::dg::Tags::Massive, BackgroundTag>;
-  using simple_tags = tmpl::list<fixed_sources_tag, analytic_sources_tag,
-                                 Poisson::Tags::SolveIteration>;
+  using simple_tags = tmpl::list<fixed_sources_tag>;
   using compute_tags = tmpl::list<>;
 
   template <typename DbTagsList, typename... InboxTags, typename Metavariables,

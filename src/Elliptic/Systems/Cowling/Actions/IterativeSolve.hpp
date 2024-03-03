@@ -130,7 +130,8 @@ struct IterativeSolve {
           *solve_iteration = iteration_value;
           *previous_solve_field = solve_value;
         },
-        make_not_null(&box), new_source, iteration, previous_solve);
+        make_not_null(&box), new_source, iteration,
+        Scalar<DataVector>{update_field});
 
     return {Parallel::AlgorithmExecution::Continue, std::nullopt};
   }

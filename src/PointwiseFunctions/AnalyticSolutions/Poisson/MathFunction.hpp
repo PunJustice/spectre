@@ -32,7 +32,6 @@ struct MathFunctionVariables {
 
   const tnsr::I<DataType, Dim>& x;
   const ::MathFunction<Dim, Frame::Inertial>& math_function;
-  const double epsilon;
 
   void operator()(gsl::not_null<Scalar<DataType>*> field,
                   gsl::not_null<Cache*> cache, Tags::Field /*meta*/) const;
@@ -58,12 +57,7 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
     static constexpr Options::String help = "The solution function";
   };
 
-  struct Epsilon {
-    using type = double;
-    static constexpr Options::String help = "Epsilon for self-consistent solve";
-  };
-
-  using options = tmpl::list<Function, Epsilon>;
+  using options = tmpl::list<Function>;
   static constexpr Options::String help{
       "Any solution to the Poisson equation given by a MathFunction "
       "implementation, such as a Gaussian."};
@@ -78,14 +72,11 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
       const override;
 
   MathFunction(
-      std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function,
-      double epsilon);
+      std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function);
 
   const ::MathFunction<Dim, Frame::Inertial>& math_function() const {
     return *math_function_;
   }
-
-  double epsilon() const { return epsilon_; }
 
   /// \cond
   explicit MathFunction(CkMigrateMessage* m);
@@ -99,7 +90,7 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
       tmpl::list<RequestedTags...> /*meta*/) const {
     using VarsComputer = detail::MathFunctionVariables<DataType, Dim>;
     typename VarsComputer::Cache cache{get_size(*x.begin())};
-    const VarsComputer computer{x, *math_function_, epsilon_};
+    const VarsComputer computer{x, *math_function_};
     return {cache.get_var(computer, RequestedTags{})...};
   }
 
@@ -108,7 +99,6 @@ class MathFunction : public elliptic::analytic_data::AnalyticSolution {
 
  private:
   std::unique_ptr<::MathFunction<Dim, Frame::Inertial>> math_function_;
-  double epsilon_;
 };
 
 template <size_t Dim>

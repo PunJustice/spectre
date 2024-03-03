@@ -11,7 +11,6 @@
 
 #include "DataStructures/DataBox/DataBox.hpp"
 #include "DataStructures/DataBox/PrefixHelpers.hpp"
-#include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "IO/Logging/Tags.hpp"
 #include "IO/Logging/Verbosity.hpp"
 #include "NumericalAlgorithms/Convergence/Tags.hpp"
@@ -25,6 +24,7 @@
 #include "Utilities/Gsl.hpp"
 #include "Utilities/PrettyType.hpp"
 #include "Utilities/Requires.hpp"
+
 /// \cond
 namespace tuples {
 template <typename...>

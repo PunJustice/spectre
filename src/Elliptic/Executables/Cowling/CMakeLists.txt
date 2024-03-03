@@ -12,6 +12,7 @@ add_spectre_executable(
 target_link_libraries(
   ${EXECUTABLE}
   PRIVATE
+  Charmxx::main
   Convergence
   CoordinateMaps
   DiscontinuousGalerkin
@@ -19,6 +20,7 @@ target_link_libraries(
   Elliptic
   EllipticDg
   EllipticDgSubdomainOperator
+  EllipticSubdomainPreconditioners
   Events
   EventsAndTriggers
   Informer

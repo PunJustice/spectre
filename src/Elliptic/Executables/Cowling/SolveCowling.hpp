@@ -40,6 +40,7 @@
 #include "Parallel/InitializationFunctions.hpp"
 #include "Parallel/Phase.hpp"
 #include "Parallel/PhaseDependentActionList.hpp"
+#include "Parallel/Protocols/RegistrationMetavariables.hpp"
 #include "Parallel/Reduction.hpp"
 #include "ParallelAlgorithms/Actions/RandomizeVariables.hpp"
 #include "ParallelAlgorithms/Actions/TerminatePhase.hpp"
@@ -254,10 +255,9 @@ struct Metavariables {
       operator_applied_to_vars_tag>;
 
   using register_actions =
-      tmpl::list<observers::Actions::RegisterEventsWithObservers,
-                 typename schwarz_smoother::register_element,
+      tmpl::list<typename schwarz_smoother::register_element,
                  typename multigrid::register_element,
-                 Parallel::Actions::TerminatePhase>;
+                 observers::Actions::RegisterEventsWithObservers>;
 
   template <typename Label>
   using smooth_actions = typename schwarz_smoother::template solve<
@@ -265,9 +265,12 @@ struct Metavariables {
 
   using solve_actions = tmpl::list<
       Cowling::Actions::IterativeSolve,
+      typename elliptic::dg::Actions::DgOperator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag,
+          fluxes_vars_tag>::apply_actions,
       elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
           system, fixed_sources_tag>,
-      dg_operator::apply_actions,
       typename linear_solver::template solve<tmpl::list<
           typename multigrid::template solve<
               typename dg_operator::apply_actions,
@@ -281,13 +284,16 @@ struct Metavariables {
 
   using dg_element_array = elliptic::DgElementArray<
       Metavariables,
-      tmpl::list<
-          Parallel::PhaseActions<Parallel::Phase::Initialization,
-                                 initialization_actions>,
-          Parallel::PhaseActions<Parallel::Phase::Register, register_actions>,
-          Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
+      tmpl::list<Parallel::PhaseActions<Parallel::Phase::Initialization,
+                                        initialization_actions>,
+                 Parallel::PhaseActions<
+                     Parallel::Phase::Register,
+                     tmpl::push_back<register_actions,
+                                     Parallel::Actions::TerminatePhase>>,
+                 Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename multigrid::options_group>>;
+
   // Specify all parallel components that will execute actions at some point.
   using component_list = tmpl::flatten<
       tmpl::list<dg_element_array, typename linear_solver::component_list,
