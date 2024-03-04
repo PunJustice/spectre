@@ -64,8 +64,7 @@ struct FirstOrderSystem
     : tt::ConformsTo<elliptic::protocols::FirstOrderSystem> {
  private:
   using field = ::CurvedScalarWave::Tags::Psi;
-  using field_gradient =
-      ::Tags::deriv<field, tmpl::size_t<3>, Frame::Inertial>;
+  using field_gradient = ::Tags::deriv<field, tmpl::size_t<3>, Frame::Inertial>;
 
  public:
   static constexpr size_t volume_dim = 3;
@@ -90,7 +89,8 @@ struct FirstOrderSystem
                     Frame::Inertial>,
       gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
       gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
-      gr::Tags::Shift<DataVector, 3, Frame::Inertial>>;
+      gr::Tags::Shift<DataVector, 3, Frame::Inertial>,
+      gr::Tags::ShiftPlusVelocity<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
       gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>;
 

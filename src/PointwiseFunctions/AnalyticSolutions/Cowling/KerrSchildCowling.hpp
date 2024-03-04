@@ -86,7 +86,8 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
       gr::Tags::WeylElectricScalar<DataType>,
       gr::Tags::WeylMagneticScalar<DataType>,
       gr::Tags::SpatialMetric<DataType, 3, Frame>,
-      gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>>>;
+      gr::Tags::ExtrinsicCurvature<DataType, 3, Frame>,
+      gr::Tags::ShiftPlusVelocity<DataType, 3, Frame>>>;
 
   KerrSchild() = default;
   KerrSchild(const KerrSchild& /*rhs*/) = default;
@@ -232,6 +233,7 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
       internal_tags::deriv_lapse_multiplier<DataType>,
       internal_tags::shift_multiplier<DataType>,
       gr::Tags::Shift<DataType, 3, Frame>, DerivShift<DataType, Frame>,
+      gr::Tags::ShiftPlusVelocity<DataType, 3, Frame>,
       gr::Tags::SpatialMetric<DataType, 3, Frame>,
       gr::Tags::InverseSpatialMetric<DataType, 3, Frame>,
       DerivSpatialMetric<DataType, Frame>,
@@ -383,6 +385,10 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
     void operator()(const gsl::not_null<tnsr::I<DataType, 3, Frame>*> shift,
                     const gsl::not_null<CachedBuffer*> cache,
                     gr::Tags::Shift<DataType, 3, Frame> /*meta*/) const;
+    void operator()(
+        const gsl::not_null<tnsr::I<DataType, 3, Frame>*> shift_plus_velocity,
+        const gsl::not_null<CachedBuffer*> cache,
+        gr::Tags::ShiftPlusVelocity<DataType, 3, Frame> /*meta*/) const;
 
     void operator()(
         const gsl::not_null<tnsr::iJ<DataType, 3, Frame>*> deriv_shift,

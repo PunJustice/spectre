@@ -504,6 +504,18 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
 
 template <typename DataType, typename Frame>
 void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
+    const gsl::not_null<tnsr::I<DataType, 3, Frame>*> shift_plus_velocity,
+    const gsl::not_null<CachedBuffer*> cache,
+    gr::Tags::ShiftPlusVelocity<DataType, 3, Frame> /*meta*/) const {
+  const auto& shift =
+      cache->get_var(*this, gr::Tags::Shift<DataType, 3, Frame>{});
+  for (size_t i = 0; i < 3; ++i) {
+    shift_plus_velocity->get(i) = shift.get(i) + solution_.boost_velocity()[i];
+  }
+}
+
+template <typename DataType, typename Frame>
+void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
     const gsl::not_null<tnsr::iJ<DataType, 3, Frame>*> deriv_shift,
     const gsl::not_null<CachedBuffer*> cache,
     DerivShift<DataType, Frame> /*meta*/) const {
