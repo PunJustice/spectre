@@ -32,6 +32,7 @@ target_link_libraries(
   Options
   Cowling
   Serialization
+  SpecialRelativity
   Interpolation
   Utilities
   GeneralRelativity
