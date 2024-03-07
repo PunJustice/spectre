@@ -11,12 +11,13 @@
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/DataVector.hpp"  // IWYU pragma: keep
 #include "DataStructures/TempBuffer.hpp"
+#include "DataStructures/Tensor/EagerMath/DotProduct.hpp"
 #include "DataStructures/Tensor/EagerMath/Magnitude.hpp"
+#include "DataStructures/Tensor/EagerMath/RaiseOrLowerIndex.hpp"
 #include "DataStructures/Tensor/TypeAliases.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Christoffel.hpp"
 #include "PointwiseFunctions/GeneralRelativity/ExtrinsicCurvature.hpp"
-#include "PointwiseFunctions/GeneralRelativity/IndexManipulation.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Ricci.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/WeylElectric.hpp"
@@ -349,13 +350,13 @@ void KerrSchild::IntermediateComputer<DataType, Frame>::operator()(
                        deriv_log_r.get(j) * r);
       if (i == j) {
         deriv_null_form->get(j, i) += denom * r;
-      } else {         //  add denom*epsilon^ijk a_k
+      } else {  //  add denom*epsilon^ijk a_k
         size_t k = (j + 1) % 3;
         if (k == i) {  // j+1 = i (cyclic), so choose minus sign
           k++;
-          k = k % 3;   // and set k to be neither i nor j
+          k = k % 3;  // and set k to be neither i nor j
           deriv_null_form->get(j, i) -= denom * gsl::at(spin_a, k);
-        } else {       // i+1 = j (cyclic), so choose plus sign
+        } else {  // i+1 = j (cyclic), so choose plus sign
           deriv_null_form->get(j, i) += denom * gsl::at(spin_a, k);
         }
       }

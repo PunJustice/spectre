@@ -248,7 +248,7 @@ struct Metavariables {
       // Apply the DG operator to the initial guess
       Parallel::Actions::TerminatePhase>;
 
-  using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
+  using build_linear_operator_actions = elliptic::dg::Actions::DgOperator<
       system, true, linear_solver_iteration_id, vars_tag, fluxes_vars_tag,
       operator_applied_to_vars_tag>;
 
@@ -259,24 +259,24 @@ struct Metavariables {
                  Parallel::Actions::TerminatePhase>;
 
   template <typename Label>
-  using smooth_actions =
-      typename schwarz_smoother::template solve<build_linear_operator_actions,
-                                                Label>;
+  using smooth_actions = typename schwarz_smoother::template solve<
+      build_linear_operator_actions::apply_actions, Label>;
 
   using solve_actions = tmpl::list<
       Cowling::Actions::IterativeSolve,
       elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
           system, fixed_sources_tag>,
-      elliptic::dg::Actions::apply_operator<
+      elliptic::dg::Actions::DgOperator<
           system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
-          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
+          operator_applied_to_fields_tag, vars_tag,
+          fluxes_vars_tag>::apply_actions,
       typename linear_solver::template solve<tmpl::list<
           typename multigrid::template solve<
-              build_linear_operator_actions,
+              build_linear_operator_actions::apply_actions,
               smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
               smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
           ::LinearSolver::Actions::make_identity_if_skipped<
-              multigrid, build_linear_operator_actions>>>,
+              multigrid, build_linear_operator_actions::apply_actions>>>,
       elliptic::Actions::RunEventsAndTriggers<self_consistent_iteration_id>,
       Cowling::Actions::CheckConvergence<typename linear_solver::options_group>,
       Parallel::Actions::TerminatePhase>;
@@ -306,14 +306,4 @@ struct Metavariables {
   void pup(PUP::er& /*p*/) {}
 };
 
-static const std::vector<void (*)()> charm_init_node_funcs{
-    &setup_error_handling,
-    &setup_memory_allocation_failure_reporting,
-    &disable_openblas_multithreading,
-    &domain::creators::register_derived_with_charm,
-    &register_derived_classes_with_charm<
-        metavariables::schwarz_smoother::subdomain_solver>,
-    &register_factory_classes_with_charm<metavariables>};
-static const std::vector<void (*)()> charm_init_proc_funcs{
-    &enable_floating_point_exceptions};
 /// \endcond

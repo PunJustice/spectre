@@ -49,14 +49,14 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
                         const Scalar<DataVector>& lapse);
 
 /*!
- * \brief Compute the fluxes \f$F^i_j=\delta^i_j u(x)\f$ for the auxiliary
- * field in the first-order formulation of the Cowling equation.
+ * \brief Compute the fluxes $F^i=\gamma^{ij} n_j u$ where $n_j$ is the
+ * `face_normal`.
  *
- * \see Cowling::FirstOrderSystem
+ * The `face_normal_vector` is $\gamma^{ij} n_j$.
  */
-void auxiliary_fluxes(
-    gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
-    const Scalar<DataVector>& field);
+void fluxes_on_face(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
+                    const tnsr::I<DataVector, 3>& face_normal_vector,
+                    const Scalar<DataVector>& field);
 
 /*!
  * \brief Compute the fluxes \f$F^i_A\f$ for the curved-space Cowling equation
@@ -67,12 +67,18 @@ void auxiliary_fluxes(
 struct Fluxes {
   using argument_tags = tmpl::list<
       gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>>;
+  static constexpr bool is_trivial = true;
+  static constexpr bool is_discontinuous = false;
   using volume_tags = tmpl::list<>;
+  using const_global_cache_tags = tmpl::list<>;
   static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_spatial_metric,
+                    const Scalar<DataVector>& field,
                     const tnsr::i<DataVector, 3>& field_gradient);
-  static void apply(gsl::not_null<tnsr::Ij<DataVector, 3>*> flux_for_gradient,
+  static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_spatial_metric,
+                    const tnsr::i<DataVector, 3>& face_normal,
+                    const tnsr::I<DataVector, 3>& face_normal_vector,
                     const Scalar<DataVector>& field);
 };
 
@@ -95,11 +101,6 @@ struct Sources {
                     const Scalar<DataVector>& lapse,
                     const Scalar<DataVector>& field,
                     const tnsr::I<DataVector, 3>& field_flux);
-  static void apply(
-      gsl::not_null<tnsr::i<DataVector, 3>*> equation_for_field_gradient,
-      const tnsr::i<DataVector, 3>& christoffel_contracted,
-      const tnsr::i<DataVector, 3>& deriv_lapse,
-      const Scalar<DataVector>& lapse, const Scalar<DataVector>& field);
 };
 
 }  // namespace Cowling
