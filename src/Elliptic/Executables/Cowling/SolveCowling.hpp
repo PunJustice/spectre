@@ -202,13 +202,13 @@ struct Metavariables {
                  Cowling::Tags::MoveDerivToPhi, Cowling::Tags::UpdatePi>;
 
   // Collect all items to store in the cache.
-  using const_global_cache_tags =
-      tmpl::list<background_tag, initial_guess_tag,
-                 domain::Tags::RadiallyCompressedCoordinatesOptions,
-                 Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
-                 Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
-                 Cowling::Tags::DampingParameter,
-                 Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate>;
+  using const_global_cache_tags = tmpl::list<
+      background_tag, initial_guess_tag,
+      domain::Tags::RadiallyCompressedCoordinatesOptions,
+      Cowling::Tags::MaxIterations, Cowling::Tags::Epsilon1,
+      Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
+      Cowling::Tags::DampingParameter, Cowling::Tags::RolloffLocation,
+      Cowling::Tags::SecondRolloffLocation, Cowling::Tags::RolloffRate>;
 
   using analytic_solutions_and_data = tmpl::push_back<
       Cowling::Solutions::all_analytic_solutions,
@@ -294,7 +294,8 @@ struct Metavariables {
                     tmpl::size_t<volume_dim>, Frame::Inertial>,
       ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<volume_dim>,
                     Frame::Inertial>,
-      Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate,
+      Cowling::Tags::RolloffLocation, Cowling::Tags::SecondRolloffLocation,
+      Cowling::Tags::RolloffRate,
       domain::make_faces_tags<
           3, tmpl::list<
                  gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,

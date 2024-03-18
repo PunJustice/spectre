@@ -108,6 +108,9 @@ struct IterativeSolve {
 
     const double rolloff_rate = db::get<Cowling::Tags::RolloffRate>(box);
 
+    const double rolloff_location_2 =
+        db::get<Cowling::Tags::SecondRolloffLocation>(box);
+
     const auto& coords =
         db::get<domain::Tags::Coordinates<3, Frame::Inertial>>(box);
     DataVector r = magnitude(coords).get();
@@ -129,7 +132,8 @@ struct IterativeSolve {
                                deriv_update_field(ti::j) / lapse() / lapse());
     for (size_t i = 0; i < 3; i++) {
       shift_term.get(i) =
-          (1 - (1 - tanh((r - rolloff_location) * rolloff_rate)) / 2) *
+          (((1 - tanh((r - rolloff_location_2) * rolloff_rate)) / 2) -
+           (1 - tanh((r - rolloff_location) * rolloff_rate)) / 2) *
           shift_term.get(i);
     }
     const auto final_shift_term =
