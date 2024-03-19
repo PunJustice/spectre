@@ -19,8 +19,9 @@
 #include "Utilities/TMPL.hpp"
 
 namespace Cowling::Solutions {
-using all_analytic_solutions =
-    tmpl::list<Xcts::Solutions::WrappedGr<gr::Solutions::KerrSchild>>;
+using all_analytic_solutions = tmpl::list<
+    Xcts::Solutions::WrappedGr<gr::Solutions::KerrSchild>,
+    Xcts::Solutions::WrappedGr<gr::Solutions::HarmonicSchwarzschild>>;
 template <size_t Dim>
 using all_initial_guesses =
     tmpl::list<Zero<Dim>, Inverser<Dim>, Gaussian, SuperposedInverser<Dim>>;
