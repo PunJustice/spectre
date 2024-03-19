@@ -13,6 +13,7 @@
 #include "Domain/Tags/Faces.hpp"
 #include "Elliptic/Actions/InitializeFields.hpp"
 #include "Elliptic/Actions/RunEventsAndTriggers.hpp"
+#include "Elliptic/Amr/Actions.hpp"
 #include "Elliptic/BoundaryConditions/BoundaryCondition.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/ApplyOperator.hpp"
 #include "Elliptic/DiscontinuousGalerkin/Actions/InitializeDomain.hpp"
@@ -50,6 +51,12 @@
 #include "Parallel/Reduction.hpp"
 #include "ParallelAlgorithms/Actions/RandomizeVariables.hpp"
 #include "ParallelAlgorithms/Actions/TerminatePhase.hpp"
+#include "ParallelAlgorithms/Amr/Actions/Initialize.hpp"
+#include "ParallelAlgorithms/Amr/Actions/SendAmrDiagnostics.hpp"
+#include "ParallelAlgorithms/Amr/Criteria/Factory.hpp"
+#include "ParallelAlgorithms/Amr/Projectors/DefaultInitialize.hpp"
+#include "ParallelAlgorithms/Amr/Projectors/Variables.hpp"
+#include "ParallelAlgorithms/Amr/Protocols/AmrMetavariables.hpp"
 #include "ParallelAlgorithms/Events/Factory.hpp"
 #include "ParallelAlgorithms/Events/Tags.hpp"
 #include "ParallelAlgorithms/EventsAndTriggers/Completion.hpp"
@@ -158,7 +165,7 @@ struct Metavariables {
 
   // Precondition each linear solver iteration with a multigrid V-cycle
   using multigrid = LinearSolver::multigrid::Multigrid<
-      volume_dim, typename linear_solver::operand_tag,
+      Metavariables, typename linear_solver::operand_tag,
       SolveCowling::OptionTags::MultigridGroup, elliptic::dg::Tags::Massive,
       typename linear_solver::preconditioner_source_tag>;
   // Smooth each multigrid level with a number of Schwarz smoothing steps
@@ -215,6 +222,10 @@ struct Metavariables {
       Xcts::AnalyticData::Binary<elliptic::analytic_data::AnalyticSolution,
                                  Cowling::Solutions::all_analytic_solutions>>;
 
+  template <typename Tag>
+  using overlaps_tag = LinearSolver::Schwarz::Tags::Overlaps<
+      Tag, volume_dim, SolveCowling::OptionTags::SchwarzSmootherGroup>;
+
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
     using factory_classes = tmpl::map<
@@ -248,6 +259,23 @@ struct Metavariables {
   // For labeling the yaml option for RandomizeVariables
   struct RandomizeInitialGuess {};
 
+  using dg_operator = elliptic::dg::Actions::DgOperator<
+      system, true, linear_solver_iteration_id, vars_tag, fluxes_vars_tag,
+      operator_applied_to_vars_tag>;
+
+  using build_matrix = LinearSolver::Actions::BuildMatrix<
+      linear_solver_iteration_id, vars_tag, operator_applied_to_vars_tag,
+      domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
+      LinearSolver::multigrid::Tags::IsFinestGrid>;
+
+  using build_matrix_actions = typename build_matrix::template actions<
+      typename dg_operator::apply_actions>;
+
+  using init_subdomain_action =
+      elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
+          system, background_tag, typename schwarz_smoother::options_group,
+          false>;
+
   using initialization_actions = tmpl::list<
       elliptic::dg::Actions::InitializeDomain<volume_dim>,
       typename linear_solver::initialize_element,
@@ -260,23 +288,22 @@ struct Metavariables {
       Cowling::Actions::InitializeFixedSources<system, initial_guess_tag>,
       Parallel::Actions::TerminatePhase>;
 
-  using build_linear_operator_actions = elliptic::dg::Actions::apply_operator<
-      system, true, linear_solver_iteration_id, vars_tag, fluxes_vars_tag,
-      operator_applied_to_vars_tag>;
+  using subdomain_init_tags =
+      tmpl::list<domain::Tags::Mesh<volume_dim>,
+                 domain::Tags::Element<volume_dim>,
+                 domain::Tags::NeighborMesh<volume_dim>>;
 
   using register_actions =
       tmpl::list<observers::Actions::RegisterEventsWithObservers,
                  typename schwarz_smoother::register_element,
                  typename multigrid::register_element,
                  importers::Actions::RegisterWithElementDataReader,
-                 LinearSolver::Actions::build_matrix_register<
-                     LinearSolver::multigrid::Tags::IsFinestGrid>,
+                 typename build_matrix::register_actions,
                  Parallel::Actions::TerminatePhase>;
 
   template <typename Label>
-  using smooth_actions =
-      typename schwarz_smoother::template solve<build_linear_operator_actions,
-                                                Label>;
+  using smooth_actions = typename schwarz_smoother::template solve<
+      typename dg_operator::apply_actions, Label>;
 
   using import_fields = tmpl::list<
       gr::Tags::SpatialMetric<DataVector, volume_dim>,
@@ -297,47 +324,39 @@ struct Metavariables {
       domain::make_faces_tags<
           3, tmpl::list<gr::Tags::Lapse<DataVector>,
                         gr::Tags::Shift<DataVector, 3>,
-                        Xcts::Tags::ConformalFactor<DataVector>>>>>;
+                        Xcts::Tags::ConformalFactor<DataVector>>>,
+      subdomain_init_tags>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
       Cowling::Actions::ProcessVolumeData<import_fields>,
       elliptic::dg::Actions::initialize_operator<system, background_tag>,
-      elliptic::dg::subdomain_operator::Actions::InitializeSubdomain<
-          system, background_tag, typename schwarz_smoother::options_group>,
       LinearSolver::Schwarz::Actions::SendOverlapFields<
           communicated_overlap_tags, typename schwarz_smoother::options_group,
           false>,
       LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
           volume_dim, communicated_overlap_tags,
-          typename schwarz_smoother::options_group>,
-      Parallel::Actions::TerminatePhase>;
+          typename schwarz_smoother::options_group, false>,
+      init_subdomain_action, Parallel::Actions::TerminatePhase>;
 
   using solve_actions = tmpl::list<
       PhaseControl::Actions::ExecutePhaseChange,
       Cowling::Actions::IterativeSolve,
+      typename elliptic::dg::Actions::DgOperator<
+          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
+          operator_applied_to_fields_tag, vars_tag,
+          fluxes_vars_tag>::apply_actions,
       elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
           system, fixed_sources_tag>,
-      elliptic::dg::Actions::apply_operator<
-          system, true, linear_solver_iteration_id, fields_tag, fluxes_vars_tag,
-          operator_applied_to_fields_tag, vars_tag, fluxes_vars_tag>,
       typename linear_solver::template solve<tmpl::list<
           typename multigrid::template solve<
-              build_linear_operator_actions,
+              typename dg_operator::apply_actions,
               smooth_actions<LinearSolver::multigrid::VcycleDownLabel>,
               smooth_actions<LinearSolver::multigrid::VcycleUpLabel>>,
           ::LinearSolver::Actions::make_identity_if_skipped<
-              multigrid, build_linear_operator_actions>>>,
+              multigrid, typename dg_operator::apply_actions>>>,
       elliptic::Actions::RunEventsAndTriggers<self_consistent_iteration_id>,
       Cowling::Actions::CheckConvergence<typename linear_solver::options_group>,
-      Parallel::Actions::TerminatePhase>;
-
-  using build_matrix_actions = tmpl::list<
-      LinearSolver::Actions::build_matrix_actions<
-          linear_solver_iteration_id, vars_tag, operator_applied_to_vars_tag,
-          build_linear_operator_actions,
-          domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
-          LinearSolver::multigrid::Tags::IsFinestGrid>,
       Parallel::Actions::TerminatePhase>;
 
   using dg_element_array = elliptic::DgElementArray<
@@ -353,6 +372,33 @@ struct Metavariables {
                                  build_matrix_actions>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename multigrid::options_group>>;
+
+  using amr_projectors = tmpl::flatten<tmpl::list<
+      elliptic::dg::ProjectGeometry<volume_dim>, tmpl::list<>,
+      typename linear_solver::amr_projectors,
+      typename multigrid::amr_projectors,
+      typename schwarz_smoother::amr_projectors,
+      ::amr::projectors::DefaultInitialize<tmpl::append<
+          tmpl::list<domain::Tags::InitialExtents<volume_dim>,
+                     domain::Tags::InitialRefinementLevels<volume_dim>>,
+          // Tags communicated on subdomain overlaps. No need to project
+          // these during AMR because they will be communicated.
+          db::wrap_tags_in<overlaps_tag,
+                           tmpl::append<subdomain_init_tags, tmpl::list<>>>,
+          // Tags initialized on subdomains. No need to project these during
+          // AMR because they will get re-initialized after communication.
+          typename init_subdomain_action::simple_tags>>,
+      ::amr::projectors::ProjectVariables<volume_dim, fields_tag>,
+      Cowling::Actions::InitializeFixedSources<system, background_tag>,
+      elliptic::dg::Actions::amr_projectors<system, background_tag>,
+      typename dg_operator::amr_projectors,
+      typename build_matrix::amr_projectors,
+      elliptic::amr::Actions::Initialize>>;
+
+  struct amr : tt::ConformsTo<::amr::protocols::AmrMetavariables> {
+    using element_array = dg_element_array;
+    using projectors = amr_projectors;
+  };
   // Specify all parallel components that will execute actions at some point.
   using component_list = tmpl::flatten<
       tmpl::list<dg_element_array, typename linear_solver::component_list,

@@ -14,6 +14,7 @@ target_link_libraries(
   ${EXECUTABLE}
   PRIVATE
   Charmxx::main
+  AmrCriteria
   Convergence
   CoordinateMaps
   DataStructures
@@ -34,6 +35,7 @@ target_link_libraries(
   Observer
   Options
   Parallel
+  ParallelAmr
   ParallelLinearSolver
   ParallelMultigrid
   ParallelSchwarz

@@ -77,6 +77,9 @@ struct Fluxes {
       gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>,
       Xcts::Tags::ConformalFactor<DataVector>>;
   using volume_tags = tmpl::list<>;
+  using const_global_cache_tags = tmpl::list<>;
+  static constexpr bool is_trivial = false;
+  static constexpr bool is_discontinuous = false;
   static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
                     const tnsr::II<DataVector, 3>& inv_conformal_metric,
                     const tnsr::I<DataVector, 3>& shift,
