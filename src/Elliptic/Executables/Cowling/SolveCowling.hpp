@@ -315,6 +315,12 @@ struct Metavariables {
   using solve_actions = tmpl::list<
       PhaseControl::Actions::ExecutePhaseChange,
       Cowling::Actions::IterativeSolve,
+      LinearSolver::Schwarz::Actions::SendOverlapFields<
+          tmpl::list<fixed_sources_tag>,
+          typename schwarz_smoother::options_group, false>,
+      LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
+          volume_dim, tmpl::list<fixed_sources_tag>,
+          typename schwarz_smoother::options_group>,
       elliptic::dg::Actions::ImposeInhomogeneousBoundaryConditionsOnSource<
           system, fixed_sources_tag>,
       elliptic::dg::Actions::apply_operator<
