@@ -46,6 +46,7 @@
 #include "ParallelAlgorithms/LinearSolver/Multigrid/Tags.hpp"
 #include "ParallelAlgorithms/LinearSolver/Schwarz/Actions/CommunicateOverlapFields.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Cowling/Factory.hpp"
+#include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/Background.hpp"
 #include "PointwiseFunctions/InitialDataUtilities/InitialGuess.hpp"
@@ -70,7 +71,9 @@ struct Metavariables {
       typename solver::observe_fields,
       tmpl::list<domain::Tags::Coordinates<volume_dim, Frame::Inertial>,
                  domain::Tags::RadiallyCompressedCoordinatesCompute<
-                     volume_dim, Frame::Inertial>>>;
+                     volume_dim, Frame::Inertial>,
+                 gr::Tags::WeylElectricScalar<DataVector>,
+                 gr::Tags::WeylMagneticScalar<DataVector>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
