@@ -63,9 +63,6 @@ void add_curved_sources(
   get(*source_for_field) -=
       6. * get(dot_product(conformal_factor_deriv, flux_for_field)) /
       get(conformal_factor);
-  get(*source_for_field) -=
-      6. * get(dot_product(conformal_factor_deriv, flux_for_field)) /
-      get(conformal_factor);
 }
 
 void add_GB_terms(gsl::not_null<Scalar<DataVector>*> cowling_equation,
