@@ -10,6 +10,7 @@
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/Divergence.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "NumericalAlgorithms/Spectral/Mesh.hpp"
@@ -38,6 +39,7 @@ using common_tags = tmpl::list<
     Tags::ConformalChristoffelContracted<DataType, 3, Frame::Inertial>,
     // Fixed sources
     ::Tags::FixedSource<Tags::ConformalFactorMinusOne<DataType>>,
+    ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi>,
     ::Tags::FixedSource<Tags::LapseTimesConformalFactorMinusOne<DataType>>,
     ::Tags::FixedSource<Tags::ShiftExcess<DataType, 3, Frame::Inertial>>,
     // These tags require numerical differentiation
@@ -144,6 +146,10 @@ struct CommonVariables {
       gsl::not_null<Cache*> cache,
       ::Tags::FixedSource<Tags::ConformalFactorMinusOne<DataType>> /*meta*/)
       const;
+  void operator()(
+      gsl::not_null<Scalar<DataVector>*> fixed_source_for_cowling,
+      gsl::not_null<Cache*> cache,
+      ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi> /*meta*/) const;
   void operator()(
       gsl::not_null<Scalar<DataType>*> fixed_source_for_lapse_equation,
       gsl::not_null<Cache*> cache,

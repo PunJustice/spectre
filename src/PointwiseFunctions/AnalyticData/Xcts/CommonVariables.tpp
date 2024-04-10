@@ -17,6 +17,7 @@
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "DataStructures/Variables.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
+#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/Divergence.hpp"
 #include "NumericalAlgorithms/LinearOperators/Divergence.tpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
@@ -104,6 +105,15 @@ void CommonVariables<DataType, Cache>::operator()(
     const {
   std::fill(fixed_source_for_hamiltonian_constraint->begin(),
             fixed_source_for_hamiltonian_constraint->end(), 0.);
+}
+
+template <typename DataType, typename Cache>
+void CommonVariables<DataType, Cache>::operator()(
+    const gsl::not_null<Scalar<DataVector>*> fixed_source_for_cowling,
+    const gsl::not_null<Cache*> /*cache*/,
+    ::Tags::FixedSource<::CurvedScalarWave::Tags::Psi> /*meta*/) const {
+  std::fill(fixed_source_for_cowling->begin(), fixed_source_for_cowling->end(),
+            0.);
 }
 
 template <typename DataType, typename Cache>
