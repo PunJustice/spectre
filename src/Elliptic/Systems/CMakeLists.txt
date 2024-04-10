@@ -18,6 +18,7 @@ target_link_libraries(
   Utilities
   )
 
+add_subdirectory(Cowling)
 add_subdirectory(Elasticity)
 add_subdirectory(Poisson)
 add_subdirectory(Punctures)
