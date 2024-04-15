@@ -38,11 +38,19 @@ struct FirstOrderSystem
       tmpl::list<::Tags::Flux<field, tmpl::size_t<3>, Frame::Inertial>>;
 
   using background_fields = tmpl::list<
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
-                                                 Frame::Inertial>>;
+      gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
+      gr::Tags::SpatialChristoffelSecondKindContracted<DataVector, 3,
+                                                       Frame::Inertial>,
+      gr::Tags::WeylElectricScalar<DataVector>,
+      gr::Tags::WeylMagneticScalar<DataVector>, gr::Tags::Lapse<DataVector>,
+      ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
+                    Frame::Inertial>,
+      gr::Tags::SpatialMetric<DataVector, 3, Frame::Inertial>,
+      gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
+      gr::Tags::Shift<DataVector, 3, Frame::Inertial>,
+      gr::Tags::ShiftPlusVelocity<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>;
+      gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>;
 
   using fluxes_computer = Fluxes;
   using sources_computer = Sources;

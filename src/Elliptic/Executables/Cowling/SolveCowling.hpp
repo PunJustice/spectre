@@ -78,16 +78,12 @@ struct Metavariables {
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
                      Frame::ElementLogical, Frame::Inertial>>;
-  using analytic_solutions_and_data = tmpl::push_back<
-      Cowling::Solutions::all_analytic_solutions,
-      Xcts::AnalyticData::Binary<elliptic::analytic_data::Background,
-                                 Cowling::Solutions::all_analytic_solutions>>;
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
     using factory_classes = tmpl::map<
         tmpl::pair<DomainCreator<volume_dim>, domain_creators<volume_dim>>,
         tmpl::pair<elliptic::analytic_data::Background,
-                   analytic_solutions_and_data>,
+                   Cowling::Solutions::all_analytic_solutions>,
         tmpl::pair<elliptic::analytic_data::InitialGuess,
                    Cowling::Solutions::all_initial_guesses<volume_dim>>,
         tmpl::pair<elliptic::BoundaryConditions::BoundaryCondition<volume_dim>,
@@ -134,56 +130,31 @@ struct Metavariables {
   using register_actions =
       tmpl::push_back<typename solver::register_actions,
                       observers::Actions::RegisterEventsWithObservers>;
+  using communicated_overlap_tags =
+      tmpl::list<Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
 
-  using import_fields =
-      tmpl::list<gr::Tags::SpatialMetric<DataVector, volume_dim>,
-                 gr::Tags::Lapse<DataVector>,
-                 gr::Tags::Shift<DataVector, volume_dim>,
-                 gr::Tags::ExtrinsicCurvature<DataVector, volume_dim>,
-                 Xcts::Tags::ConformalFactor<DataVector>,
-                 Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
-                                                    Frame::Inertial>>;
-  using communicated_overlap_tags = tmpl::flatten<tmpl::list<
-      gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, volume_dim>,
-      Xcts::Tags::ConformalFactor<DataVector>,
-      ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                    tmpl::size_t<volume_dim>, Frame::Inertial>,
-      ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<volume_dim>,
-                    Frame::Inertial>,
-      Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
-      gr::Tags::WeylElectricScalar<DataVector>,
-      gr::Tags::WeylMagneticScalar<DataVector>,
-      domain::make_faces_tags<
-          3, tmpl::list<gr::Tags::Lapse<DataVector>,
-                        gr::Tags::Shift<DataVector, 3>,
-                        Xcts::Tags::ConformalFactor<DataVector>>>>>;
-
-  using import_actions = tmpl::list<
-      importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
-      Cowling::Actions::ProcessVolumeData<import_fields>,
-      LinearSolver::Schwarz::Actions::SendOverlapFields<
-          communicated_overlap_tags,
-          typename solver::schwarz_smoother::options_group, false>,
-      LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
-          volume_dim, communicated_overlap_tags,
-          typename solver::schwarz_smoother::options_group, false>,
-      Parallel::Actions::TerminatePhase>;
+  using import_actions =
+      tmpl::list<LinearSolver::Schwarz::Actions::SendOverlapFields<
+                     communicated_overlap_tags,
+                     typename solver::schwarz_smoother::options_group, false>,
+                 LinearSolver::Schwarz::Actions::ReceiveOverlapFields<
+                     volume_dim, communicated_overlap_tags,
+                     typename solver::schwarz_smoother::options_group, false>,
+                 Parallel::Actions::TerminatePhase>;
 
   using solve_actions = typename solver::template solve_actions<tmpl::list<>>;
 
   using dg_element_array = elliptic::DgElementArray<
       Metavariables,
-      tmpl::list<
-          Parallel::PhaseActions<Parallel::Phase::Initialization,
-                                 initialization_actions>,
-          Parallel::PhaseActions<
-              Parallel::Phase::Register,
-              tmpl::push_back<register_actions,
-                              importers::Actions::RegisterWithElementDataReader,
-                              Parallel::Actions::TerminatePhase>>,
-          Parallel::PhaseActions<Parallel::Phase::ImportInitialData,
-                                 import_actions>,
-          Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
+      tmpl::list<Parallel::PhaseActions<Parallel::Phase::Initialization,
+                                        initialization_actions>,
+                 Parallel::PhaseActions<
+                     Parallel::Phase::Register,
+                     tmpl::push_back<register_actions,
+                                     Parallel::Actions::TerminatePhase>>,
+                 Parallel::PhaseActions<Parallel::Phase::ImportInitialData,
+                                        import_actions>,
+                 Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename solver::multigrid::options_group>>;
 
@@ -198,26 +169,15 @@ struct Metavariables {
             Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
                         Frame::Inertial>,
             gr::Tags::Shift<DataVector, 3, Frame::Inertial>,
-            Xcts::Tags::ConformalFactor<DataVector>,
-            Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                        tmpl::size_t<3>, Frame::Inertial>,
             domain::Tags::Faces<3, gr::Tags::Lapse<DataVector>>,
             domain::Tags::Faces<
                 3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
-            domain::Tags::Faces<3, Xcts::Tags::ConformalFactor<DataVector>>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 gr::Tags::Lapse<DataVector>, 3,
                 elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 gr::Tags::Shift<DataVector, 3, Frame::Inertial>, 3,
                 elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                Xcts::Tags::ConformalFactor<DataVector>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                            tmpl::size_t<3>, Frame::Inertial>,
-                3, elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
                             Frame::Inertial>,
@@ -240,9 +200,6 @@ struct Metavariables {
             LinearSolver::Schwarz::Tags::Overlaps<
                 domain::Tags::Faces<
                     3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
-                3, elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                domain::Tags::Faces<3, Xcts::Tags::ConformalFactor<DataVector>>,
                 3, elliptic::OptionTags::SchwarzSmootherGroup>>>;
   };
 

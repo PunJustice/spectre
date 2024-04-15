@@ -39,6 +39,7 @@ target_link_libraries(
   ParallelNonlinearSolver
   ParallelSchwarz
   Cowling
+  CowlingSolutions
   Xcts
   XctsAnalyticData
   XctsSolutions
