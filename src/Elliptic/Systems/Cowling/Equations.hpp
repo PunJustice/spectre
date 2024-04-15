@@ -84,7 +84,8 @@ void add_linearized_GB_terms(
 struct Fluxes {
   using argument_tags =
       tmpl::list<gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
-                 gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
+                 gr::Tags::ShiftPlusVelocity<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::Lapse<DataVector>>;
   using volume_tags = tmpl::list<>;
   using const_global_cache_tags = tmpl::list<>;
   static constexpr bool is_trivial = false;

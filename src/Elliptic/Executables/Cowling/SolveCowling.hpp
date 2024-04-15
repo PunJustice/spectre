@@ -160,47 +160,15 @@ struct Metavariables {
 
   struct amr : tt::ConformsTo<::amr::protocols::AmrMetavariables> {
     using element_array = dg_element_array;
-    using projectors = tmpl::push_back<
-        typename solver::amr_projectors,
-        ::amr::projectors::DefaultInitialize<
-            gr::Tags::WeylElectricScalar<DataVector>,
-            gr::Tags::WeylMagneticScalar<DataVector>,
-            gr::Tags::Lapse<DataVector>,
-            Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                        Frame::Inertial>,
-            gr::Tags::Shift<DataVector, 3, Frame::Inertial>,
-            domain::Tags::Faces<3, gr::Tags::Lapse<DataVector>>,
-            domain::Tags::Faces<
-                3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                gr::Tags::Lapse<DataVector>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                gr::Tags::Shift<DataVector, 3, Frame::Inertial>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                            Frame::Inertial>,
-                3, elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                Cowling::Tags::Epsilon2, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                Cowling::Tags::Epsilon4, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                gr::Tags::WeylElectricScalar<DataVector>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                gr::Tags::WeylMagneticScalar<DataVector>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                domain::Tags::Faces<3, gr::Tags::Lapse<DataVector>>, 3,
-                elliptic::OptionTags::SchwarzSmootherGroup>,
-            LinearSolver::Schwarz::Tags::Overlaps<
-                domain::Tags::Faces<
-                    3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
-                3, elliptic::OptionTags::SchwarzSmootherGroup>>>;
+    using projectors =
+        tmpl::push_back<typename solver::amr_projectors,
+                        ::amr::projectors::DefaultInitialize<
+                            LinearSolver::Schwarz::Tags::Overlaps<
+                                Cowling::Tags::Epsilon2, 3,
+                                elliptic::OptionTags::SchwarzSmootherGroup>,
+                            LinearSolver::Schwarz::Tags::Overlaps<
+                                Cowling::Tags::Epsilon4, 3,
+                                elliptic::OptionTags::SchwarzSmootherGroup>>>;
   };
 
   struct registration
