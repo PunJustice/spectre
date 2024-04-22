@@ -14,6 +14,7 @@
 #include "Domain/Structure/DirectionMap.hpp"
 #include "Domain/Tags.hpp"
 #include "Domain/Tags/Faces.hpp"
+#include "Elliptic/Systems/Cowling/Tags.hpp"
 #include "Elliptic/Systems/Poisson/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "IO/Importers/Tags.hpp"
@@ -82,9 +83,31 @@ struct ProcessVolumeData {
     }
     auto& element_data = received_data->second;
 
-    const auto& lapse = tuples::get<gr::Tags::Lapse<DataVector>>(element_data);
-    const auto& shift =
+    const auto& coords =
+        db::get<domain::Tags::Coordinates<3, Frame::Inertial>>(box);
+    DataVector r = magnitude(coords).get();
+
+    const auto& full_shift =
         tuples::get<gr::Tags::Shift<DataVector, 3>>(element_data);
+    const auto& shift_excess =
+        tuples::get<Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>(
+            element_data);
+    tnsr::I<DataVector, 3> shift;
+    DataVector shift_background;
+
+    const double rolloff_location =
+        db::get<Cowling::Tags::RolloffLocation>(box);
+
+    const double rolloff_rate = db::get<Cowling::Tags::RolloffRate>(box);
+
+    for (size_t i = 0; i < 3; i++) {
+      shift_background = full_shift.get(i) - shift_excess.get(i);
+      shift.get(i) = shift_excess.get(i) +
+                     (1 - tanh((r - rolloff_location) * rolloff_rate)) *
+                         shift_background / 2;
+    }
+
+    const auto& lapse = tuples::get<gr::Tags::Lapse<DataVector>>(element_data);
     const auto spatial_metric =
         tuples::get<gr::Tags::SpatialMetric<DataVector, 3>>(element_data);
     const auto& extrinsic_curvature =
