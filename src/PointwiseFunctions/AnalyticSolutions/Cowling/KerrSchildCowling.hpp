@@ -38,7 +38,7 @@ namespace Solutions {
  * compute.
  */
 class KerrSchild : public ::gr::AnalyticSolution<3_st>,
-                   public ::elliptic::analytic_data::AnalyticSolution {
+                   public ::elliptic::analytic_data::Background {
  public:
   struct Mass {
     using type = double;
@@ -97,8 +97,8 @@ class KerrSchild : public ::gr::AnalyticSolution<3_st>,
   KerrSchild(KerrSchild&& /*rhs*/) = default;
   KerrSchild& operator=(KerrSchild&& /*rhs*/) = default;
   ~KerrSchild() = default;
-  std::unique_ptr<elliptic::analytic_data::AnalyticSolution> get_clone()
-      const override;
+  std::unique_ptr<elliptic::analytic_data::Background> get_clone()
+      const;
 
   template <typename DataType, typename... RequestedTags>
   tuples::TaggedTuple<RequestedTags...> variables(

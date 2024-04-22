@@ -60,7 +60,7 @@ void KerrSchild::pup(PUP::er& p) {
 
 PUP::able::PUP_ID KerrSchild::my_PUP_ID = 0;  // NOLINT
 
-std::unique_ptr<elliptic::analytic_data::AnalyticSolution>
+std::unique_ptr<elliptic::analytic_data::Background>
 KerrSchild::get_clone() const {
   return std::make_unique<KerrSchild>(mass_, dimensionless_spin_, center_);
 }
