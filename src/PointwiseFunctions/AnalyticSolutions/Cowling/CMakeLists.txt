@@ -24,25 +24,15 @@ spectre_target_headers(
 
 target_link_libraries(
   ${LIBRARY}
-  INTERFACE
+  PUBLIC
   DataStructures
   ErrorHandling
   MathFunctions
   Options
   Cowling
-  Hydro
   Serialization
   SpecialRelativity
   Interpolation
-  Spectral
   Utilities
   GeneralRelativity
-  InitialDataUtilities
-  Xcts
-  XctsAnalyticData
-  XctsSolutions
-  XctsPointwiseFunctions
-  ElasticityPointwiseFunctions
-  GeneralRelativity
-  GeneralRelativitySolutions
   )
