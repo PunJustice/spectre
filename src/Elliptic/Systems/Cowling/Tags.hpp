@@ -56,6 +56,18 @@ struct Epsilon2 {
       "Epsilon2 for self-consistent iterations."};
 };
 
+struct RolloffLocation {
+  static std::string name() { return "RolloffLocation"; }
+  using type = double;
+  static constexpr Options::String help{"Location of center of tanh function."};
+};
+
+struct RolloffRate {
+  static std::string name() { return "RolloffRate"; }
+  using type = double;
+  static constexpr Options::String help{"Rate of roll off for tanh function."};
+};
+
 struct Epsilon4 {
   static std::string name() { return "Epsilon4"; }
   using type = double;
@@ -128,6 +140,30 @@ struct Epsilon2 : db::SimpleTag {
   using option_tags = tmpl::list<OptionTags::Epsilon2>;
   static constexpr bool pass_metavariables = false;
   static double create_from_options(const double epsilon) { return epsilon; }
+};
+
+/*!
+ * \brief Location of rolloff for tanh function.
+ */
+struct RolloffLocation : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::RolloffLocation>;
+  static constexpr bool pass_metavariables = false;
+  static double create_from_options(const double rolloff_location) {
+    return rolloff_location;
+  }
+};
+
+/*!
+ * \brief Rate of rolloff for tanh function.
+ */
+struct RolloffRate : db::SimpleTag {
+  using type = double;
+  using option_tags = tmpl::list<OptionTags::RolloffRate>;
+  static constexpr bool pass_metavariables = false;
+  static double create_from_options(const double rolloff_rate) {
+    return rolloff_rate;
+  }
 };
 
 /*!

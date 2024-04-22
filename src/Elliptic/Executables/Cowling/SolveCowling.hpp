@@ -120,7 +120,8 @@ struct Metavariables {
   // Additional items to store in the global cache
   using const_global_cache_tags =
       tmpl::list<domain::Tags::RadiallyCompressedCoordinatesOptions,
-                 Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4>;
+                 Cowling::Tags::Epsilon2, Cowling::Tags::Epsilon4,
+                 Cowling::Tags::RolloffLocation, Cowling::Tags::RolloffRate>;
 
   // Collect all reduction tags for observers
   using observed_reduction_data_tags =
@@ -139,6 +140,7 @@ struct Metavariables {
       tmpl::list<gr::Tags::SpatialMetric<DataVector, volume_dim>,
                  gr::Tags::Lapse<DataVector>,
                  gr::Tags::Shift<DataVector, volume_dim>,
+                 Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
                  gr::Tags::ExtrinsicCurvature<DataVector, volume_dim>,
                  Xcts::Tags::ConformalFactor<DataVector>,
                  Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
