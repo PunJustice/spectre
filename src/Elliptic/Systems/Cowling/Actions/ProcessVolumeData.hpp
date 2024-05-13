@@ -48,7 +48,8 @@ struct ProcessVolumeData {
   using inbox_tags = tmpl::list<importers::Tags::VolumeData<FieldTagsList>>;
 
   using flux_tags =
-      tmpl::list<gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+      tmpl::list<gr::Tags::Lapse<DataVector>,
+                 gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
                  Xcts::Tags::ConformalFactor<DataVector>>;
 
   using faces_tags = domain::make_faces_tags<3, flux_tags>;
@@ -60,7 +61,10 @@ struct ProcessVolumeData {
                     Frame::Inertial>,
       gr::Tags::Shift<DataVector, 3>, Xcts::Tags::ConformalFactor<DataVector>,
       ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>, tmpl::size_t<3>,
-                    Frame::Inertial>>;
+                    Frame::Inertial>,
+      gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+      gr::Tags::SpatialMetric<DataVector, 3>,
+      gr::Tags::ExtrinsicCurvature<DataVector, 3>>;
 
   using simple_tags =
       tmpl::flatten<tmpl::list<imported_and_derived_fields, faces_tags>>;
@@ -170,7 +174,8 @@ struct ProcessVolumeData {
 
     ::Initialization::mutate_assign<imported_and_derived_fields>(
         make_not_null(&box), weyl_electric_scalar, weyl_magnetic_scalar, lapse,
-        deriv_lapse, shift, conformal_factor, deriv_conformal_factor);
+        deriv_lapse, full_shift, conformal_factor, deriv_conformal_factor,
+        shift, spatial_metric, extrinsic_curvature);
 
     DirectionMap<3, Scalar<DataVector>> sliced_lapse;
     DirectionMap<3, tnsr::I<DataVector, 3, Frame::Inertial>> sliced_shift;

@@ -73,10 +73,10 @@ void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
  * \see Punctures
  */
 void add_GB_terms(gsl::not_null<Scalar<DataVector>*> cowling_equation,
-                 const double eps2, const double eps4,
-                 const Scalar<DataVector>& weyl_electric,
-                 const Scalar<DataVector>& weyl_magnetic,
-                 const Scalar<DataVector>& field);
+                  const double eps2, const double eps4,
+                  const Scalar<DataVector>& weyl_electric,
+                  const Scalar<DataVector>& weyl_magnetic,
+                  const Scalar<DataVector>& field);
 
 void add_linearized_GB_terms(
     gsl::not_null<Scalar<DataVector>*> linearized_cowling_equation,
@@ -88,8 +88,8 @@ void add_linearized_GB_terms(
 struct Fluxes {
   using argument_tags = tmpl::list<
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>,
-      Xcts::Tags::ConformalFactor<DataVector>>;
+      gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+      gr::Tags::Lapse<DataVector>, Xcts::Tags::ConformalFactor<DataVector>>;
   using volume_tags = tmpl::list<>;
   using const_global_cache_tags = tmpl::list<>;
   static constexpr bool is_trivial = false;
