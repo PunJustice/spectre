@@ -61,6 +61,10 @@ template <typename DataType, size_t Dim, typename Frame>
 struct Shift : db::SimpleTag {
   using type = tnsr::I<DataType, Dim, Frame>;
 };
+template <typename DataType, size_t Dim, typename Frame>
+struct RolledOffShift : db::SimpleTag {
+  using type = tnsr::I<DataType, Dim, Frame>;
+};
 template <typename DataType>
 struct Lapse : db::SimpleTag {
   using type = Scalar<DataType>;

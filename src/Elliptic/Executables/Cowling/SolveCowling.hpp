@@ -24,6 +24,7 @@
 #include "IO/Observer/Actions/RegisterEvents.hpp"
 #include "IO/Observer/Helpers.hpp"
 #include "IO/Observer/ObserverComponent.hpp"
+#include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Protocols/FactoryCreation.hpp"
 #include "Options/String.hpp"
 #include "Parallel/GlobalCache.hpp"
@@ -73,11 +74,24 @@ struct Metavariables {
                  domain::Tags::RadiallyCompressedCoordinatesCompute<
                      volume_dim, Frame::Inertial>,
                  gr::Tags::WeylElectricScalar<DataVector>,
-                 gr::Tags::WeylMagneticScalar<DataVector>>>;
+                 gr::Tags::WeylMagneticScalar<DataVector>,
+                 gr::Tags::SpatialMetric<DataVector, 3>,
+                 gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, 3>,
+                 gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+                 ::CurvedScalarWave::Tags::Phi<3>, ::CurvedScalarWave::Tags::Pi,
+                 ::CurvedScalarWave::Tags::PiWithRolledOffShift>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
-                     Frame::ElementLogical, Frame::Inertial>>;
+                     Frame::ElementLogical, Frame::Inertial>,
+                 ::Tags::DerivTensorCompute<
+                     ::CurvedScalarWave::Tags::Psi,
+                     domain::Tags::InverseJacobian<
+                         volume_dim, Frame::ElementLogical, Frame::Inertial>,
+                     ::domain::Tags::Mesh<volume_dim>>,
+                 Cowling::Tags::MoveDerivToPhi, Cowling::Tags::UpdatePi,
+                 Cowling::Tags::UpdatePiRollOff>;
   using analytic_solutions_and_data = tmpl::push_back<
       Cowling::Solutions::all_analytic_solutions,
       Xcts::AnalyticData::Binary<elliptic::analytic_data::Background,
@@ -146,7 +160,8 @@ struct Metavariables {
                  Xcts::Tags::InverseConformalMetric<DataVector, volume_dim,
                                                     Frame::Inertial>>;
   using communicated_overlap_tags = tmpl::flatten<tmpl::list<
-      gr::Tags::Lapse<DataVector>, gr::Tags::Shift<DataVector, volume_dim>,
+      gr::Tags::Lapse<DataVector>,
+      gr::Tags::RolledOffShift<DataVector, volume_dim, Frame::Inertial>,
       Xcts::Tags::ConformalFactor<DataVector>,
       ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
                     tmpl::size_t<volume_dim>, Frame::Inertial>,
@@ -156,9 +171,10 @@ struct Metavariables {
       gr::Tags::WeylElectricScalar<DataVector>,
       gr::Tags::WeylMagneticScalar<DataVector>,
       domain::make_faces_tags<
-          3, tmpl::list<gr::Tags::Lapse<DataVector>,
-                        gr::Tags::Shift<DataVector, 3>,
-                        Xcts::Tags::ConformalFactor<DataVector>>>>>;
+          3,
+          tmpl::list<gr::Tags::Lapse<DataVector>,
+                     gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+                     Xcts::Tags::ConformalFactor<DataVector>>>>>;
 
   using import_actions = tmpl::list<
       importers::Actions::ReadVolumeData<OptionsGroup, import_fields>,
@@ -205,13 +221,13 @@ struct Metavariables {
                         tmpl::size_t<3>, Frame::Inertial>,
             domain::Tags::Faces<3, gr::Tags::Lapse<DataVector>>,
             domain::Tags::Faces<
-                3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
+                3, gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>>,
             domain::Tags::Faces<3, Xcts::Tags::ConformalFactor<DataVector>>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 gr::Tags::Lapse<DataVector>, 3,
                 elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
-                gr::Tags::Shift<DataVector, 3, Frame::Inertial>, 3,
+                gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>, 3,
                 elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 Xcts::Tags::ConformalFactor<DataVector>, 3,
@@ -240,12 +256,15 @@ struct Metavariables {
                 domain::Tags::Faces<3, gr::Tags::Lapse<DataVector>>, 3,
                 elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
-                domain::Tags::Faces<
-                    3, gr::Tags::Shift<DataVector, 3, Frame::Inertial>>,
+                domain::Tags::Faces<3, gr::Tags::RolledOffShift<
+                                           DataVector, 3, Frame::Inertial>>,
                 3, elliptic::OptionTags::SchwarzSmootherGroup>,
             LinearSolver::Schwarz::Tags::Overlaps<
                 domain::Tags::Faces<3, Xcts::Tags::ConformalFactor<DataVector>>,
-                3, elliptic::OptionTags::SchwarzSmootherGroup>>>;
+                3, elliptic::OptionTags::SchwarzSmootherGroup>,
+            gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+            gr::Tags::SpatialMetric<DataVector, 3>,
+            gr::Tags::ExtrinsicCurvature<DataVector, 3>>>;
   };
 
   struct registration
