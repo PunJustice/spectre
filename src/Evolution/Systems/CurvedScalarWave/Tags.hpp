@@ -47,6 +47,10 @@ struct Pi : db::SimpleTag {
   using type = Scalar<DataVector>;
 };
 
+struct PiWithRolledOffShift : db::SimpleTag {
+  using type = Scalar<DataVector>;
+};
+
 /*!
  * \brief Auxiliary variable which is analytically the spatial derivative of the
  * scalar field.

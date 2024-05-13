@@ -209,6 +209,24 @@ struct UpdatePi : ::CurvedScalarWave::Tags::Pi, db::ComputeTag {
                  gr::Tags::Shift<DataVector, 3>, gr::Tags::Lapse<DataVector>>;
 };
 
+struct UpdatePiRollOff : ::CurvedScalarWave::Tags::PiWithRolledOffShift,
+                         db::ComputeTag {
+ public:
+  using base = ::CurvedScalarWave::Tags::PiWithRolledOffShift;
+  using return_type = typename base::type;
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv,
+                       const tnsr::I<DataVector, 3>& shift,
+                       const Scalar<DataVector>& lapse) {
+    result->get() = get(dot_product(shift, deriv)) / get(lapse);
+  }
+  using argument_tags =
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::Lapse<DataVector>>;
+};
+
 // struct ComputeFlux : Cowling::Tags::Flux, db::ComputeTag {
 //  public:
 //   using base = ::Cowling::Tags::Flux;
