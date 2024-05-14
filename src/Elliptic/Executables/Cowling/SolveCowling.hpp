@@ -265,7 +265,8 @@ struct Metavariables {
                 3, elliptic::OptionTags::SchwarzSmootherGroup>,
             gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
             gr::Tags::SpatialMetric<DataVector, 3>,
-            gr::Tags::ExtrinsicCurvature<DataVector, 3>>>;
+            gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+            Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>>;
   };
 
   struct registration
