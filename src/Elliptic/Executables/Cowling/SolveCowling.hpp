@@ -81,7 +81,8 @@ struct Metavariables {
                  gr::Tags::ExtrinsicCurvature<DataVector, 3>,
                  ::CurvedScalarWave::Tags::Phi<3>, ::CurvedScalarWave::Tags::Pi,
                  ::CurvedScalarWave::Tags::PiWithRolledOffShift,
-                 Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>>;
+                 Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
+                 ::CurvedScalarWave::Tags::PiWithOnlyExcess>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
@@ -92,7 +93,7 @@ struct Metavariables {
                          volume_dim, Frame::ElementLogical, Frame::Inertial>,
                      ::domain::Tags::Mesh<volume_dim>>,
                  Cowling::Tags::MoveDerivToPhi, Cowling::Tags::UpdatePi,
-                 Cowling::Tags::UpdatePiRollOff>;
+                 Cowling::Tags::UpdatePiRollOff, Cowling::Tags::UpdatePiExcess>;
   using analytic_solutions_and_data = tmpl::push_back<
       Cowling::Solutions::all_analytic_solutions,
       Xcts::AnalyticData::Binary<elliptic::analytic_data::Background,
