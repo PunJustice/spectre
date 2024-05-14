@@ -80,7 +80,8 @@ struct Metavariables {
                  gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
                  gr::Tags::ExtrinsicCurvature<DataVector, 3>,
                  ::CurvedScalarWave::Tags::Phi<3>, ::CurvedScalarWave::Tags::Pi,
-                 ::CurvedScalarWave::Tags::PiWithRolledOffShift>>;
+                 ::CurvedScalarWave::Tags::PiWithRolledOffShift,
+                 Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
