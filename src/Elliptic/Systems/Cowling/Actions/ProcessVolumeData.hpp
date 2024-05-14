@@ -64,7 +64,8 @@ struct ProcessVolumeData {
                     Frame::Inertial>,
       gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
       gr::Tags::SpatialMetric<DataVector, 3>,
-      gr::Tags::ExtrinsicCurvature<DataVector, 3>>;
+      gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+      Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>;
 
   using simple_tags =
       tmpl::flatten<tmpl::list<imported_and_derived_fields, faces_tags>>;
@@ -175,7 +176,7 @@ struct ProcessVolumeData {
     ::Initialization::mutate_assign<imported_and_derived_fields>(
         make_not_null(&box), weyl_electric_scalar, weyl_magnetic_scalar, lapse,
         deriv_lapse, full_shift, conformal_factor, deriv_conformal_factor,
-        shift, spatial_metric, extrinsic_curvature);
+        shift, spatial_metric, extrinsic_curvature, shift_excess);
 
     DirectionMap<3, Scalar<DataVector>> sliced_lapse;
     DirectionMap<3, tnsr::I<DataVector, 3, Frame::Inertial>> sliced_shift;
