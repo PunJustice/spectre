@@ -11,6 +11,7 @@
 #include "DataStructures/DataBox/Tag.hpp"
 #include "DataStructures/Tensor/EagerMath/DotProduct.hpp"
 #include "DataStructures/Tensor/TypeAliases.hpp"
+#include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Options.hpp"
@@ -224,6 +225,24 @@ struct UpdatePiRollOff : ::CurvedScalarWave::Tags::PiWithRolledOffShift,
       tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
                                Frame::Inertial>,
                  gr::Tags::RolledOffShift<DataVector, 3, Frame::Inertial>,
+                 gr::Tags::Lapse<DataVector>>;
+};
+
+struct UpdatePiExcess : ::CurvedScalarWave::Tags::PiWithOnlyExcess,
+                        db::ComputeTag {
+ public:
+  using base = ::CurvedScalarWave::Tags::PiWithOnlyExcess;
+  using return_type = typename base::type;
+  static void function(gsl::not_null<return_type*> result,
+                       const tnsr::i<DataVector, 3, Frame::Inertial>& deriv,
+                       const tnsr::I<DataVector, 3>& shift,
+                       const Scalar<DataVector>& lapse) {
+    result->get() = get(dot_product(shift, deriv)) / get(lapse);
+  }
+  using argument_tags =
+      tmpl::list<::Tags::deriv<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                               Frame::Inertial>,
+                 Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
                  gr::Tags::Lapse<DataVector>>;
 };
 
