@@ -1,0 +1,223 @@
+# Distributed under the MIT License.
+# See LICENSE.txt for details.
+
+Executable: SolveCowling
+ExpectedOutput:
+  - ScalarReductions.h5
+  - ScalarVolume*.h5
+
+---
+
+Parallelization:
+  ElementDistribution: NumGridPoints
+
+ResourceInfo:
+  AvoidGlobalProc0: false
+  Singletons: Auto
+
+Epsilon2: {{ Epsilon2 }}
+Epsilon4: {{ Epsilon4 }}
+RolloffLocation: {{ RolloffLocation }}
+RolloffRate: 0.2
+
+Background: &background
+  Binary:
+    XCoords: [&x_left {{ XLeft }}, &x_right {{ XRight }}]
+    ObjectLeft: &kerr_left
+      KerrSchild:
+        Mass: &mass_left {{ MassLeft }}
+        Spin: &spin_left
+          - {{ DimensionlessSpinLeft_x }}
+          - {{ DimensionlessSpinLeft_y }}
+          - {{ DimensionlessSpinLeft_z }}
+        Center: [0., 0., 0.]
+        Velocity: [0., 0., 0.]
+    ObjectRight: &kerr_right
+      KerrSchild:
+        Mass: &mass_right {{ MassRight }}
+        Spin: &spin_right
+          - {{ DimensionlessSpinRight_x }}
+          - {{ DimensionlessSpinRight_y }}
+          - {{ DimensionlessSpinRight_z }}
+        Center: [0., 0., 0.]
+        Velocity: [0., 0., 0.]
+    AngularVelocity: {{ OrbitalAngularVelocity }}
+    Expansion: {{ RadialExpansionVelocity }}
+    LinearVelocity: [0., 0., 0.]
+    FalloffWidths:
+      - {{ FalloffWidthLeft }}
+      - {{ FalloffWidthRight }}
+
+InitialGuess:
+  SuperposedInverser:
+    AmplitudeA: {{ InitialGuessAmplitudeA }}
+    AmplitudeB: {{ InitialGuessAmplitudeB }}
+    LocationA: *x_left
+    LocationB: *x_right
+
+RandomizeInitialGuess: None
+
+
+DomainCreator:
+  BinaryCompactObject:
+    ObjectA:
+      InnerRadius: {{ ExcisionRadiusRight }}
+      OuterRadius: 4.
+      XCoord: *x_right
+      Interior:
+        ExciseWithBoundaryCondition: DoNothing
+      UseLogarithmicMap: True
+    ObjectB:
+      InnerRadius: {{ ExcisionRadiusLeft }}
+      OuterRadius: 4.
+      XCoord: *x_left
+      Interior:
+        ExciseWithBoundaryCondition: DoNothing
+      UseLogarithmicMap: True
+    Envelope:
+      Radius: &outer_shell_inner_radius 67.5
+      RadialDistribution: Projective
+    OuterShell:
+      Radius: &outer_radius 675.0
+      RadialDistribution: &outer_shell_distribution Inverse
+      OpeningAngle: 90.0
+      BoundaryCondition:
+        Robin:
+          DirichletWeight: 1.
+          NeumannWeight: *outer_radius
+          Constant: 0.
+    UseEquiangularMap: True
+    InitialRefinement:
+      ObjectAShell:     [{{ L }}, {{ L }}, {{ L }}]
+      ObjectBShell:     [{{ L }}, {{ L }}, {{ L }}]
+      ObjectACube:      [{{ L }}, {{ L }}, {{ L }}]
+      ObjectBCube:      [{{ L }}, {{ L }}, {{ L }}]
+      Envelope:         [{{ L }}, {{ L }}, {{ L + 1 }}]
+      OuterShell:       [{{ L }}, {{ L }}, {{ L }}]
+    # This p-refinement represents a crude manual optimization of the domain. We
+    # will need AMR to optimize the domain further.
+    InitialGridPoints:
+      ObjectAShell:   [{{ P + 1}}, {{ P + 1}}, {{ P + 5}}]
+      ObjectBShell:   [{{ P + 1}}, {{ P + 1}}, {{ P + 5}}]
+      ObjectACube:    [{{ P + 1}}, {{ P + 1}}, {{ P + 2}}]
+      ObjectBCube:    [{{ P + 1}}, {{ P + 1}}, {{ P + 2}}]
+      Envelope:       [{{ P + 1}}, {{ P + 1}}, {{ P + 1}}]
+      OuterShell:     [{{ P + 1}}, {{ P + 1}}, {{ P + 1}}]
+    TimeDependentMaps:
+      InitialTime: 0.
+      ExpansionMap: None
+      RotationMap: None
+      TranslationMap: None
+      ShapeMapA:
+        LMax: 20
+        InitialValues:
+          Mass: *mass_right
+          Spin: *spin_right
+        SizeInitialValues: [0, 0, 0]
+        TransitionEndsAtCube: False
+      ShapeMapB:
+        LMax: 20
+        InitialValues:
+          Mass: *mass_left
+          Spin: *spin_left
+        SizeInitialValues: [0, 0, 0]
+        TransitionEndsAtCube: False
+
+Discretization:
+  DiscontinuousGalerkin:
+    PenaltyParameter: 2.
+    Massive: True
+    Formulation: StrongInertial
+    Quadrature: GaussLobatto
+
+Observers:
+  VolumeFileName: "ScalarVolume"
+  ReductionFileName: "ScalarReductions"
+
+NonlinearSolver:
+  NewtonRaphson:
+    ConvergenceCriteria:
+      MaxIterations: 20
+      RelativeResidual: 1.e-15
+      AbsoluteResidual: 1.e-10
+    SufficientDecrease: 1.e-4
+    MaxGlobalizationSteps: 10
+    DampingFactor: 1.
+    Verbosity: Verbose
+
+LinearSolver:
+  Gmres:
+    ConvergenceCriteria:
+      MaxIterations: 120
+      RelativeResidual: 5.e-3
+      AbsoluteResidual: 1.e-10
+    Verbosity: Verbose
+
+  Multigrid:
+    Iterations: 1
+    MaxLevels: Auto
+    PreSmoothing: True
+    PostSmoothingAtBottom: True
+    Verbosity: Silent
+    OutputVolumeData: False
+
+  SchwarzSmoother:
+    Iterations: 3
+    MaxOverlap: 2
+    Verbosity: Silent
+    SubdomainSolver:
+      Gmres:
+        ConvergenceCriteria:
+          MaxIterations: 10
+          RelativeResidual: 1.e-4
+          AbsoluteResidual: 1.e-10
+        Verbosity: Silent
+        Restart: None
+        Preconditioner:
+          ExplicitInverse:
+            WriteMatrixToFile: None
+    SkipResets: True
+    ObservePerCoreReductions: False
+
+RadiallyCompressedCoordinates: None
+
+PhaseChangeAndTriggers:
+
+Amr:
+  Verbosity: Verbose
+  Criteria: []
+  Policies:
+    EnforceTwoToOneBalanceInNormalDirection: true
+    Isotropy: Anisotropic
+    Limits:
+      NumGridPoints: Auto
+      RefinementLevel: Auto
+  Iterations: 1
+
+
+Importers:
+  VolumeData:
+    FileGlob: "../BbhVolume*.h5"
+    Subgroup: "VolumeData"
+    ObservationValue: Last
+    Interpolate: True
+
+EventsAndTriggers:
+  - Trigger: HasConverged
+    Events:
+      - ObserveFields:
+          SubfileName: VolumeData
+          VariablesToObserve:
+            - Psi
+            - Pi
+            - PiWithRolledOffShift
+            - Phi
+            - SpatialMetric
+            - Lapse
+            - ExtrinsicCurvature
+            - Shift, RolledOffShift
+            - ShiftExcess
+            - PiWithOnlyExcess
+          InterpolateToMesh: None
+          CoordinatesFloatingPointType: Double
+          FloatingPointTypes: [Double]

@@ -14,6 +14,7 @@ class Bbh(click.MultiCommand):
             "find-horizon",
             "generate-id",
             "postprocess-id",
+            "generate-id-st",
             "start-inspiral",
             "start-ringdown",
         ]
@@ -31,6 +32,10 @@ class Bbh(click.MultiCommand):
             from .PostprocessId import postprocess_id_command
 
             return postprocess_id_command
+        elif name == "generate-id-st":
+            from .SolveST import generate_scalar_tensor_id_command
+
+            return generate_scalar_tensor_id_command
         elif name == "start-inspiral":
             from .Inspiral import start_inspiral_command
 
