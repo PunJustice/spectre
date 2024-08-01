@@ -61,16 +61,18 @@ class DoNothing : public elliptic::BoundaryConditions::BoundaryCondition<3> {
   using argument_tags = tmpl::list<>;
   using volume_tags = tmpl::list<>;
 
-  void apply(
-      gsl::not_null<Scalar<DataVector>*> /*field*/,
-      gsl::not_null<Scalar<DataVector>*> /*n_dot_field_gradient*/) const {};
+  void apply(gsl::not_null<Scalar<DataVector>*> /*field*/,
+             gsl::not_null<Scalar<DataVector>*> /*n_dot_field_gradient*/,
+             const tnsr::i<DataVector, 3>& /*deriv_field*/) const {};
 
   using argument_tags_linearized = tmpl::list<>;
   using volume_tags_linearized = tmpl::list<>;
 
-  void apply_linearized(gsl::not_null<Scalar<DataVector>*> /*field_correction*/,
-                        gsl::not_null<Scalar<DataVector>*>
-                        /*n_dot_field_gradient_correction*/) const {};
+  void apply_linearized(
+      gsl::not_null<Scalar<DataVector>*> /*field_correction*/,
+      gsl::not_null<Scalar<DataVector>*>
+      /*n_dot_field_gradient_correction*/,
+      const tnsr::i<DataVector, 3>& /*deriv_field_correction*/) const {};
 };
 
 bool operator==(const DoNothing& /*lhs*/, const DoNothing& /*rhs*/) {
