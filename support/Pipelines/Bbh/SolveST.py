@@ -26,6 +26,7 @@ def prepare_scalar_solve(
     dimensionless_coupling_quadratic: float,
     dimensionless_coupling_quartic: float,
     id_run_dir: Optional[Union[str, Path]] = None,
+    pipeline_dir: Optional[Union[str, Path]] = None,
     refinement_level: int = 1,
     polynomial_order: int = 6,
     **scheduler_kwargs,
@@ -107,6 +108,7 @@ def prepare_scalar_solve(
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
         id_run_dir=id_run_dir,
+        pipeline_dir=pipeline_dir,
         control=False,
         evolve=False,
         refinement_level=refinement_level,
@@ -214,6 +216,8 @@ def generate_scalar_tensor_id(
         )
     if pipeline_dir and not run_dir:
         run_dir = pipeline_dir / "001x_ScalarTensorInitialData"
+    else:
+        run_dir = f"{run_dir}/ScalarSolve"
 
     # Determine remaining initial data parameters from options
     id_params = id_parameters(
@@ -251,7 +255,7 @@ def generate_scalar_tensor_id(
         control=False,
         evolve=False,
         pipeline_dir=pipeline_dir,
-        run_dir=f"{run_dir}/ScalarSolve",
+        run_dir=run_dir,
         segments_dir=segments_dir,
     )
 
@@ -303,6 +307,15 @@ def generate_scalar_tensor_id(
         " relative to this directory."
     ),
     show_default="directory of the ID_INPUT_FILE_PATH",
+)
+@click.option(
+    "--pipeline-dir",
+    "-d",
+    type=click.Path(
+        writable=True,
+        path_type=Path,
+    ),
+    help="Directory where steps in the pipeline are created.",
 )
 @click.option(
     "--refinement-level",
