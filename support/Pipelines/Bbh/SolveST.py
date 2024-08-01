@@ -248,7 +248,7 @@ def generate_scalar_tensor_id(
         control=False,
         evolve=False,
         pipeline_dir=pipeline_dir,
-        run_dir=run_dir / "ScalarSolve",
+        run_dir=f"{run_dir}/ScalarSolve",
         segments_dir=segments_dir,
     )
 
