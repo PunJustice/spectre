@@ -106,6 +106,7 @@ def prepare_scalar_solve(
         roll_off_location=roll_off_location,
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
+        id_run_dir=id_run_dir,
         control=False,
         evolve=False,
         refinement_level=refinement_level,
@@ -132,6 +133,7 @@ def generate_scalar_tensor_id(
     roll_off_location: float,
     initial_guess_amplitude_a: float,
     initial_guess_amplitude_b: float,
+    id_run_dir: Union[str, Path],
     # Resolution
     refinement_level: int = 1,
     polynomial_order: int = 6,
@@ -236,6 +238,7 @@ def generate_scalar_tensor_id(
             "RolloffLocation": roll_off_location,
             "InitialGuessAmplitudeA": initial_guess_amplitude_a,
             "InitialGuessAmplitudeB": initial_guess_amplitude_b,
+            "XctsSolveFile": Path(id_run_dir).resolve() / "BbhVolume*.h5",
         }
     )
     logger.debug(f"Extended initial data parameters: {pretty_repr(id_params)}")

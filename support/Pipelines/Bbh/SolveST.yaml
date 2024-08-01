@@ -197,7 +197,7 @@ Amr:
 
 Importers:
   VolumeData:
-    FileGlob: "../BbhVolume*.h5"
+    FileGlob: {{ XctsSolveFile }}
     Subgroup: "VolumeData"
     ObservationValue: Last
     Interpolate: True
