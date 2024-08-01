@@ -91,8 +91,6 @@ def prepare_scalar_solve(
     # Roll-off location
     roll_off_location = 0.93 / orbital_angular_velocity
 
-    scalar_solve_run_dir = f"{id_run_dir}/ScalarSolve"
-
     # Run ID
     generate_scalar_tensor_id(
         mass_a=M_input_A,
@@ -108,15 +106,14 @@ def prepare_scalar_solve(
         roll_off_location=roll_off_location,
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
-        run_dir=scalar_solve_run_dir,
         control=False,
         evolve=False,
-        scheduler=None,
         refinement_level=refinement_level,
         polynomial_order=polynomial_order,
+        **scheduler_kwargs,
     )
 
-    return scalar_solve_run_dir
+    return 0.0
 
 
 def generate_scalar_tensor_id(
@@ -143,7 +140,6 @@ def generate_scalar_tensor_id(
     control: bool = False,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
-    run_dir: Optional[Union[str, Path]] = None,
     segments_dir: Optional[Union[str, Path]] = None,
     **scheduler_kwargs,
 ):
@@ -251,7 +247,7 @@ def generate_scalar_tensor_id(
         control=False,
         evolve=False,
         pipeline_dir=pipeline_dir,
-        run_dir=run_dir,
+        run_dir=run_dir / "ScalarSolve",
         segments_dir=segments_dir,
     )
 
