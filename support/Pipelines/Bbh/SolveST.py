@@ -139,6 +139,7 @@ def generate_scalar_tensor_id(
     id_input_file_template: Union[str, Path] = SCALARSOLVE_INPUT_FILE_TEMPLATE,
     control: bool = False,
     evolve: bool = False,
+    run_dir: Optional[Union[str, Path]] = None,
     pipeline_dir: Optional[Union[str, Path]] = None,
     segments_dir: Optional[Union[str, Path]] = None,
     **scheduler_kwargs,
