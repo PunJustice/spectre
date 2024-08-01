@@ -225,6 +225,8 @@ EventsAndTriggers:
             - ExtrinsicCurvature
             - SpatialRicci
             - RadiallyCompressedCoordinates
+            - ConformalFactor
+            - Conformal(InverseSpatialMetric)
           InterpolateToMesh: None
           CoordinatesFloatingPointType: Double
           FloatingPointTypes: [Double]
