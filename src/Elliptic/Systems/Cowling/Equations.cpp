@@ -24,8 +24,8 @@ void curved_fluxes(const gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
   raise_or_lower_index(flux_for_field, field_gradient, inv_conformal_metric);
 
   for (size_t i = 0; i < 3; i++) {
-    flux_for_field->get(i) /= get(conformal_factor) / get(conformal_factor) /
-                              get(conformal_factor) / get(conformal_factor);
+    flux_for_field->get(i) /= get(conformal_factor) * get(conformal_factor) *
+                              get(conformal_factor) * get(conformal_factor);
     flux_for_field->get(i) -= get(dot_product(shift, field_gradient)) *
                               shift.get(i) / get(lapse) / get(lapse);
   }
@@ -41,8 +41,8 @@ void face_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
   raise_or_lower_index(flux_for_field, face_normal, inv_conformal_metric);
 
   for (size_t i = 0; i < 3; i++) {
-    flux_for_field->get(i) /= get(conformal_factor) / get(conformal_factor) /
-                              get(conformal_factor) / get(conformal_factor);
+    flux_for_field->get(i) /= get(conformal_factor) * get(conformal_factor) *
+                              get(conformal_factor) * get(conformal_factor);
     flux_for_field->get(i) -= get(dot_product(shift, face_normal)) *
                               shift.get(i) / get(lapse) / get(lapse);
     flux_for_field->get(i) *= get(field);
