@@ -116,6 +116,7 @@ def generate_id(
     # Scheduling options
     id_input_file_template: Union[str, Path] = ID_INPUT_FILE_TEMPLATE,
     control: bool = False,
+    scalar_solve: bool = False,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
     run_dir: Optional[Union[str, Path]] = None,
@@ -203,6 +204,7 @@ def generate_id(
         **id_params,
         **scheduler_kwargs,
         control=control,
+        scalar_solve=scalar_solve,
         evolve=evolve,
         pipeline_dir=pipeline_dir,
         run_dir=run_dir,
@@ -329,6 +331,12 @@ def generate_id(
     default=True,
     show_default=True,
     help="Control BBH physical parameters.",
+)
+@click.option(
+    "--scalar-solve/--no-scalar-solve",
+    default=True,
+    show_default=True,
+    help="Solve for the scalar field on top of the XCTS background.",
 )
 @click.option(
     "--evolve",

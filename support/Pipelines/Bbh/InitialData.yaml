@@ -17,6 +17,7 @@ Next:
     dimensionless_coupling_linear: 0.0
     dimensionless_coupling_quadratic: 1.0
     dimensionless_coupling_quartic: -10.0
+    scalar_solve: {{ scalar_solve }}
     evolve: {{ evolve }}
     scheduler: {{ scheduler | default("None") }}
     copy_executable: {{ copy_executable | default("None") }}

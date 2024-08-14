@@ -15,6 +15,7 @@ from spectre.Pipelines.Bbh.ControlId import (
     control_id,
 )
 from spectre.Pipelines.Bbh.FindHorizon import find_horizon, vec_to_string
+from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
 from spectre.SphericalHarmonics import Strahlkorper
 from spectre.support.Schedule import schedule, scheduler_options
 from spectre.Visualization.OpenVolfiles import open_volfiles
@@ -37,9 +38,9 @@ def postprocess_id(
     dimensionless_coupling_linear: float = 0.0,
     dimensionless_coupling_quadratic: float = 0.0,
     dimensionless_coupling_quartic: float = 0.0,
+    scalar_solve: bool = False,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
-    scalar_solve: bool = False,
     **scheduler_kwargs,
 ):
     """Postprocess initial data after generation.
@@ -151,6 +152,8 @@ def postprocess_id(
             max_iterations=control_max_iterations,
             refinement_level=control_refinement_level,
             polynomial_order=control_polynomial_order,
+            pipeline_dir=pipeline_dir,
+            scheduler=None,
         )
 
     # Start the inspiral from the ID if requested
@@ -205,9 +208,10 @@ def postprocess_id(
     help="Evolve the initial data after postprocessing.",
 )
 @click.option(
-    "--scalar-solve",
-    is_flag=True,
-    help="Solve scalar after the initial data after postprocessing.",
+    "--scalar-solve/--no-scalar-solve",
+    default=True,
+    show_default=True,
+    help="Solve for the scalar field on top of the XCTS background.",
 )
 @click.option(
     "--pipeline-dir",
