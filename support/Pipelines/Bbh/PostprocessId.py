@@ -34,8 +34,12 @@ def postprocess_id(
     control_max_iterations: int = DEFAULT_MAX_ITERATIONS,
     control_refinement_level: int = 1,
     control_polynomial_order: int = 6,
+    dimensionless_coupling_linear: float = 0.0,
+    dimensionless_coupling_quadratic: float = 0.0,
+    dimensionless_coupling_quartic: float = 0.0,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
+    scalar_solve: bool = False,
     **scheduler_kwargs,
 ):
     """Postprocess initial data after generation.
@@ -136,6 +140,19 @@ def postprocess_id(
         id_run_dir = last_control_run_dir
         id_input_file_path = f"{last_control_run_dir}/InitialData.yaml"
 
+    if scalar_solve:
+        prepare_scalar_solve(
+            id_input_file_path,
+            dimensionless_coupling_linear=dimensionless_coupling_linear,
+            dimensionless_coupling_quadratic=dimensionless_coupling_quadratic,
+            dimensionless_coupling_quartic=dimensionless_coupling_quartic,
+            id_run_dir=id_run_dir,
+            residual_tolerance=control_residual_tolerance,
+            max_iterations=control_max_iterations,
+            refinement_level=control_refinement_level,
+            polynomial_order=control_polynomial_order,
+        )
+
     # Start the inspiral from the ID if requested
     if evolve:
         from spectre.Pipelines.Bbh.Inspiral import start_inspiral
@@ -186,6 +203,11 @@ def postprocess_id(
     "--evolve",
     is_flag=True,
     help="Evolve the initial data after postprocessing.",
+)
+@click.option(
+    "--scalar-solve",
+    is_flag=True,
+    help="Solve scalar after the initial data after postprocessing.",
 )
 @click.option(
     "--pipeline-dir",
