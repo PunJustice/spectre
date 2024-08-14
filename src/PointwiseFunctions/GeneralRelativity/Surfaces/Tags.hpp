@@ -352,6 +352,33 @@ struct SurfaceIntegralCompute : SurfaceIntegral<IntegrandTag, Frame>,
 };
 /// @}
 
+/// @{
+/// Computes the integral of a scalar over a Strahlkorper.
+template <typename IntegrandTag, typename Frame>
+struct SurfaceAverage : db::SimpleTag {
+  static std::string name() {
+    return "SurfaceAverage(" + db::tag_name<IntegrandTag>() + ")";
+  }
+  using type = double;
+};
+
+template <typename IntegrandTag, typename Frame>
+struct SurfaceAverageCompute : SurfaceAverage<IntegrandTag, Frame>,
+                               db::ComputeTag {
+  using base = SurfaceAverage<IntegrandTag, Frame>;
+  using return_type = double;
+  static void function(const gsl::not_null<double*> surface_integral,
+                       const Scalar<DataVector>& area_element,
+                       const Scalar<DataVector>& integrand,
+                       const ylm::Strahlkorper<Frame>& strahlkorper) {
+    *surface_integral = ::gr::surfaces::surface_average_of_scalar<Frame>(
+        area_element, integrand, strahlkorper);
+  }
+  using argument_tags = tmpl::list<AreaElement<Frame>, IntegrandTag,
+                                   ylm::Tags::Strahlkorper<Frame>>;
+};
+/// @}
+
 /// Tag representing the surface area of a Strahlkorper
 struct Area : db::SimpleTag {
   using type = double;

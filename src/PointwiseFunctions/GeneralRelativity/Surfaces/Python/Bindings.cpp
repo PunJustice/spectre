@@ -80,8 +80,10 @@ void bind_st_horizon_quantities_impl(py::module& m) {
             tmpl::append<::ah::compute_items_on_target<Dim, Frame>,
                             tmpl::list<
                             gr::surfaces::Tags::DimensionlessSpinVectorCompute<
-                                Frame, Frame>
-                                >
+                                Frame, Frame>>
+                            //     ,
+                            // gr::surfaces::Tags::SurfaceAverageCompute<
+                            //     CurvedScalarWave::Tags::Psi, Frame>
                         >>(
             std::move(horizon), std::move(spatial_metric),
             std::move(inv_spatial_metric), std::move(extrinsic_curvature),
