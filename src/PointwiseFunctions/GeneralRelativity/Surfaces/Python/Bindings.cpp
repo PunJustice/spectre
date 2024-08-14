@@ -78,12 +78,11 @@ void bind_st_horizon_quantities_impl(py::module& m) {
                          CurvedScalarWave::Tags::Psi>
                          >,
             tmpl::append<::ah::compute_items_on_target<Dim, Frame>,
-                            tmpl::list<
-                            gr::surfaces::Tags::DimensionlessSpinVectorCompute<
-                                Frame, Frame>>
-                            //     ,
-                            // gr::surfaces::Tags::SurfaceAverageCompute<
-                            //     CurvedScalarWave::Tags::Psi, Frame>
+                        tmpl::list<
+                        gr::surfaces::Tags::DimensionlessSpinVectorCompute<
+                            Frame, Frame>,
+                        gr::surfaces::Tags::SurfaceAverageCompute<
+                            CurvedScalarWave::Tags::Psi, Frame>>
                         >>(
             std::move(horizon), std::move(spatial_metric),
             std::move(inv_spatial_metric), std::move(extrinsic_curvature),
@@ -101,6 +100,9 @@ void bind_st_horizon_quantities_impl(py::module& m) {
             db::get<gr::surfaces::Tags::DimensionlessSpinMagnitude<Frame>>(box);
         result["DimensionlessSpinVector"] =
             db::get<gr::surfaces::Tags::DimensionlessSpinVector<Frame>>(box);
+        result["SurfaceAverageOfScalar"] =
+            db::get<gr::surfaces::Tags::SurfaceAverage<
+                            CurvedScalarWave::Tags::Psi, Frame>>(box);
         return result;
       },
       py::arg("horizon"), py::arg("spatial_metric"),
