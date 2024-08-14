@@ -110,6 +110,10 @@ def generate_id(
     separation: float,
     orbital_angular_velocity: float,
     radial_expansion_velocity: float,
+    # Scalar tensor parameters
+    coupling_linear: float = 0.0,
+    coupling_quadratic: float = 0.0,
+    coupling_quartic: float = 0.0,
     # Resolution
     refinement_level: int = 1,
     polynomial_order: int = 6,
@@ -197,6 +201,16 @@ def generate_id(
         polynomial_order=polynomial_order,
     )
     logger.debug(f"Initial data parameters: {pretty_repr(id_params)}")
+
+    # Append extra scalar tensor parameters
+    id_params.update(
+        {
+            "Epsilon1": coupling_linear,
+            "Epsilon2": coupling_quadratic,
+            "Epsilon4": coupling_quartic,
+        }
+    )
+    logger.debug(f"Extended initial data parameters: {pretty_repr(id_params)}")
 
     # Schedule!
     return schedule(
@@ -295,6 +309,27 @@ def generate_id(
         " initial orbital parameters for a circular orbit."
     ),
 )
+@click.option(
+    "--dimensionless-coupling-linear",
+    type=float,
+    help="Dimensionless coupling linear",
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "--dimensionless-coupling-quadratic",
+    type=float,
+    help="Dimensionless coupling quadratic",
+    default=0.0,
+    show_default=True,
+)
+@click.option(
+    "--dimensionless-coupling-quartic",
+    type=float,
+    help="Dimensionless coupling quartic",
+    default=0.0,
+    show_default=True,
+)
 # Resolution
 @click.option(
     "--refinement-level",
@@ -368,6 +403,10 @@ def generate_id_command(
     mean_anomaly_fraction,
     num_orbits,
     time_to_merger,
+    # Scalar tensor parameters
+    dimensionless_coupling_linear,
+    dimensionless_coupling_quadratic,
+    dimensionless_coupling_quartic,
     **kwargs,
 ):
     _rich_traceback_guard = True  # Hide traceback until here
@@ -398,6 +437,9 @@ def generate_id_command(
         separation=separation,
         orbital_angular_velocity=orbital_angular_velocity,
         radial_expansion_velocity=radial_expansion_velocity,
+        coupling_linear=dimensionless_coupling_linear,
+        coupling_quadratic=dimensionless_coupling_quadratic,
+        coupling_quartic=dimensionless_coupling_quartic,
         **kwargs,
     )
 
