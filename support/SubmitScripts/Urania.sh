@@ -44,6 +44,7 @@ export CHARM_ROOT=/u/guilara/charm_impi_2/mpi-linux-x86_64-smp
 export PATH=$PATH:/u/guilara/charm_impi_2/mpi-linux-x86_64-smp/bin
 
 # Load python environment
+export SPECTRE_HOME=/u/guilara/repos/others_spectre/PJSpectre/spectre
 source $SPECTRE_HOME/env/bin/activate
 {% endblock %}
 
