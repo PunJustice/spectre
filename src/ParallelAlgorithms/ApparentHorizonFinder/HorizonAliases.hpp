@@ -35,6 +35,13 @@ using vars_to_interpolate_to_target =
                gr::Tags::SpatialChristoffelSecondKind<DataVector, Dim, Frame>,
                gr::Tags::SpatialRicci<DataVector, Dim, Frame>>;
 
+template <size_t Dim, typename Frame>
+using vars_to_interpolate_to_target_no_ricci =
+    tmpl::list<gr::Tags::SpatialMetric<DataVector, Dim, Frame>,
+               gr::Tags::InverseSpatialMetric<DataVector, Dim, Frame>,
+               gr::Tags::ExtrinsicCurvature<DataVector, Dim, Frame>,
+               gr::Tags::SpatialChristoffelSecondKind<DataVector, Dim, Frame>>;
+
 template <typename Frame>
 using tags_for_observing = tmpl::list<
     gr::surfaces::Tags::AreaCompute<Frame>,
@@ -42,6 +49,17 @@ using tags_for_observing = tmpl::list<
     ylm::Tags::MaxRicciScalarCompute, ylm::Tags::MinRicciScalarCompute,
     gr::surfaces::Tags::ChristodoulouMassCompute<Frame>,
     gr::surfaces::Tags::DimensionlessSpinMagnitudeCompute<Frame>
+    // Needs `ObserveTimeSeriesOnSurface` to be able to write a `std::array`
+    // gr::surfaces::Tags::DimensionlessSpinVectorCompute<Frame, Frame>
+    >;
+
+template <typename Frame>
+using tags_for_observing_no_ricci = tmpl::list<
+    gr::surfaces::Tags::AreaCompute<Frame>,
+    gr::surfaces::Tags::IrreducibleMassCompute<Frame>
+    // ,
+    // gr::surfaces::Tags::ChristodoulouMassCompute<Frame>,
+    // gr::surfaces::Tags::DimensionlessSpinMagnitudeCompute<Frame>
     // Needs `ObserveTimeSeriesOnSurface` to be able to write a `std::array`
     // gr::surfaces::Tags::DimensionlessSpinVectorCompute<Frame, Frame>
     >;
@@ -74,4 +92,33 @@ using compute_items_on_target = tmpl::append<
         gr::surfaces::Tags::SpinFunctionCompute<Frame>,
         gr::surfaces::Tags::DimensionfulSpinMagnitudeCompute<Frame>>,
     tags_for_observing<Frame>>;
+
+template <size_t Dim, typename Frame>
+using compute_items_on_target_no_ricci = tmpl::append<
+    tmpl::list<
+        ylm::Tags::ThetaPhiCompute<Frame>, ylm::Tags::RadiusCompute<Frame>,
+        ylm::Tags::RhatCompute<Frame>, ylm::Tags::CartesianCoordsCompute<Frame>,
+        ylm::Tags::InvJacobianCompute<Frame>,
+        ylm::Tags::InvHessianCompute<Frame>, ylm::Tags::JacobianCompute<Frame>,
+        ylm::Tags::DxRadiusCompute<Frame>, ylm::Tags::D2xRadiusCompute<Frame>,
+        ylm::Tags::NormalOneFormCompute<Frame>,
+        ylm::Tags::OneOverOneFormMagnitudeCompute<DataVector, Dim, Frame>,
+        ylm::Tags::TangentsCompute<Frame>,
+        ylm::Tags::UnitNormalOneFormCompute<Frame>,
+        ylm::Tags::UnitNormalVectorCompute<Frame>,
+        ylm::Tags::GradUnitNormalOneFormCompute<Frame>,
+        // Note that ylm::Tags::ExtrinsicCurvatureCompute is the
+        // 2d extrinsic curvature of the strahlkorper embedded in the 3d
+        // slice, whereas gr::tags::ExtrinsicCurvature is the 3d
+        // extrinsic curvature of the slice embedded in 4d spacetime.
+        // Both quantities are in the DataBox.
+        gr::surfaces::Tags::AreaElementCompute<Frame>,
+        ylm::Tags::EuclideanAreaElementCompute<Frame>,
+        ylm::Tags::ExtrinsicCurvatureCompute<Frame>
+        // ,
+        // gr::surfaces::Tags::SpinFunctionCompute<Frame>,
+        // gr::surfaces::Tags::DimensionfulSpinMagnitudeCompute<Frame>
+        >,
+    tags_for_observing_no_ricci<Frame>>;
+
 }  // namespace ah

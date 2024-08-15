@@ -74,10 +74,11 @@ void bind_st_horizon_quantities_impl(py::module& m) {
         const auto box = db::create<
             tmpl::append<tmpl::list<ylm::Tags::Strahlkorper<Frame>>,
                          tmpl::push_back<
-                         ::ah::vars_to_interpolate_to_target<Dim, Frame>,
+                        ::ah::vars_to_interpolate_to_target<Dim, Frame>,
                          CurvedScalarWave::Tags::Psi>
                          >,
-            tmpl::append<::ah::compute_items_on_target<Dim, Frame>,
+            tmpl::append<
+                        ::ah::compute_items_on_target<Dim, Frame>,
                         tmpl::list<
                         gr::surfaces::Tags::DimensionlessSpinVectorCompute<
                             Frame, Frame>,
@@ -87,13 +88,12 @@ void bind_st_horizon_quantities_impl(py::module& m) {
             std::move(horizon), std::move(spatial_metric),
             std::move(inv_spatial_metric), std::move(extrinsic_curvature),
             std::move(spatial_christoffel_second_kind),
-            std::move(spatial_ricci), std::move(psi_scalar));
+            std::move(spatial_ricci),
+            std::move(psi_scalar));
         py::dict result{};
         result["Area"] = db::get<gr::surfaces::Tags::Area>(box);
         result["IrreducibleMass"] =
             db::get<gr::surfaces::Tags::IrreducibleMass>(box);
-        result["MaxRicciScalar"] = db::get<ylm::Tags::MaxRicciScalar>(box);
-        result["MinRicciScalar"] = db::get<ylm::Tags::MinRicciScalar>(box);
         result["ChristodoulouMass"] =
             db::get<gr::surfaces::Tags::ChristodoulouMass>(box);
         result["DimensionlessSpinMagnitude"] =

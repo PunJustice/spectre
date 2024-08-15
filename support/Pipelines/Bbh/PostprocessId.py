@@ -14,7 +14,11 @@ from spectre.Pipelines.Bbh.ControlId import (
     DEFAULT_RESIDUAL_TOLERANCE,
     control_id,
 )
-from spectre.Pipelines.Bbh.FindHorizon import find_horizon, vec_to_string
+from spectre.Pipelines.Bbh.FindHorizon import (
+    find_horizon,
+    st_find_horizon,
+    vec_to_string,
+)
 from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
 from spectre.SphericalHarmonics import Strahlkorper
 from spectre.support.Schedule import schedule, scheduler_options
@@ -246,7 +250,7 @@ def postprocess_st_id(
         ["AhA", "AhB"], [x_A, x_B], [excision_radius_A, excision_radius_B]
     ):
         # Replace with pybinding that interpolates the scalar on the surface
-        _, horizon_quantities = find_horizon(
+        _, horizon_quantities = st_find_horizon(
             id_volfiles,
             subfile_name=id_subfile_name,
             obs_id=obs_id,
@@ -264,8 +268,10 @@ def postprocess_st_id(
         )
         logger.info(
             f"{object_label} has mass"
-            f" {horizon_quantities['ChristodoulouMass']:g} and spin"
-            f" {vec_to_string(horizon_quantities['DimensionlessSpinVector'])}."
+            f" {horizon_quantities['ChristodoulouMass']:g}, spin"
+            f" {vec_to_string(horizon_quantities['DimensionlessSpinVector'])},"
+            " and scalar average"
+            f" {vec_to_string(horizon_quantities['SurfaceAverageOfScalar'])}."
         )
     logger.info(f"Horizons found and written to {horizons_file}.")
 
