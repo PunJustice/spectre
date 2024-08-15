@@ -84,7 +84,8 @@ struct Metavariables {
                  Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
                  ::CurvedScalarWave::Tags::PiWithOnlyExcess,
                  gr::Tags::InverseSpatialMetric<DataVector, 3>,
-                 gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>>>;
+                 gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>,
+                 gr::Tags::SpatialRicci<DataVector, 3>>>;
   using observer_compute_tags =
       tmpl::list<::Events::Tags::ObserverMeshCompute<volume_dim>,
                  ::Events::Tags::ObserverDetInvJacobianCompute<
@@ -271,7 +272,8 @@ struct Metavariables {
             gr::Tags::ExtrinsicCurvature<DataVector, 3>,
             Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
             gr::Tags::InverseSpatialMetric<DataVector, 3>,
-            gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>>>;
+            gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>,
+            gr::Tags::SpatialRicci<DataVector, 3>>>;
   };
 
   struct registration
