@@ -5,6 +5,19 @@ Executable: SolveCowling
 ExpectedOutput:
   - ScalarReductions.h5
   - ScalarVolume*.h5
+Next:
+  Run: spectre.Pipelines.Bbh.PostprocessId:postprocess_st_id
+  With:
+    id_input_file_path: __file__
+    id_run_dir: ./
+    pipeline_dir: {{ pipeline_dir | default("None") }}
+    control_refinement_level: {{ L }}
+    control_polynomial_order: {{ P }}
+    evolve: {{ evolve }}
+    scheduler: None
+    copy_executable: {{ copy_executable | default("None") }}
+    submit_script_template: {{ submit_script_template | default("None") }}
+    submit: True
 
 ---
 
@@ -219,6 +232,11 @@ EventsAndTriggers:
             - RolledOffShift
             - ShiftExcess
             - PiWithOnlyExcess
+          # Xcts extra output
+            - ConformalFactor
+            - InverseSpatialMetric
+            - SpatialChristoffelSecondKind
+            - RadiallyCompressedCoordinates
           InterpolateToMesh: None
           CoordinatesFloatingPointType: Double
           FloatingPointTypes: [Double]
