@@ -83,6 +83,9 @@ def prepare_scalar_solve(
     # M_A is always positive by convention. M_B can be either positive
     # or negative.
     ig_sign_B = 1.0
+    if not initial_guess_same_parity:
+        ig_sign_B = -1.0
+
     if coupling_quadratic_M_A > 1e-16:
         initial_guess_amplitude_M_A = np.sqrt(
             np.abs(coupling_quartic_M_A / coupling_quadratic_M_A)
