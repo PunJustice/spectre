@@ -17,6 +17,7 @@ Next:
     dimensionless_coupling_linear: {{ Epsilon1 }}
     dimensionless_coupling_quadratic: {{ Epsilon2 }}
     dimensionless_coupling_quartic: {{ Epsilon4 }}
+    initial_guess_same_parity: {{ IDParity }}
     scalar_solve: {{ scalar_solve }}
     evolve: {{ evolve }}
     scheduler: {{ scheduler | default("None") }}

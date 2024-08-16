@@ -114,6 +114,7 @@ def generate_id(
     coupling_linear: float = 0.0,
     coupling_quadratic: float = 0.0,
     coupling_quartic: float = 0.0,
+    id_parity: bool = True,
     # Resolution
     refinement_level: int = 1,
     polynomial_order: int = 6,
@@ -208,6 +209,7 @@ def generate_id(
             "Epsilon1": coupling_linear,
             "Epsilon2": coupling_quadratic,
             "Epsilon4": coupling_quartic,
+            "IDParity": id_parity,
         }
     )
     logger.debug(f"Extended initial data parameters: {pretty_repr(id_params)}")
@@ -330,6 +332,12 @@ def generate_id(
     default=0.0,
     show_default=True,
 )
+@click.option(
+    "--initial-guess-same-parity/--intial-guess-opposite-parity",
+    default=True,
+    show_default=True,
+    help="Sign difference of intial guess.",
+)
 # Resolution
 @click.option(
     "--refinement-level",
@@ -407,6 +415,7 @@ def generate_id_command(
     dimensionless_coupling_linear,
     dimensionless_coupling_quadratic,
     dimensionless_coupling_quartic,
+    initial_guess_same_parity,
     **kwargs,
 ):
     _rich_traceback_guard = True  # Hide traceback until here
@@ -440,6 +449,7 @@ def generate_id_command(
         coupling_linear=dimensionless_coupling_linear,
         coupling_quadratic=dimensionless_coupling_quadratic,
         coupling_quartic=dimensionless_coupling_quartic,
+        id_parity=initial_guess_same_parity,
         **kwargs,
     )
 

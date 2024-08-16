@@ -42,6 +42,7 @@ def postprocess_id(
     dimensionless_coupling_linear: float = 0.0,
     dimensionless_coupling_quadratic: float = 0.0,
     dimensionless_coupling_quartic: float = 0.0,
+    initial_guess_same_parity: bool = True,
     scalar_solve: bool = False,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
@@ -151,6 +152,7 @@ def postprocess_id(
             dimensionless_coupling_linear=dimensionless_coupling_linear,
             dimensionless_coupling_quadratic=dimensionless_coupling_quadratic,
             dimensionless_coupling_quartic=dimensionless_coupling_quartic,
+            initial_guess_same_parity=initial_guess_same_parity,
             id_run_dir=id_run_dir,
             residual_tolerance=control_residual_tolerance,
             max_iterations=control_max_iterations,
@@ -331,6 +333,12 @@ def postprocess_st_id(
     default=True,
     show_default=True,
     help="Solve for the scalar field on top of the XCTS background.",
+)
+@click.option(
+    "--initial-guess-same-parity/--intial-guess-opposite-parity",
+    default=True,
+    show_default=True,
+    help="Sign difference of intial guess.",
 )
 @click.option(
     "--pipeline-dir",

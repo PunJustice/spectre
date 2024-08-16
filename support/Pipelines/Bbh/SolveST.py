@@ -25,6 +25,7 @@ def prepare_scalar_solve(
     dimensionless_coupling_linear: float,
     dimensionless_coupling_quadratic: float,
     dimensionless_coupling_quartic: float,
+    initial_guess_same_parity: bool = True,
     id_run_dir: Optional[Union[str, Path]] = None,
     pipeline_dir: Optional[Union[str, Path]] = None,
     refinement_level: int = 1,
@@ -77,17 +78,21 @@ def prepare_scalar_solve(
     coupling_quadratic_M_B = dimensionless_coupling_quadratic * (M_B**2)
     coupling_quartic_M_B = dimensionless_coupling_quartic * (M_B**2)
 
-    # Initial guesses
+    # Initial guesses.
+    # Need to deal with different combinations of charges.
+    # M_A is always positive by convention. M_B can be either positive
+    # or negative.
+    ig_sign_B = 1.0
     if coupling_quadratic_M_A > 1e-16:
         initial_guess_amplitude_M_A = np.sqrt(
             np.abs(coupling_quartic_M_A / coupling_quadratic_M_A)
         )
-        initial_guess_amplitude_M_B = -np.sqrt(
+        initial_guess_amplitude_M_B = ig_sign_B * np.sqrt(
             np.abs(coupling_quartic_M_A / coupling_quadratic_M_A)
         )
     else:
         initial_guess_amplitude_M_A = 0.3
-        initial_guess_amplitude_M_B = -0.3
+        initial_guess_amplitude_M_B = ig_sign_B * 0.3
 
     # Roll-off location
     roll_off_location = 0.93 / orbital_angular_velocity
@@ -291,6 +296,12 @@ def generate_scalar_tensor_id(
     help="Dimensionless coupling quartic",
     default=0.0,
     show_default=True,
+)
+@click.option(
+    "--initial-guess-same-parity/--intial-guess-opposite-parity",
+    default=True,
+    show_default=True,
+    help="Sign difference of intial guess.",
 )
 @click.option(
     "-i",

@@ -236,6 +236,7 @@ EventsAndTriggers:
             # - ConformalFactor
             - InverseSpatialMetric
             - SpatialChristoffelSecondKind
+            - SpatialRicci
           InterpolateToMesh: None
           CoordinatesFloatingPointType: Double
           FloatingPointTypes: [Double]
