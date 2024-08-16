@@ -271,7 +271,7 @@ def postprocess_st_id(
             f" {horizon_quantities['ChristodoulouMass']:g}, spin"
             f" {vec_to_string(horizon_quantities['DimensionlessSpinVector'])},"
             " and scalar average"
-            f" {vec_to_string(horizon_quantities['SurfaceAverageOfScalar'])}."
+            f" {horizon_quantities['SurfaceAverageOfScalar']}."
         )
     logger.info(f"Horizons found and written to {horizons_file}.")
 

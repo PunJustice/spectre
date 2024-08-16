@@ -11,7 +11,7 @@ import click
 import spectre.IO.H5 as spectre_h5
 from spectre.ApparentHorizonFinder import FastFlow, FlowType, Status
 from spectre.DataStructures import DataVector
-from spectre.DataStructures.Tensor import tnsr
+from spectre.DataStructures.Tensor import Scalar, tnsr
 from spectre.IO.Exporter import interpolate_tensors_to_points
 from spectre.PointwiseFunctions.GeneralRelativity.Surfaces import (
     horizon_quantities,
@@ -418,7 +418,7 @@ def st_find_horizon(
             tnsr.ii[DataVector, 3],
             tnsr.Ijj[DataVector, 3],
             tnsr.ii[DataVector, 3],
-            scalar[DataVector],
+            Scalar[DataVector],
         ],
     )
     quantities = st_horizon_quantities(
