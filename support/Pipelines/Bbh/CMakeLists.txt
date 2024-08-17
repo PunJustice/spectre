@@ -8,6 +8,7 @@ spectre_python_add_module(
   __init__.py
   ControlId.py
   FindHorizon.py
+  GenerateChains.py
   InitialData.py
   InitialData.yaml
   Inspiral.py
@@ -26,5 +27,6 @@ add_dependencies(
   ${PIPELINE_TARGET}
   EvolveGhBinaryBlackHole
   EvolveGhSingleBlackHole
+  SolveCowling
   SolveXcts
   )
