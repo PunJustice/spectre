@@ -8,7 +8,7 @@ spectre_python_add_module(
   __init__.py
   ControlId.py
   FindHorizon.py
-  GenerateChains.py
+  GenerateChain.py
   InitialData.py
   InitialData.yaml
   Inspiral.py
