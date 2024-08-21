@@ -26,6 +26,7 @@ def control_id(
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
     refinement_level: int = 1,
     polynomial_order: int = 6,
+    executable: Optional[Union[str, Path]] = None,
 ):
     """Control BBH physical parameters.
 
@@ -92,6 +93,7 @@ def control_id(
     ):
         nonlocal iteration
         nonlocal control_run_dir
+        nonlocal executable
 
         if iteration > 0:
             logger.info(
@@ -117,6 +119,7 @@ def control_id(
                 scheduler=None,
                 refinement_level=refinement_level,
                 polynomial_order=polynomial_order,
+                executable=executable,
             )
 
         # Get black hole physical parameters

@@ -214,7 +214,7 @@ def generate_chain(
 
         # Postprocess. Find Horizons and do control loop
         # Note: For the control loop we do not need to make use of Next.
-        postprocess_id(
+        last_control_id_input_file_path = postprocess_id(
             id_input_file_path=f"{xcts_run_dir}/{ID_INPUT_FILE_NAME}",
             id_run_dir=None,
             horizon_l_max=12,
@@ -249,7 +249,8 @@ def generate_chain(
 
                 prepare_scalar_solve(
                     # Need to know the path to the last control solve
-                    id_input_file_path=f"{xcts_run_dir}/{ID_INPUT_FILE_NAME}",
+                    # id_input_file_path=f"{xcts_run_dir}/{ID_INPUT_FILE_NAME}",
+                    id_input_file_path=last_control_id_input_file_path,
                     dimensionless_coupling_linear=0.0,
                     dimensionless_coupling_quadratic=coupling_quadratic,
                     dimensionless_coupling_quartic=coupling_quartic,

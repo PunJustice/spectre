@@ -142,6 +142,7 @@ def postprocess_id(
             max_iterations=control_max_iterations,
             refinement_level=control_refinement_level,
             polynomial_order=control_polynomial_order,
+            executable=scheduler_kwargs["executable"],
         )
         id_run_dir = last_control_run_dir
         id_input_file_path = f"{last_control_run_dir}/InitialData.yaml"
@@ -173,6 +174,8 @@ def postprocess_id(
             pipeline_dir=pipeline_dir,
             **scheduler_kwargs,
         )
+
+    return id_input_file_path
 
 
 def postprocess_st_id(
