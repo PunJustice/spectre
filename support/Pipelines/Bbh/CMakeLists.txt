@@ -18,6 +18,7 @@ spectre_python_add_module(
   Ringdown.yaml
   SolveST.py
   SolveST.yaml
+  SolveSTChain.yaml
 )
 
 # Create a target to compile all executables for this pipeline

@@ -224,8 +224,8 @@ def generate_scalar_tensor_id(
         )
     if pipeline_dir and not run_dir:
         run_dir = pipeline_dir / "001x_ScalarTensorInitialData"
-    else:
-        run_dir = f"{run_dir}/ScalarSolve"
+    # else:
+    #     run_dir = f"{run_dir}/ScalarSolve"
 
     # Determine remaining initial data parameters from options
     id_params = id_parameters(
