@@ -122,10 +122,6 @@ def generate_chain(
                 ],
                 axis=0,
             )
-            logger.warning(
-                "Initial data parameters:"
-                f" {pretty_repr(initial_orbital_parameters_sequence)}"
-            )
 
     if orbital_angular_velocity_sequence is not None:
         assert separation_sequence is None, "Specify only one sequence."
@@ -164,10 +160,12 @@ def generate_chain(
                 ],
                 axis=0,
             )
-            logger.warning(
-                "Initial data parameters:"
-                f" {pretty_repr(initial_orbital_parameters_sequence)}"
-            )
+
+    # Print ID orbital paramters
+    logger.info(
+        "Initial data parameters:"
+        f" {pretty_repr(initial_orbital_parameters_sequence)}"
+    )
 
     iteration = 0
 
@@ -213,7 +211,18 @@ def generate_chain(
         )
 
         # Postprocess. Find Horizons and do control loop
-        # Note: For the control loop we do not need to make use of Next.
+        # Note: The control loop uses Next to compute the horizons.
+        # It also uses the InitialData.yaml template -- since the
+        # control_id routine does not take input file templates.
+        # We also need to pass the executable path since for some
+        # reason is not retreiveing it when we use the pipeline
+        # functions outside without ./spectre bbh ...
+        #
+        # How to improve this?
+        # One option to make this less confusing is to write a
+        # postprocess function that only computes the horizon,
+        # and add the option of passing an input file template
+        # to control_id
         last_control_id_input_file_path = postprocess_id(
             id_input_file_path=f"{xcts_run_dir}/{ID_INPUT_FILE_NAME}",
             id_run_dir=None,
@@ -288,7 +297,7 @@ def generate_chain(
 
 
 if __name__ == "__main__":
-    logger.setLevel(logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     generate_chain(
         mass_ratio=1.0,
