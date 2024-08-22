@@ -78,14 +78,12 @@ def generate_chain(
 
     initial_orbital_parameters_sequence = np.empty((0, 3), float)
 
-    logger.warning("Here")
-
     # Specify only consistent Xcts sequences
     if separation_sequence is not None:
         assert (
             orbital_angular_velocity_sequence is None
         ), "Specify only one sequence."
-        logger.warning("Here")
+
         # Set up initial orbital parameters and store them in a vector
         for separation in separation_sequence:
             orbital_angular_velocity = None
@@ -310,6 +308,7 @@ def generate_chain(
                 )
 
                 # We omit the spin direction
+                # (Include resolution as well?)
                 summary_data_file.write(
                     "{Separation}, {OrbitalAngularVelocity},"
                     " {RadialExpansionVelocity}, {CouplingQuadratic},"
@@ -347,23 +346,36 @@ if __name__ == "__main__":
     chain_dir = "/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir"
 
     # Notes:
+    # - Adjust the number of nodes in the submit script.
     # - Use distances << 60 M (where the envelope fixed radius is)
-    #   until we automatically scale it
+    #   until we automatically scale it (linearly with separation?).
     # - Send different parities in different jobs to avoid confusion and sorting.
-    # - Use only one sequence for the orbital parameters (separation or orbital frequency)
+    # - Use only one sequence for the orbital parameters (separation or orbital
+    #   frequency).
+    # - Xcts solutions are stored in XctsXX/ folders. Scalar solutions using
+    #   these Xcts backgrounds are stored in subfolders ScalarSolveXX.
+    # - A summary of the relevant run parameters and horizon values is output on
+    #   chain_dir/ChainSummary.txt. See above for the order of these parameters.
+    #   We can use this to plot e.g. the avg scalar at horizon vs frequency.
+    #   (Shall we add as well the resolution data?)
+    # - I have not tested the linear coupling, so I don't know if its well
+    #   behaved
 
     generate_chain(
-        mass_ratio=1.0,
+        mass_ratio=2.0,
         dimensionless_spin_a=[0.0, 0.0, 0.0],
         dimensionless_spin_b=[0.0, 0.0, 0.0],
         # Orbital parameter sequences
-        # separation_sequence=[14.0, 16.0],
-        orbital_angular_velocity_sequence=[0.016, 0.017, 0.018],
-        coupling_sequence=[[4.0, -40.0], [4.5, -45.0]],
+        separation_sequence=[16.0, 32.0],
+        # orbital_angular_velocity_sequence=[0.016, 0.017, 0.018],
+        coupling_sequence=[[2.0, -20.0]],
         # Control
         control=True,
         # Parity. True for like charges. False for opposite.
         id_parity=False,
+        # Resolution
+        refinement_level=1,
+        polynomial_order=5,
         # Scheduling options
         id_input_file_template=ID_INPUT_FILE_TEMPLATE,
         chain_dir=chain_dir,
