@@ -248,6 +248,8 @@ def postprocess_st_id(
         open_volfiles(id_volfiles, id_subfile_name), step=-1
     )
 
+    horizons_summary = dict()
+
     # Find horizons and write to the output file
     if not horizons_file:
         horizons_file = Path(id_run_dir) / "Horizons.h5"
@@ -278,6 +280,27 @@ def postprocess_st_id(
             " and scalar average"
             f" {horizon_quantities['SurfaceAverageOfScalar']}."
         )
+
+        for key in horizon_quantities.keys():
+            horizons_summary.update(
+                {
+                    key + object_label: horizon_quantities[key],
+                }
+            )
+
+        # if object_label == "AhA":
+        #     horizons_summary.update(
+        #         {
+        #         "ObjectA" : horizon_quantities,
+        #         }
+        #     )
+        # if object_label == "AhB":
+        #     horizons_summary.update(
+        #         {
+        #         "ObjectB" : horizon_quantities,
+        #         }
+        #     )
+
     logger.info(f"Horizons found and written to {horizons_file}.")
 
     # Start the inspiral from the ID if requested
@@ -291,6 +314,13 @@ def postprocess_st_id(
             pipeline_dir=pipeline_dir,
             **scheduler_kwargs,
         )
+
+    # Add return to collect a summary of final quanitites?
+    # Note: need to append coupling values and orbital parameters to
+    # fully characterize the solution
+
+    # Make sure to include both objects
+    return horizons_summary
 
 
 @click.command(name="postprocess-id", help=postprocess_id.__doc__)

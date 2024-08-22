@@ -53,7 +53,7 @@ def generate_chain(
     polynomial_order: int = 6,
     # Scheduling options
     id_input_file_template: Union[str, Path] = ID_INPUT_FILE_TEMPLATE,
-    control: bool = False,
+    control: bool = True,
     scalar_solve: bool = False,
     evolve: bool = False,
     chain_dir: Optional[Union[str, Path]] = None,
@@ -167,6 +167,10 @@ def generate_chain(
         f" {pretty_repr(initial_orbital_parameters_sequence)}"
     )
 
+    # File to write summary of parameters and horizon quantities after
+    # each scalar solve
+    summary_data_file = open(f"{chain_dir}/ChainSummary.txt", "w")
+
     iteration = 0
 
     for (
@@ -199,8 +203,8 @@ def generate_chain(
             executable=xcts_executable_path,
             # Specify run directory
             run_dir=xcts_run_dir,
-            # Enable later
-            control=True,
+            # This should be kept disabled
+            control=False,
             validate=False,
             # Always disabled
             evolve=False,
@@ -228,8 +232,8 @@ def generate_chain(
             id_run_dir=None,
             horizon_l_max=12,
             horizons_file=None,
-            # Control loop off for now.
-            control=True,
+            # Control loop option
+            control=control,
             control_refinement_level=refinement_level,
             control_polynomial_order=polynomial_order,
             # dimensionless_coupling_linear=coupling_linear,
@@ -276,7 +280,7 @@ def generate_chain(
 
                 # Postprocess. Find Horizons and do control loop
                 # Note: For the control loop we do not need to make use of Next.
-                postprocess_st_id(
+                final_horizon_values = postprocess_st_id(
                     id_input_file_path=f"{scalar_run_dir}/SolveSTChain.yaml",
                     id_run_dir=None,
                     horizon_l_max=12,
@@ -289,6 +293,38 @@ def generate_chain(
                     scheduler=None,
                 )
 
+                final_horizon_values.update(
+                    {
+                        "Separation": separation,
+                        "OrbitalAngularVelocity": orbital_angular_velocity,
+                        "RadialExpansionVelocity": radial_expansion_velocity,
+                        "CouplingQuadratic": coupling_quadratic,
+                        "CouplingQuartic": coupling_quartic,
+                        "IdParity": int(id_parity),
+                    }
+                )
+
+                logger.info(
+                    "Initial data parameters:"
+                    f" {pretty_repr(final_horizon_values)}"
+                )
+
+                # We omit the spin direction
+                summary_data_file.write(
+                    "{Separation}, {OrbitalAngularVelocity},"
+                    " {RadialExpansionVelocity}, {CouplingQuadratic},"
+                    " {CouplingQuartic}, {IdParity}, {AreaAhA},"
+                    " {IrreducibleMassAhA}, {ChristodoulouMassAhA},"
+                    " {DimensionlessSpinMagnitudeAhA},"
+                    " {SurfaceAverageOfScalarAhA}, {AreaAhB},"
+                    " {IrreducibleMassAhB}, {ChristodoulouMassAhB},"
+                    " {DimensionlessSpinMagnitudeAhB},"
+                    " {SurfaceAverageOfScalarAhB} \n".format(
+                        **final_horizon_values
+                    )
+                )
+                summary_data_file.flush()
+
                 scalar_iteration += 1
 
         iteration += 1
@@ -297,70 +333,37 @@ def generate_chain(
 
 
 if __name__ == "__main__":
+    # Compile cli and setup the PYTHONPATH in the submit script before running
+
+    # Set to DEBUG for more output
     logging.basicConfig(level=logging.INFO)
+
+    # Need to specify the build directory
+    build_dir = "/u/guilara/repos/others_spectre/PJSpectre/spectre/build_pip_st"
+    chain_dir = "/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir"
+
+    # Notes:
+    # - Use distances << 60 M (where the envelope fixed radius is)
+    #   until we automatically scale it
+    # - Send different parities in different jobs to avoid confusion and sorting.
+    # - Use only one sequence for the orbital parameters (separation or orbital frequency)
 
     generate_chain(
         mass_ratio=1.0,
         dimensionless_spin_a=[0.0, 0.0, 0.0],
         dimensionless_spin_b=[0.0, 0.0, 0.0],
-        # Orbital parameter sequences. Specify only one.
+        # Orbital parameter sequences
         # separation_sequence=[14.0, 16.0],
         orbital_angular_velocity_sequence=[0.016, 0.017, 0.018],
         coupling_sequence=[[4.0, -40.0], [4.5, -45.0]],
+        # Control
+        control=True,
+        # Parity. True for like charges. False for opposite.
+        id_parity=False,
         # Scheduling options
         id_input_file_template=ID_INPUT_FILE_TEMPLATE,
-        chain_dir="/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir",
-        xcts_executable_path="/u/guilara/repos/others_spectre/PJSpectre/spectre/build_pip_st/bin/SolveXcts",
+        chain_dir=chain_dir,
+        xcts_executable_path=f"{build_dir}/bin/SolveXcts",
         scalar_solve=True,
-        scalar_executable_path="/u/guilara/repos/others_spectre/PJSpectre/spectre/build_pip_st/bin/SolveCowling",
+        scalar_executable_path=f"{build_dir}/bin/SolveCowling",
     )
-
-
-############ SKETCH
-
-# - Setup chain parameters.
-# - Setup directory structure for ID solves.
-#       One Xcts directory and multiple for different couplings?
-#       Or one Xcts solve for each coupling?
-# - Send with generate-id and schedule=False (except for the first one).
-# - Correct submit script to send pure python job.
-
-# Chain parameter options
-# - Distance sequence. Forward directly to omegaAndAdot
-# - Number of orbits sequence. Determine omega then distance, then
-#   omega adot again in InitialOrbitalParameters.py
-# - Frequency sequence. Pass orbital frequency and
-#   InitialOrbitalParameters.py will find the right separation
-# - (Optional) Time to merger sequence. Similar to number of orbits.
-# - Couplings sequence. Fixed XCTS background, multiple scalar solves.
-
-# Directory structure (frequency sequence)
-# Chain/
-#   Omega01/
-#       Xcts/
-#       ScalarSolve/
-#   Omega02/
-#       ...
-#
-# Directory structure (couplings sequence)
-# (
-# Label by integers not couplings.
-#  e.g. ['01', [eta: 1.0, zeta: -1.0], '02', [eta: 2.0, zeta: -20.0], ...]
-# )
-# Chain/
-#   Xcts/
-#   ScalarSolve01/
-#   ScalarSolve02/
-#   ...
-# Combined directory structure
-# Chain/
-#   Omega01/
-#       Xcts/
-#       ScalarSolve01/
-#       ScalarSolve02/
-#       ...
-#   Omega02/
-#       ...
-# Append to summary table Chain/Summary.dat after every solve.
-# [xcts params, couplings, masses, spins, scalar at horizons]
-#
