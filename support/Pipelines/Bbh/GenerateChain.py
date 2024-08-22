@@ -24,14 +24,6 @@ from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
 
 logger = logging.getLogger(__name__)
 
-# We might need a new template since things are chained by 'Next'
-ID_INPUT_FILE_NAME = "InitialDataChain.yaml"
-SCALAR_ID_INPUT_FILE_NAME = "SolveSTChain.yaml"
-ID_INPUT_FILE_TEMPLATE = Path(__file__).parent / ID_INPUT_FILE_NAME
-SCALAR_ID_INPUT_FILE_TEMPLATE = (
-    Path(__file__).parent / SCALAR_ID_INPUT_FILE_NAME
-)
-
 
 def generate_chain(
     mass_ratio: float,
@@ -45,6 +37,7 @@ def generate_chain(
     # coupling_linear: float = 0.0,
     # coupling_quadratic: float = 0.0,
     # coupling_quartic: float = 0.0,
+    spectre_home_dir: Optional[Union[str, Path]],
     separation_sequence: Optional[Sequence[float]] = None,
     orbital_angular_velocity_sequence: Optional[Sequence[float]] = None,
     id_parity: bool = True,
@@ -52,7 +45,6 @@ def generate_chain(
     refinement_level: int = 1,
     polynomial_order: int = 6,
     # Scheduling options
-    id_input_file_template: Union[str, Path] = ID_INPUT_FILE_TEMPLATE,
     control: bool = True,
     scalar_solve: bool = False,
     evolve: bool = False,
@@ -70,6 +62,20 @@ def generate_chain(
     logger.warning(
         "The BBH pipeline is still experimental. Please review the"
         " generated input files."
+    )
+
+    # We might need a new template since things are chained by 'Next'
+    ID_INPUT_FILE_NAME = "InitialDataChain.yaml"
+    ID_POSTPROC_INPUT_FILE_NAME = "InitialData.yaml"
+    SCALAR_ID_INPUT_FILE_NAME = "SolveSTChain.yaml"
+    ID_INPUT_FILE_TEMPLATE = (
+        f"{spectre_home_dir}/support/Pipelines/Bbh/{ID_INPUT_FILE_NAME}"
+    )
+    ID_POSTPROC_INPUT_FILE_TEMPLATE = (
+        f"{spectre_home_dir}/{ID_POSTPROC_INPUT_FILE_NAME}"
+    )
+    SCALAR_ID_INPUT_FILE_TEMPLATE = (
+        f"{spectre_home_dir}/{SCALAR_ID_INPUT_FILE_NAME}"
     )
 
     # Resolve directories
@@ -239,7 +245,7 @@ def generate_chain(
             # dimensionless_coupling_quartic=coupling_quartic,
             # initial_guess_same_parity=id_parity,
             # Use the template here. Exclude Next
-            id_input_file_template=ID_INPUT_FILE_TEMPLATE,
+            id_input_file_template=ID_POSTPROC_INPUT_FILE_TEMPLATE,
             executable=xcts_executable_path,
             validate=False,
             # Check this argument
@@ -342,10 +348,13 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     # Need to specify the build and chain directories
-    build_dir = "/u/guilara/repos/others_spectre/PJSpectre/spectre/build_pip_st"
+    spectre_home_dir = "/u/guilara/repos/others_spectre/PJSpectre/spectre"
+    build_dir = f"{spectre_home_dir}/build_pip_st"
     chain_dir = "/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir"
 
     # Notes:
+    # - If you change the yaml files make sure the XYZChain.yaml and the XYZ.yaml
+    #   version are identical except for the 'Next' arguments.
     # - Adjust the number of nodes in the submit script.
     # - Use distances << 60 M (where the envelope fixed radius is)
     #   until we automatically scale it (linearly with separation?).
@@ -362,6 +371,7 @@ if __name__ == "__main__":
     #   behaved
 
     generate_chain(
+        spectre_home_dir=spectre_home_dir,
         mass_ratio=2.0,
         dimensionless_spin_a=[0.0, 0.0, 0.0],
         dimensionless_spin_b=[0.0, 0.0, 0.0],
@@ -377,7 +387,6 @@ if __name__ == "__main__":
         refinement_level=1,
         polynomial_order=5,
         # Scheduling options
-        id_input_file_template=ID_INPUT_FILE_TEMPLATE,
         chain_dir=chain_dir,
         xcts_executable_path=f"{build_dir}/bin/SolveXcts",
         scalar_solve=True,

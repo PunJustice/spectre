@@ -142,6 +142,7 @@ def postprocess_id(
             max_iterations=control_max_iterations,
             refinement_level=control_refinement_level,
             polynomial_order=control_polynomial_order,
+            id_input_file_template=scheduler_kwargs["id_input_file_template"],
             executable=scheduler_kwargs["executable"],
         )
         id_run_dir = last_control_run_dir

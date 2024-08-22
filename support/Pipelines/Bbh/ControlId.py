@@ -26,6 +26,7 @@ def control_id(
     max_iterations: int = DEFAULT_MAX_ITERATIONS,
     refinement_level: int = 1,
     polynomial_order: int = 6,
+    id_input_file_template: Optional[Union[str, Path]] = None,
     executable: Optional[Union[str, Path]] = None,
 ):
     """Control BBH physical parameters.
@@ -114,6 +115,7 @@ def control_id(
                 orbital_angular_velocity=orbital_angular_velocity,
                 radial_expansion_velocity=radial_expansion_velocity,
                 run_dir=control_run_dir,
+                id_input_file_template=id_input_file_template,
                 control=False,
                 evolve=False,
                 scheduler=None,
