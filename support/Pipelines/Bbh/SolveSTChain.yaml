@@ -75,10 +75,10 @@ DomainCreator:
         ExciseWithBoundaryCondition: DoNothing
       UseLogarithmicMap: True
     Envelope:
-      Radius: &outer_shell_inner_radius 67.5
+      Radius: &outer_shell_inner_radius 60.0
       RadialDistribution: Projective
     OuterShell:
-      Radius: &outer_radius 675.0
+      Radius: &outer_radius 600.0
       RadialDistribution: &outer_shell_distribution Inverse
       OpeningAngle: 90.0
       BoundaryCondition:
