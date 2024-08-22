@@ -333,12 +333,16 @@ def generate_chain(
 
 
 if __name__ == "__main__":
-    # Compile cli and setup the PYTHONPATH in the submit script before running
+    # Submit this script with support/SubmitScripts/SubmitChain.sh
+    # and adapt it until we automatize that
+
+    # Compile cli, SolveXcts and SolveCowling before running
+    # Setup the PYTHONPATH in the submit script before running
 
     # Set to DEBUG for more output
     logging.basicConfig(level=logging.INFO)
 
-    # Need to specify the build directory
+    # Need to specify the build and chain directories
     build_dir = "/u/guilara/repos/others_spectre/PJSpectre/spectre/build_pip_st"
     chain_dir = "/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir"
 
