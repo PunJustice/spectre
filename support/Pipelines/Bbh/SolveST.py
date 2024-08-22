@@ -97,8 +97,13 @@ def prepare_scalar_solve(
         initial_guess_amplitude_M_A = 0.3
         initial_guess_amplitude_M_B = ig_sign_B * 0.3
 
-    # Roll-off location
+    # Roll-off location and rate
+    # Place transition middle point slightly inside the light cylinder
     roll_off_location = 0.93 / orbital_angular_velocity
+    # Roll of rate has units 1 / length. Scalar inversely with separation.
+    # Use as reference the value at separation = 16.0
+    roll_off_rate_scaling_factor = 0.2 * 16.0
+    roll_off_rate = roll_off_rate_scaling_factor / np.abs(separation)
 
     # Run ID
     generate_scalar_tensor_id(
@@ -113,6 +118,7 @@ def prepare_scalar_solve(
         coupling_quadratic=coupling_quadratic_M_A,
         coupling_quartic=coupling_quartic_M_A,
         roll_off_location=roll_off_location,
+        roll_off_rate=roll_off_rate,
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
         id_run_dir=id_run_dir,
@@ -141,6 +147,7 @@ def generate_scalar_tensor_id(
     coupling_quadratic: float,
     coupling_quartic: float,
     roll_off_location: float,
+    roll_off_rate: float,
     initial_guess_amplitude_a: float,
     initial_guess_amplitude_b: float,
     id_run_dir: Union[str, Path],
@@ -248,6 +255,7 @@ def generate_scalar_tensor_id(
             "Epsilon2": coupling_quadratic,
             "Epsilon4": coupling_quartic,
             "RolloffLocation": roll_off_location,
+            "RolloffRate": roll_off_rate,
             "InitialGuessAmplitudeA": initial_guess_amplitude_a,
             "InitialGuessAmplitudeB": initial_guess_amplitude_b,
             "XctsSolveFile": Path(id_run_dir).resolve() / "BbhVolume*.h5",
