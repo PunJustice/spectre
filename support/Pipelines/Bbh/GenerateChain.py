@@ -71,11 +71,9 @@ def generate_chain(
     ID_INPUT_FILE_TEMPLATE = (
         f"{spectre_home_dir}/support/Pipelines/Bbh/{ID_INPUT_FILE_NAME}"
     )
-    ID_POSTPROC_INPUT_FILE_TEMPLATE = (
-        f"{spectre_home_dir}/{ID_POSTPROC_INPUT_FILE_NAME}"
-    )
+    ID_POSTPROC_INPUT_FILE_TEMPLATE = f"{spectre_home_dir}/support/Pipelines/Bbh/{ID_POSTPROC_INPUT_FILE_NAME}"
     SCALAR_ID_INPUT_FILE_TEMPLATE = (
-        f"{spectre_home_dir}/{SCALAR_ID_INPUT_FILE_NAME}"
+        f"{spectre_home_dir}/support/Pipelines/Bbh/{SCALAR_ID_INPUT_FILE_NAME}"
     )
 
     # Resolve directories
