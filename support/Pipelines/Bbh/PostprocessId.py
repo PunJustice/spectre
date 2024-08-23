@@ -44,6 +44,7 @@ def postprocess_id(
     dimensionless_coupling_quartic: float = 0.0,
     initial_guess_same_parity: bool = True,
     scalar_solve: bool = False,
+    id_input_file_template: Optional[Union[str, Path]] = None,
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
     **scheduler_kwargs,
@@ -142,7 +143,7 @@ def postprocess_id(
             max_iterations=control_max_iterations,
             refinement_level=control_refinement_level,
             polynomial_order=control_polynomial_order,
-            id_input_file_template=scheduler_kwargs["id_input_file_template"],
+            id_input_file_template=id_input_file_template,
             executable=scheduler_kwargs["executable"],
         )
         id_run_dir = last_control_run_dir
