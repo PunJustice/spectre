@@ -72,6 +72,10 @@ def id_parameters(
     L1_dist_B = separation - L1_dist_A
     falloff_width_A = 3.0 / 5.0 * L1_dist_A
     falloff_width_B = 3.0 / 5.0 * L1_dist_B
+    # Compute envelope and object radius
+    object_radius_A = 4.0 * (separation / 14.0)
+    object_radius_B = object_radius_A
+    envelope_radius = 60.0 * (separation / 14.0)
     return {
         "MassRight": mass_a,
         "MassLeft": mass_b,
@@ -79,6 +83,9 @@ def id_parameters(
         "XLeft": x_B,
         "ExcisionRadiusRight": 0.93 * r_plus_A,
         "ExcisionRadiusLeft": 0.93 * r_plus_B,
+        "ObjectRadiusRight": object_radius_A,
+        "ObjectRadiusLeft": object_radius_B,
+        "EnvelopeRadius": envelope_radius,
         "OrbitalAngularVelocity": orbital_angular_velocity,
         "RadialExpansionVelocity": radial_expansion_velocity,
         "DimensionlessSpinRight_x": chi_A[0],
