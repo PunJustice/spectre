@@ -45,7 +45,7 @@ DomainCreator:
   BinaryCompactObject:
     ObjectA:
       InnerRadius: {{ ExcisionRadiusRight }}
-      OuterRadius: 4.
+      OuterRadius: {{ ObjectRadiusRight }}
       XCoord: *x_right
       Interior:
         ExciseWithBoundaryCondition:
@@ -60,7 +60,7 @@ DomainCreator:
       UseLogarithmicMap: True
     ObjectB:
       InnerRadius: {{ ExcisionRadiusLeft }}
-      OuterRadius: 4.
+      OuterRadius: {{ ObjectRadiusLeft }}
       XCoord: *x_left
       Interior:
         ExciseWithBoundaryCondition:
@@ -74,7 +74,7 @@ DomainCreator:
             NegativeExpansion: *kerr_left
       UseLogarithmicMap: True
     Envelope:
-      Radius: &outer_shell_inner_radius 60.
+      Radius: &outer_shell_inner_radius {{ EnvelopeRadius }}
       RadialDistribution: Projective
     OuterShell:
       Radius: &outer_radius 1e5
