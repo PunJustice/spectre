@@ -62,23 +62,23 @@ DomainCreator:
   BinaryCompactObject:
     ObjectA:
       InnerRadius: {{ ExcisionRadiusRight }}
-      OuterRadius: 4.
+      OuterRadius: {{ ObjectRadiusRight }}
       XCoord: *x_right
       Interior:
         ExciseWithBoundaryCondition: DoNothing
       UseLogarithmicMap: True
     ObjectB:
       InnerRadius: {{ ExcisionRadiusLeft }}
-      OuterRadius: 4.
+      OuterRadius: {{ ObjectRadiusLeft }}
       XCoord: *x_left
       Interior:
         ExciseWithBoundaryCondition: DoNothing
       UseLogarithmicMap: True
     Envelope:
-      Radius: &outer_shell_inner_radius 60.0
+      Radius: &outer_shell_inner_radius {{ EnvelopeRadius }}
       RadialDistribution: Projective
     OuterShell:
-      Radius: &outer_radius 600.0
+      Radius: &outer_radius {{ OuterRadius }}
       RadialDistribution: &outer_shell_distribution Inverse
       OpeningAngle: 90.0
       BoundaryCondition:
@@ -137,7 +137,7 @@ Observers:
 NonlinearSolver:
   NewtonRaphson:
     ConvergenceCriteria:
-      MaxIterations: 20
+      MaxIterations: 30
       RelativeResidual: 1.e-15
       AbsoluteResidual: 1.e-10
     SufficientDecrease: 1.e-4

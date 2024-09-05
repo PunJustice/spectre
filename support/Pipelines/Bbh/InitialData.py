@@ -73,9 +73,17 @@ def id_parameters(
     falloff_width_A = 3.0 / 5.0 * L1_dist_A
     falloff_width_B = 3.0 / 5.0 * L1_dist_B
     # Compute envelope and object radius
-    object_radius_A = 4.0 * (separation / 14.0)
-    object_radius_B = object_radius_A
-    envelope_radius = 60.0 * (separation / 14.0)
+
+    if separation > 14.0:
+        object_radius_A = 4.0 * (separation / 14.0)
+        object_radius_B = object_radius_A
+        envelope_radius = 60.0 * (separation / 14.0)
+    else:
+        # Do not decrease too much for small separation
+        object_radius_A = 4.0 * np.sqrt(separation / 14.0)
+        object_radius_B = object_radius_A
+        envelope_radius = 60.0 * np.sqrt(separation / 14.0)
+
     return {
         "MassRight": mass_a,
         "MassLeft": mass_b,

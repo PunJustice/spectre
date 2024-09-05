@@ -164,7 +164,7 @@ Observers:
 NonlinearSolver:
   NewtonRaphson:
     ConvergenceCriteria:
-      MaxIterations: 20
+      MaxIterations: 30
       RelativeResidual: 0.
       AbsoluteResidual: 1.e-8
     SufficientDecrease: 1.e-4
@@ -175,7 +175,7 @@ NonlinearSolver:
 LinearSolver:
   Gmres:
     ConvergenceCriteria:
-      MaxIterations: 100
+      MaxIterations: 120
       RelativeResidual: 1.e-3
       AbsoluteResidual: 1.e-9
     Verbosity: Quiet
