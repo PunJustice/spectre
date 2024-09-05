@@ -303,6 +303,8 @@ def generate_chain(
                         "CouplingQuadratic": coupling_quadratic,
                         "CouplingQuartic": coupling_quartic,
                         "IdParity": int(id_parity),
+                        "RefinementLevel": refinement_level,
+                        "PolynomialOrder": polynomial_order,
                     }
                 )
 
@@ -314,7 +316,8 @@ def generate_chain(
                 # We omit the spin direction
                 # (Include resolution as well?)
                 summary_data_file.write(
-                    "{Separation}, {OrbitalAngularVelocity},"
+                    "{RefinementLevel}, {PolynomialOrder},"
+                    " {Separation}, {OrbitalAngularVelocity},"
                     " {RadialExpansionVelocity}, {CouplingQuadratic},"
                     " {CouplingQuartic}, {IdParity}, {AreaAhA},"
                     " {IrreducibleMassAhA}, {ChristodoulouMassAhA},"
