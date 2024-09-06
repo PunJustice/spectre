@@ -43,6 +43,7 @@ def prepare_scalar_solve(
     with open(id_input_file_path, "r") as open_input_file:
         _, id_input_file = yaml.safe_load_all(open_input_file)
     binary_data = id_input_file["Background"]["Binary"]
+    binary_domain = id_input_file["DomainCreator"]["BinaryCompactObject"]
     M_input_A = binary_data["ObjectRight"]["KerrSchild"]["Mass"]
     M_input_B = binary_data["ObjectLeft"]["KerrSchild"]["Mass"]
     chi_input_A = binary_data["ObjectRight"]["KerrSchild"]["Spin"]
@@ -51,6 +52,9 @@ def prepare_scalar_solve(
     separation = x_A - x_B
     orbital_angular_velocity = binary_data["AngularVelocity"]
     radial_expansion_velocity = binary_data["Expansion"]
+
+    inner_radius_A = binary_domain["ObjectA"]["InnerRadius"]
+    inner_radius_B = binary_domain["ObjectB"]["InnerRadius"]
 
     # Get black hole physical parameters
     with spectre_h5.H5File(f"{id_run_dir}/Horizons.h5", "r") as horizons_file:
@@ -86,12 +90,18 @@ def prepare_scalar_solve(
     if not initial_guess_same_parity:
         ig_sign_B = -1.0
 
-    if coupling_quadratic_M_A > 1e-16:
-        initial_guess_amplitude_M_A = np.sqrt(
-            np.abs(coupling_quartic_M_A / coupling_quadratic_M_A)
+    # For unequal mass ration we need to multiply by inner radius
+    # or horizon radius since the initial guess is for A in an A / r
+    # profile
+    if coupling_quartic_M_A > 1e-16:
+        initial_guess_amplitude_M_A = (
+            np.sqrt(np.abs(coupling_quadratic_M_A / coupling_quartic_M_A))
+            * inner_radius_A
         )
-        initial_guess_amplitude_M_B = ig_sign_B * np.sqrt(
-            np.abs(coupling_quartic_M_A / coupling_quadratic_M_A)
+        initial_guess_amplitude_M_B = (
+            ig_sign_B
+            * np.sqrt(np.abs(coupling_quadratic_M_B / coupling_quartic_M_B))
+            * inner_radius_B
         )
     else:
         initial_guess_amplitude_M_A = 0.3

@@ -75,8 +75,10 @@ def id_parameters(
     # Compute envelope and object radius
 
     if separation > 14.0:
-        object_radius_A = 4.0 * (separation / 14.0)
+        # Slowly increase inner object sizes for large separations
+        object_radius_A = 4.0 * np.sqrt(separation / 14.0)
         object_radius_B = object_radius_A
+        # But scale the envelope linearly
         envelope_radius = 60.0 * (separation / 14.0)
     else:
         # Do not decrease too much for small separation
