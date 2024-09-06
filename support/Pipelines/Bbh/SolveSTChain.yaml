@@ -78,9 +78,9 @@ DomainCreator:
       Radius: &outer_shell_inner_radius {{ EnvelopeRadius }}
       RadialDistribution: Projective
     OuterShell:
-      Radius: &outer_radius {{ OuterRadius }}
+      Radius: &outer_radius 1e5
       RadialDistribution: &outer_shell_distribution Inverse
-      OpeningAngle: 90.0
+      OpeningAngle: 120.0
       BoundaryCondition:
         Robin:
           DirichletWeight: 1.
@@ -127,7 +127,7 @@ Discretization:
   DiscontinuousGalerkin:
     PenaltyParameter: 2.
     Massive: True
-    Formulation: StrongInertial
+    Formulation: WeakInertial
     Quadrature: GaussLobatto
 
 Observers:
@@ -166,16 +166,8 @@ LinearSolver:
     MaxOverlap: 2
     Verbosity: Silent
     SubdomainSolver:
-      Gmres:
-        ConvergenceCriteria:
-          MaxIterations: 10
-          RelativeResidual: 1.e-4
-          AbsoluteResidual: 1.e-10
-        Verbosity: Silent
-        Restart: None
-        Preconditioner:
-          ExplicitInverse:
-            WriteMatrixToFile: None
+      ExplicitInverse:
+        WriteMatrixToFile: None
     SkipResets: True
     ObservePerCoreReductions: False
 

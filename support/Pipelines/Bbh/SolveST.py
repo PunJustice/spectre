@@ -105,13 +105,6 @@ def prepare_scalar_solve(
     roll_off_rate_scaling_factor = 0.2 * 16.0
     roll_off_rate = roll_off_rate_scaling_factor / np.abs(separation)
 
-    # Outer radius
-    if separation > 14.0:
-        outer_scalar_radius = 600.0 * (separation / 14.0)
-    else:
-        # Do not decrease too much for smaller separations
-        outer_scalar_radius = 600.0 * np.sqrt(separation / 14.0)
-
     # Run ID
     generate_scalar_tensor_id(
         mass_a=M_input_A,
@@ -126,7 +119,6 @@ def prepare_scalar_solve(
         coupling_quartic=coupling_quartic_M_A,
         roll_off_location=roll_off_location,
         roll_off_rate=roll_off_rate,
-        outer_scalar_radius=outer_scalar_radius,
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
         id_run_dir=id_run_dir,
@@ -156,7 +148,6 @@ def generate_scalar_tensor_id(
     coupling_quartic: float,
     roll_off_location: float,
     roll_off_rate: float,
-    outer_scalar_radius: float,
     initial_guess_amplitude_a: float,
     initial_guess_amplitude_b: float,
     id_run_dir: Union[str, Path],
@@ -268,7 +259,6 @@ def generate_scalar_tensor_id(
             "InitialGuessAmplitudeA": initial_guess_amplitude_a,
             "InitialGuessAmplitudeB": initial_guess_amplitude_b,
             "XctsSolveFile": Path(id_run_dir).resolve() / "BbhVolume*.h5",
-            "OuterRadius": outer_scalar_radius,
         }
     )
     logger.debug(f"Extended initial data parameters: {pretty_repr(id_params)}")
