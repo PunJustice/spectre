@@ -93,7 +93,7 @@ def prepare_scalar_solve(
     # For unequal mass ration we need to multiply by inner radius
     # or horizon radius since the initial guess is for A in an A / r
     # profile
-    if coupling_quartic_M_A > 1e-16:
+    if np.abs(coupling_quartic_M_A) > 1e-16:
         initial_guess_amplitude_M_A = (
             np.sqrt(np.abs(coupling_quadratic_M_A / coupling_quartic_M_A))
             * inner_radius_A
