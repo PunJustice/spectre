@@ -364,4 +364,27 @@ void SpacetimeQuantitiesComputer::operator()(
               cube(conformal_factor()) * momentum_density(ti::I));
 }
 
+void SpacetimeQuantitiesComputer::operator()(
+    const gsl::not_null<tnsr::ijj<DataVector, 3>*>
+        cov_deriv_extrinsic_curvature,
+    const gsl::not_null<Cache*> cache,
+    ::Tags::deriv<gr::Tags::ExtrinsicCurvature<DataVector, 3>, tmpl::size_t<3>,
+                  Frame::Inertial> /*meta*/) const {
+  const auto& extrinsic_curvature =
+      cache->get_var(*this, gr::Tags::ExtrinsicCurvature<DataVector, 3>{});
+  const auto& spatial_christoffel = cache->get_var(
+      *this, gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>{});
+  // Possible accuracy improvement would be to take part of this derivative
+  // analytically.
+  const auto deriv_extrinsic_curvature =
+      partial_derivative(extrinsic_curvature, mesh, inv_jacobian);
+  tenex::evaluate<ti::i, ti::j, ti::k>(
+      cov_deriv_extrinsic_curvature,
+      deriv_extrinsic_curvature(ti::i, ti::j, ti::k) -
+          spatial_christoffel(ti::L, ti::i, ti::j) *
+              extrinsic_curvature(ti::l, ti::k) -
+          spatial_christoffel(ti::L, ti::i, ti::k) *
+              extrinsic_curvature(ti::j, ti::l));
+}
+
 }  // namespace Xcts

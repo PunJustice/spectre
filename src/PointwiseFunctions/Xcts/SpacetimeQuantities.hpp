@@ -41,8 +41,11 @@ using SpacetimeQuantities = CachedTempBuffer<
     ::Tags::deriv<Tags::ConformalFactor<DataVector>, tmpl::size_t<3>,
                   Frame::Inertial>,
     // Note: this is the _covariant_ second derivative of the conformal factor
-    // (includes Christoffel symbols)
+    // and extrinsic curvature (includes Christoffel symbols)
     ::Tags::deriv<::Tags::deriv<Tags::ConformalFactor<DataVector>,
+                                tmpl::size_t<3>, Frame::Inertial>,
+                  tmpl::size_t<3>, Frame::Inertial>,
+    ::Tags::deriv<::Tags::deriv<gr::Tags::ExtrinsicCurvature<DataVector, 3>,
                                 tmpl::size_t<3>, Frame::Inertial>,
                   tmpl::size_t<3>, Frame::Inertial>,
     detail::ConformalLaplacianOfConformalFactor<DataVector>,
@@ -150,6 +153,11 @@ struct SpacetimeQuantitiesComputer {
   void operator()(gsl::not_null<tnsr::I<DataVector, 3>*> momentum_constraint,
                   gsl::not_null<Cache*> cache,
                   gr::Tags::MomentumConstraint<DataVector, 3> /*meta*/) const;
+  void operator()(
+      gsl::not_null<tnsr::ijj<DataVector, 3>*> momentum_constraint,
+      gsl::not_null<Cache*> cache,
+      ::Tags::deriv<gr::Tags::ExtrinsicCurvature<DataVector, 3>,
+                    tmpl::size_t<3>, Frame::Inertial> /*meta*/) const;
 
   // XCTS variables
   const Scalar<DataVector>& conformal_factor_minus_one;
