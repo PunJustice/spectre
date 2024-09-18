@@ -544,11 +544,11 @@ def schedule(
         force=force,
     )
 
-    if validate or validate is None:
-        # Validate input file
-        validate_input_file(
-            input_file_path.resolve(), executable=executable, work_dir=run_dir
-        )
+    # if validate or validate is None:
+    #     # Validate input file
+    #     validate_input_file(
+    #         input_file_path.resolve(), executable=executable, work_dir=run_dir
+    #     )
 
     # - If the input file may request resubmissions, make sure we have a
     #   segments directory
@@ -576,11 +576,6 @@ def schedule(
 
     # If requested, run executable directly and return early
     if not scheduler:
-        assert num_nodes is None or num_nodes == 1, (
-            "Running executables directly is only supported on a single node. "
-            "Set the 'scheduler' ('--scheduler') to submit a multi-node job "
-            "to the queue."
-        )
         auto_provision = num_procs is None
         provision_info = (
             "all available cores"
@@ -591,15 +586,15 @@ def schedule(
             f"Run '{executable.name}' in '{run_dir}' on {provision_info}."
         )
         machine = this_machine(raise_exception=False)
-        run_command = (machine.launch_command if machine else []) + [
-            str(executable),
-            "--input-file",
-            str(input_file_path.resolve()),
-        ]
-        if auto_provision:
-            run_command += ["+auto-provision"]
-        else:
-            run_command += ["+p", str(num_procs)]
+        run_command = (
+            ["srun"]
+            + [
+                str(executable),
+                "--input-file",
+                str(input_file_path.resolve()),
+            ]
+            + ["++ppn", str(70), "+pemap", "0-34,36-70", "+commap", "35,71"]
+        )
         if from_checkpoint:
             run_command += ["+restart", str(from_checkpoint)]
         logger.debug(f"Run command: {run_command}")
