@@ -187,6 +187,7 @@ void negative_expansion_quantities(
   get(*beta_orthogonal_correction) *= -1.;
   get(*beta_orthogonal_correction) -= get(lapse);
 }
+}  // namespace
 
 template <Xcts::Geometry ConformalGeometry>
 void apparent_horizon_impl(
@@ -493,7 +494,6 @@ void linearized_apparent_horizon_impl(
     get(*n_dot_lapse_times_conformal_factor_gradient_correction) = 0.;
   }
 }
-}  // namespace
 
 template <Xcts::Geometry ConformalGeometry>
 void ApparentHorizon<ConformalGeometry>::apply(

@@ -26,15 +26,25 @@ class DataVector;
 
 namespace Xcts::BoundaryConditions {
 
+void robin_boundary_condition_scalar(
+    const gsl::not_null<Scalar<DataVector>*> n_dot_gradient,
+    const Scalar<DataVector>& scalar, const Scalar<DataVector>& r);
+
+void robin_boundary_condition_shift(
+    const gsl::not_null<tnsr::I<DataVector, 3>*> n_dot_longitudinal_shift,
+    tnsr::I<DataVector, 3> shift, const tnsr::iJ<DataVector, 3>& deriv_shift,
+    const Scalar<DataVector>& r, const tnsr::i<DataVector, 3>& face_normal);
+
 /*!
  * \brief Impose Robin boundary conditions at the outer boundary
  *
  * Impose $\partial_r(r\psi)=0$, $\partial_r(\alpha\psi)=0$, and
  * $\partial_r(r\beta_\mathrm{excess}^j)=0$ on the boundary. These Robin
- * boundary conditions incur an error of order $1/R^2$, where $R$ is the outer
- * radius of the domain. This allows to place the outer boundary much closer
- * to the center than for Dirichlet boundary conditions
- * (Xcts::BoundaryConditions::Flatness), which incur an error of order $1/R$.
+ * boundary conditions incur an error of order $1/R^2$, where $R$ is the
+ * outer radius of the domain. This allows to place the outer boundary much
+ * closer to the center than for Dirichlet boundary conditions
+ * (Xcts::BoundaryConditions::Flatness), which incur an error of order
+ * $1/R$.
  *
  * The Robin boundary conditions are imposed as Neumann-type as follows:
  *
@@ -51,13 +61,15 @@ namespace Xcts::BoundaryConditions {
  *
  * Here, the condition on the longitudinal shift is derived by imposing the
  * Robin boundary condition
- * $n^i\partial_i\beta_\mathrm{excess}^j=-\beta_\mathrm{excess}^j/r$ only on the
- * normal component of the shift gradient. To do this we can use the projection
- * operator $P_{ij}=\delta_{ij}-n_i n_j$ to set the shift gradient to
+ * $n^i\partial_i\beta_\mathrm{excess}^j=-\beta_\mathrm{excess}^j/r$ only on
+ * the normal component of the shift gradient. To do this we can use the
+ * projection operator $P_{ij}=\delta_{ij}-n_i n_j$ to set the shift
+ * gradient to
  * $\partial_i\beta_\mathrm{excess}^j=P_{ik}\partial_k\beta_\mathrm{excess}^j
  * -n_i \beta_\mathrm{excess}^j/r$ and then apply the longitudinal operator.
  *
- * \tparam EnabledEquations The subset of XCTS equations that are being solved
+ * \tparam EnabledEquations The subset of XCTS equations that are being
+ * solved
  */
 template <Xcts::Equations EnabledEquations>
 class Robin : public elliptic::BoundaryConditions::BoundaryCondition<3> {
