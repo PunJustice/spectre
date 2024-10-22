@@ -29,15 +29,49 @@ struct FirstOrderSystem
  public:
   static constexpr size_t volume_dim = 3;
 
-  using primal_fields = tmpl::list<field>;
-  using primal_fluxes =
-      tmpl::list<::Tags::Flux<field, tmpl::size_t<3>, Frame::Inertial>>;
+  using primal_fields =
+      tmpl::list<Tags::ConformalFactorMinusOne<DataVector>,
+                 Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+                 Tags::ShiftExcess<DataVector, 3, Frame::Inertial>, field>;
+  using primal_fluxes = tmpl::list<
+      ::Tags::Flux<Tags::ConformalFactorMinusOne<DataVector>, tmpl::size_t<3>,
+                   Frame::Inertial>,
+      ::Tags::Flux<Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+                   tmpl::size_t<3>, Frame::Inertial>,
+      Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>,
+      ::Tags::Flux<field, tmpl::size_t<3>, Frame::Inertial>>;
   // Note that there are many more background fields required for the elliptic
   // solve, however these are numerically imported and so are not listed here.
   using background_fields = tmpl::list<
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
-                                                 Frame::Inertial>>;
+      // Quantities for Hamiltonian constraint
+      gr::Tags::Conformal<gr::Tags::EnergyDensity<DataVector>,
+                          ConformalMatterScale>,
+      gr::Tags::TraceExtrinsicCurvature<DataVector>,
+      Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+      Tags::ConformalRicciTensor<DataVector, 3, Frame::Inertial>,
+      Tags::ConformalRicciScalar<DataVector>,
+      Tags::ConformalChristoffelContracted<DataVector, 3, Frame::Inertial>,
+      ::Tags::deriv<Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+                    tmpl::size_t<3>, Frame::Inertial>,
+      // Additional quantities for lapse equation
+      gr::Tags::Conformal<gr::Tags::StressTrace<DataVector>,
+                          ConformalMatterScale>,
+      ::Tags::dt<gr::Tags::TraceExtrinsicCurvature<DataVector>>,
+      // Additional quantities for momentum constraint
+      gr::Tags::Conformal<gr::Tags::MomentumDensity<DataVector, 3>,
+                          ConformalMatterScale>,
+      ::Tags::deriv<gr::Tags::TraceExtrinsicCurvature<DataVector>,
+                    tmpl::size_t<3>, Frame::Inertial>,
+      Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
+      Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<DataVector, 3,
+                                                              Frame::Inertial>,
+      // Note that this is the plain divergence, i.e. with no
+      // Christoffel symbol terms added
+      ::Tags::div<Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
+          DataVector, 3, Frame::Inertial>>,
+      Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+      Tags::ConformalChristoffelFirstKind<DataVector, 3, Frame::Inertial>,
+      Tags::ConformalChristoffelSecondKind<DataVector, 3, Frame::Inertial>>;
   using inv_metric_tag =
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>;
 
