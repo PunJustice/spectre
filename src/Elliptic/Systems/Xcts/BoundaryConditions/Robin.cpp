@@ -15,7 +15,6 @@
 
 namespace Xcts::BoundaryConditions {
 
-namespace {
 void robin_boundary_condition_scalar(
     const gsl::not_null<Scalar<DataVector>*> n_dot_gradient,
     const Scalar<DataVector>& scalar, const Scalar<DataVector>& r) {
@@ -38,7 +37,6 @@ void robin_boundary_condition_shift(
         shift.get(i) + face_normal.get(i) * get(n_dot_shift) / 3.;
   }
 }
-}  // namespace
 
 template <Xcts::Equations EnabledEquations>
 std::unique_ptr<domain::BoundaryConditions::BoundaryCondition>

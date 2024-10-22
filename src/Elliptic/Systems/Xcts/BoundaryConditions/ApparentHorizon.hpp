@@ -211,6 +211,71 @@ class ApparentHorizon
             elliptic::BoundaryConditionType::Dirichlet,
             elliptic::BoundaryConditionType::Dirichlet};
   }
+  void apparent_horizon_impl(
+      const gsl::not_null<Scalar<DataVector>*> conformal_factor_minus_one,
+      const gsl::not_null<Scalar<DataVector>*>
+          lapse_times_conformal_factor_minus_one,
+      const gsl::not_null<tnsr::I<DataVector, 3>*> shift_excess,
+      const gsl::not_null<Scalar<DataVector>*> n_dot_conformal_factor_gradient,
+      const gsl::not_null<Scalar<DataVector>*>
+          n_dot_lapse_times_conformal_factor_gradient,
+      const gsl::not_null<tnsr::I<DataVector, 3>*>
+          n_dot_longitudinal_shift_excess,
+      const std::array<double, 3>& center,
+      const std::array<double, 3>& rotation,
+      const std::optional<
+          std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>&
+          solution_for_lapse,
+      const std::optional<
+          std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>&
+          solution_for_negative_expansion,
+      const tnsr::i<DataVector, 3>& face_normal,
+      const tnsr::ij<DataVector, 3>& deriv_unnormalized_face_normal,
+      const Scalar<DataVector>& face_normal_magnitude,
+      const tnsr::I<DataVector, 3>& x_offcenter,
+      const Scalar<DataVector>& extrinsic_curvature_trace,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::II<DataVector, 3>& longitudinal_shift_background,
+      [[maybe_unused]] const std::optional<
+          std::reference_wrapper<const tnsr::II<DataVector, 3>>>
+          inv_conformal_metric,
+      [[maybe_unused]] const std::optional<
+          std::reference_wrapper<const tnsr::Ijj<DataVector, 3>>>
+          conformal_christoffel_second_kind);
+
+  void linearized_apparent_horizon_impl(
+      const gsl::not_null<Scalar<DataVector>*> conformal_factor_correction,
+      const gsl::not_null<Scalar<DataVector>*>
+          lapse_times_conformal_factor_correction,
+      const gsl::not_null<tnsr::I<DataVector, 3>*> shift_correction,
+      const gsl::not_null<Scalar<DataVector>*>
+          n_dot_conformal_factor_gradient_correction,
+      const gsl::not_null<Scalar<DataVector>*>
+          n_dot_lapse_times_conformal_factor_gradient_correction,
+      const gsl::not_null<tnsr::I<DataVector, 3>*>
+          n_dot_longitudinal_shift_correction,
+      const std::array<double, 3>& center,
+      const std::optional<
+          std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>&
+          solution_for_lapse,
+      const std::optional<
+          std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>&
+          solution_for_negative_expansion,
+      const tnsr::i<DataVector, 3>& face_normal,
+      const tnsr::ij<DataVector, 3>& deriv_unnormalized_face_normal,
+      const Scalar<DataVector>& face_normal_magnitude,
+      const tnsr::I<DataVector, 3>& x_offcenter,
+      const Scalar<DataVector>& extrinsic_curvature_trace,
+      const tnsr::II<DataVector, 3>& longitudinal_shift_background,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& n_dot_longitudinal_shift_excess,
+      [[maybe_unused]] const std::optional<
+          std::reference_wrapper<const tnsr::II<DataVector, 3>>>
+          inv_conformal_metric,
+      [[maybe_unused]] const std::optional<
+          std::reference_wrapper<const tnsr::Ijj<DataVector, 3>>>
+          conformal_christoffel_second_kind);
 
   using argument_tags = tmpl::flatten<tmpl::list<
       domain::Tags::FaceNormal<3>,
