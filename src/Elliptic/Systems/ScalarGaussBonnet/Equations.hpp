@@ -21,6 +21,7 @@ class er;
 namespace sgb {
 struct Fluxes;
 struct Sources;
+struct LinearizedSources;
 }  // namespace sgb
 /// \endcond
 
@@ -90,27 +91,45 @@ void add_linearized_GB_terms(
 struct Fluxes {
   using argument_tags = tmpl::list<
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      sgb::Tags::RolledOffShift, gr::Tags::Lapse<DataVector>,
-      Xcts::Tags::ConformalFactor<DataVector>>;
+      Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                 Frame::Inertial>,
+      Tags::RolloffLocation, Tags::RolloffRate>;
   using volume_tags = tmpl::list<>;
-  using const_global_cache_tags = tmpl::list<>;
+  using const_global_cache_tags =
+      tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
   static constexpr bool is_trivial = false;
   static constexpr bool is_discontinuous = false;
-  static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
-                    const tnsr::II<DataVector, 3>& inv_conformal_metric,
-                    const tnsr::I<DataVector, 3>& shift,
-                    const Scalar<DataVector>& lapse,
-                    const Scalar<DataVector>& conformal_factor,
-                    const Scalar<DataVector>& field,
-                    const tnsr::i<DataVector, 3>& field_gradient);
-  static void apply(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
-                    const tnsr::II<DataVector, 3>& inv_conformal_metric,
-                    const tnsr::I<DataVector, 3>& shift,
-                    const Scalar<DataVector>& lapse,
-                    const Scalar<DataVector>& conformal_factor,
-                    const tnsr::i<DataVector, 3>& face_normal,
-                    const tnsr::I<DataVector, 3>& face_normal_vector,
-                    const Scalar<DataVector>& field);
+  static void apply(
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_conformal_factor,
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_lapse_times_conformal_factor,
+      gsl::not_null<tnsr::II<DataVector, 3>*> longitudinal_shift_excess,
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
+      const double& rolloff_location, const double& rolloff_rate,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const Scalar<DataVector>& scalar,
+      const tnsr::i<DataVector, 3>& conformal_factor_gradient,
+      const tnsr::i<DataVector, 3>& lapse_times_conformal_factor_gradient,
+      const tnsr::iJ<DataVector, 3>& deriv_shift_excess,
+      const tnsr::i<DataVector, 3>& scalar_gradient);
+  static void apply(
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_conformal_factor,
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_lapse_times_conformal_factor,
+      gsl::not_null<tnsr::II<DataVector, 3>*> longitudinal_shift_excess,
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
+      const tnsr::i<DataVector, 3>& face_normal,
+      const tnsr::I<DataVector, 3>& face_normal_vector,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const Scalar<DataVector>& scalar);
 };
 
 /*!
@@ -119,25 +138,62 @@ struct Fluxes {
  */
 struct Sources {
   using argument_tags = tmpl::list<
-      Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
-                                                 Frame::Inertial>,
-      ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                    Frame::Inertial>,
-      gr::Tags::Lapse<DataVector>, Xcts::Tags::ConformalFactor<DataVector>,
-      ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>, tmpl::size_t<3>,
-                    Frame::Inertial>,
-      Tags::Epsilon2, Tags::Epsilon4, gr::Tags::WeylElectricScalar<DataVector>,
+      gr::Tags::Conformal<gr::Tags::EnergyDensity<DataVector>, 0>,
+      gr::Tags::Conformal<gr::Tags::StressTrace<DataVector>, 0>,
+      gr::Tags::Conformal<gr::Tags::MomentumDensity<DataVector, 3>, 0>,
+      gr::Tags::TraceExtrinsicCurvature<DataVector>,
+      ::Tags::dt<gr::Tags::TraceExtrinsicCurvature<DataVector>>,
+      ::Tags::deriv<gr::Tags::TraceExtrinsicCurvature<DataVector>,
+                    tmpl::size_t<3>, Frame::Inertial>,
+      ::Xcts::Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
+          DataVector, 3, Frame::Inertial>,
+      ::Tags::div<
+          ::Xcts::Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
+              DataVector, 3, Frame::Inertial>>,
+      ::Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelFirstKind<DataVector, 3,
+                                                  Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                   Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
+                                                   Frame::Inertial>,
+      ::Xcts::Tags::ConformalRicciScalar<DataVector>, Tags::Epsilon2,
+      Tags::Epsilon4, gr::Tags::WeylElectricScalar<DataVector>,
       gr::Tags::WeylMagneticScalar<DataVector>>;
   static void apply(
-      gsl::not_null<Scalar<DataVector>*> equation_for_field,
+      gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
+      gsl::not_null<Scalar<DataVector>*> lapse_equation,
+      gsl::not_null<tnsr::I<DataVector, 3>*> momentum_constraint,
+      gsl::not_null<Scalar<DataVector>*> scalar_equation,
+      const Scalar<DataVector>& conformal_energy_density,
+      const Scalar<DataVector>& conformal_stress_trace,
+      const tnsr::I<DataVector, 3>& conformal_momentum_density,
+      const Scalar<DataVector>& extrinsic_curvature_trace,
+      const Scalar<DataVector>& dt_extrinsic_curvature_trace,
+      const tnsr::i<DataVector, 3>& extrinsic_curvature_trace_gradient,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::II<DataVector, 3>&
+          longitudinal_shift_background_minus_dt_conformal_metric,
+      const tnsr::I<DataVector, 3>&
+          div_longitudinal_shift_background_minus_dt_conformal_metric,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::ijj<DataVector, 3>& /*conformal_christoffel_first_kind*/,
+      const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
-      const tnsr::i<DataVector, 3>& deriv_lapse,
-      const Scalar<DataVector>& lapse,
-      const Scalar<DataVector>& conformal_factor,
-      const tnsr::i<DataVector, 3>& conformal_factor_deriv, const double& eps2,
+      const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
       const double& eps4, const Scalar<DataVector>& weyl_electric,
-      const Scalar<DataVector>& weyl_magnetic, const Scalar<DataVector>& field,
-      const tnsr::I<DataVector, 3>& field_flux);
+      const Scalar<DataVector>& weyl_magnetic,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const Scalar<DataVector>& scalar,
+      const tnsr::I<DataVector, 3>& conformal_factor_flux,
+      const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
+      const tnsr::II<DataVector, 3>& longitudinal_shift_excess,
+      const tnsr::I<DataVector, 3>& scalar_flux);
 };
 
 /*!
@@ -145,30 +201,55 @@ struct Sources {
  * gravity on a spatial metric \f$\gamma_{ij}\f$.
  */
 struct LinearizedSources {
-  using argument_tags =
-      tmpl::list<Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
-                                                            Frame::Inertial>,
-                 ::Tags::deriv<gr::Tags::Lapse<DataVector>, tmpl::size_t<3>,
-                               Frame::Inertial>,
-                 gr::Tags::Lapse<DataVector>,
-                 Xcts::Tags::ConformalFactor<DataVector>,
-                 ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
-                               tmpl::size_t<3>, Frame::Inertial>,
-                 ::CurvedScalarWave::Tags::Psi, Tags::Epsilon2, Tags::Epsilon4,
-                 gr::Tags::WeylElectricScalar<DataVector>,
-                 gr::Tags::WeylMagneticScalar<DataVector>>;
+  using argument_tags = tmpl::push_back<
+      typename Sources::argument_tags,
+      ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+      ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+      ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
+      ::Tags::Flux<::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+                   tmpl::size_t<3>, Frame::Inertial>,
+      ::Tags::Flux<::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+                   tmpl::size_t<3>, Frame::Inertial>,
+      ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>>;
   static void apply(
-      gsl::not_null<Scalar<DataVector>*> linearized_equation_for_field,
+      gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
+      gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
+      gsl::not_null<tnsr::I<DataVector, 3>*> linearized_momentum_constraint,
+      gsl::not_null<Scalar<DataVector>*> linearized_scalar_equation,
+      const Scalar<DataVector>& conformal_energy_density,
+      const Scalar<DataVector>& conformal_stress_trace,
+      const tnsr::I<DataVector, 3>& conformal_momentum_density,
+      const Scalar<DataVector>& extrinsic_curvature_trace,
+      const Scalar<DataVector>& dt_extrinsic_curvature_trace,
+      const tnsr::i<DataVector, 3>& extrinsic_curvature_trace_gradient,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::II<DataVector, 3>&
+          longitudinal_shift_background_minus_dt_conformal_metric,
+      const tnsr::I<DataVector, 3>&
+      /*div_longitudinal_shift_background_minus_dt_conformal_metric*/,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::ijj<DataVector, 3>& /*conformal_christoffel_first_kind*/,
+      const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
-      const tnsr::i<DataVector, 3>& deriv_lapse,
-      const Scalar<DataVector>& lapse,
-      const Scalar<DataVector>& conformal_factor,
-      const tnsr::i<DataVector, 3>& conformal_factor_deriv,
-      const Scalar<DataVector>& field, const double& eps2, const double& eps4,
-      const Scalar<DataVector>& weyl_electric,
+      const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
+      const double& eps4, const Scalar<DataVector>& weyl_electric,
       const Scalar<DataVector>& weyl_magnetic,
-      const Scalar<DataVector>& field_correction,
-      const tnsr::I<DataVector, 3>& field_flux_correction);
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const tnsr::I<DataVector, 3>& conformal_factor_flux,
+      const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
+      const tnsr::II<DataVector, 3>& longitudinal_shift_excess,
+      const Scalar<DataVector>& conformal_factor_correction,
+      const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+      const tnsr::I<DataVector, 3>& shift_excess_correction,
+      const Scalar<DataVector>& scalar_correction,
+      const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
+      const tnsr::I<DataVector, 3>&
+          lapse_times_conformal_factor_flux_correction,
+      const tnsr::II<DataVector, 3>& longitudinal_shift_excess_correction,
+      const tnsr::I<DataVector, 3>& scalar_flux_correction);
 };
 
 }  // namespace sgb
