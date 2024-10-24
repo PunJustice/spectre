@@ -76,6 +76,7 @@ struct FirstOrderSystem
       Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>;
 
   using fluxes_computer = Fluxes;
+  using fluxes_computer_linearized = LinearizedFluxes;
   using sources_computer = Sources;
   using sources_computer_linearized = LinearizedSources;
 
