@@ -6,6 +6,7 @@
 #include <cstddef>
 
 #include "DataStructures/Tensor/Tensor.hpp"
+#include "Domain/Tags.hpp"
 #include "Elliptic/Systems/ScalarGaussBonnet/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
@@ -32,12 +33,13 @@ namespace sgb {
  * -\alpha^{2} \beta^i \beta^j \right) \partial_j \Psi(x)$ for the scalar
  * equation in sGB gravity on a conformal metric $\tilde{\gamma}_{ij}$.
  */
-void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
-                   const tnsr::II<DataVector, 3>& inv_conformal_metric,
-                   const tnsr::I<DataVector, 3>& shift,
-                   const Scalar<DataVector>& lapse,
-                   const Scalar<DataVector>& conformal_factor,
-                   const tnsr::i<DataVector, 3>& field_gradient);
+void curved_fluxes(
+    gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+    const tnsr::I<DataVector, 3>& shift_rolloff,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const tnsr::i<DataVector, 3>& field_gradient);
 
 /*!
  * \brief Compute the fluxes $F^i=\left(\psi^{-4} \tilde{\gamma}^{ij}
@@ -45,28 +47,61 @@ void curved_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
  * equation in sGB gravity on a conformal metric $\tilde{\gamma}_{ij}$ on a face
  * normal.
  */
-void face_fluxes(gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
-                 const tnsr::II<DataVector, 3>& inv_conformal_metric,
-                 const tnsr::I<DataVector, 3>& shift,
-                 const Scalar<DataVector>& lapse,
-                 const Scalar<DataVector>& conformal_factor,
-                 const tnsr::i<DataVector, 3>& face_normal,
-                 const Scalar<DataVector>& field);
+void face_fluxes(
+    gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_field,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+    const tnsr::I<DataVector, 3>& shift_rolloff,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const tnsr::i<DataVector, 3>& face_normal, const Scalar<DataVector>& field);
 
 /*!
  * \brief Adds the source terms arising from the $\Box \Psi$ term in the
  * equation of motion for the scalar field: $S=-\tilde{\Gamma}^i_{ij}F^j-F^j
  * \alpha^{-1} \partial_j \alpha - 6F^j \psi^{-1} \partial_j \psi$.*/
-void add_curved_sources(gsl::not_null<Scalar<DataVector>*> source_for_field,
-                        const tnsr::i<DataVector, 3>& christoffel_contracted,
-                        const tnsr::I<DataVector, 3>& flux_for_field,
-                        const tnsr::i<DataVector, 3>& deriv_lapse,
-                        const Scalar<DataVector>& lapse,
-                        const Scalar<DataVector>& conformal_factor,
-                        const tnsr::i<DataVector, 3>& conformal_factor_deriv);
+void add_curved_sources(
+    gsl::not_null<Scalar<DataVector>*> source_for_field,
+    const tnsr::ii<DataVector, 3>& conformal_metric,
+    const tnsr::i<DataVector, 3>& christoffel_contracted,
+    const tnsr::I<DataVector, 3>& flux_for_field,
+    const tnsr::i<DataVector, 3>& lapse_times_conformal_factor_flux,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const tnsr::I<DataVector, 3>& conformal_factor_flux);
+
+tnsr::I<DataVector, 3> curved_sources(
+    const tnsr::ii<DataVector, 3>& conformal_metric,
+    const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
+    const tnsr::I<DataVector, 3>& flux_for_field,
+    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const tnsr::I<DataVector, 3>& conformal_factor_flux);
+
+tnsr::I<DataVector, 3> source_part_linearization(
+    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const tnsr::I<DataVector, 3>& conformal_factor_flux,
+    const Scalar<DataVector>& conformal_factor_correction,
+    const Scalar<DataVector>& lapse_times_conformal_factor_correction);
+
+tnsr::I<DataVector, 3> flux_part_linearization(
+    const Mesh<3>& mesh,
+    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                          Frame::Inertial>& inv_jacobian,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+    const tnsr::i<DataVector, 3>& scalar,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_correction,
+    const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+    const tnsr::I<DataVector, 3>& shift_rolloff,
+    const tnsr::I<DataVector, 3>& shift_excess_correction);
 
 /*!
- * \brief Add the sGB coupling term $\mathcal{R} f'(\Psi)=2(E-B)(\epsilon_2 \Psi
+ * \brief Add the sGB coupling term $\mathcal{R} f'(\Psi)=2(E-B)(\epsilon_2
+ * \Psi
  * + \epsilon_4 \Psi^3)$.
  */
 void add_GB_terms(gsl::not_null<Scalar<DataVector>*> scalar_tensor_equation,
@@ -90,10 +125,13 @@ void add_linearized_GB_terms(
  */
 struct Fluxes {
   using argument_tags = tmpl::list<
-      Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
-                                                 Frame::Inertial>,
-      Tags::RolloffLocation, Tags::RolloffRate>;
+      ::Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                   Frame::Inertial>,
+      Tags::RolloffLocation, Tags::RolloffRate,
+      ::Xcts::Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
+      ::domain::Tags::Coordinates<3, Frame::Inertial>>;
   using volume_tags = tmpl::list<>;
   using const_global_cache_tags =
       tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
@@ -105,9 +143,12 @@ struct Fluxes {
           flux_for_lapse_times_conformal_factor,
       gsl::not_null<tnsr::II<DataVector, 3>*> longitudinal_shift_excess,
       gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
       const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
       const double& rolloff_location, const double& rolloff_rate,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::I<DataVector, 3>& coordinates,
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
@@ -124,12 +165,74 @@ struct Fluxes {
       gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
       const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
+      const double& rolloff_location, const double& rolloff_rate,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::I<DataVector, 3>& coordinates,
       const tnsr::i<DataVector, 3>& face_normal,
       const tnsr::I<DataVector, 3>& face_normal_vector,
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
       const Scalar<DataVector>& scalar);
+};
+
+struct LinearizedFluxes {
+  using argument_tags = tmpl::push_back<
+      Fluxes::argument_tags, ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+      ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+      ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>;
+  using volume_tags = tmpl::list<>;
+  using const_global_cache_tags =
+      tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
+  static constexpr bool is_trivial = false;
+  static constexpr bool is_discontinuous = false;
+  static void apply(
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_conformal_factor_correction,
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_lapse_times_conformal_factor_correction,
+      gsl::not_null<tnsr::II<DataVector, 3>*>
+          longitudinal_shift_excess_correction,
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar_correction,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
+      const double& rolloff_location, const double& rolloff_rate,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::I<DataVector, 3>& coordinates,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const Scalar<DataVector>& conformal_factor_correction,
+      const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+      const tnsr::I<DataVector, 3>& shift_excess_correction,
+      const Scalar<DataVector>& scalar_correction,
+      const tnsr::i<DataVector, 3>& conformal_factor_gradient_correction,
+      const tnsr::i<DataVector, 3>&
+          lapse_times_conformal_factor_gradient_correction,
+      const tnsr::iJ<DataVector, 3>& deriv_shift_excess_correction,
+      const tnsr::i<DataVector, 3>& scalar_gradient_correction);
+  static void apply(
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_conformal_factor_correction,
+      gsl::not_null<tnsr::I<DataVector, 3>*>
+          flux_for_lapse_times_conformal_factor_correction,
+      gsl::not_null<tnsr::II<DataVector, 3>*>
+          longitudinal_shift_excess_correction,
+      gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar_correction,
+      const tnsr::II<DataVector, 3>& inv_conformal_metric,
+      const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
+      const double& rolloff_location, const double& rolloff_rate,
+      const tnsr::I<DataVector, 3>& shift_background,
+      const Scalar<DataVector>& conformal_factor_minus_one,
+      const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+      const tnsr::I<DataVector, 3>& shift_excess,
+      const tnsr::I<DataVector, 3>& coordinates,
+      const tnsr::i<DataVector, 3>& face_normal,
+      const tnsr::I<DataVector, 3>& face_normal_vector,
+      const Scalar<DataVector>& conformal_factor_correction,
+      const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+      const tnsr::I<DataVector, 3>& shift_excess_correction,
+      const Scalar<DataVector>& scalar_correction);
 };
 
 /*!
@@ -180,7 +283,7 @@ struct Sources {
           div_longitudinal_shift_background_minus_dt_conformal_metric,
       const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
-      const tnsr::ijj<DataVector, 3>& /*conformal_christoffel_first_kind*/,
+      const tnsr::ijj<DataVector, 3>& conformal_christoffel_first_kind,
       const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
@@ -206,11 +309,17 @@ struct LinearizedSources {
       ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
+      ::ScalarTensor::Tags::Psi,
       ::Tags::Flux<::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       ::Tags::Flux<::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
-      ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>>;
+      ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>,
+      ::Tags::Flux<::ScalarTensor::Tags::Psi, tmpl::size_t<3>, Frame::Inertial>
+          Tags::RolloffLocation,
+      Tags::RolloffRate, ::domain::Tags::Coordinates<3, Frame::Inertial>,
+      domain::Tags::Mesh<3>,
+      domain::Tags::InverseJacobian<3, Frame::ElementLogical, Frame::Inertial>>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
@@ -226,10 +335,10 @@ struct LinearizedSources {
       const tnsr::II<DataVector, 3>&
           longitudinal_shift_background_minus_dt_conformal_metric,
       const tnsr::I<DataVector, 3>&
-      /*div_longitudinal_shift_background_minus_dt_conformal_metric*/,
+          div_longitudinal_shift_background_minus_dt_conformal_metric,
       const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
-      const tnsr::ijj<DataVector, 3>& /*conformal_christoffel_first_kind*/,
+      const tnsr::ijj<DataVector, 3>& conformal_christoffel_first_kind,
       const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
@@ -238,9 +347,15 @@ struct LinearizedSources {
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
+      const Scalar<DataVector>& scalar,
       const tnsr::I<DataVector, 3>& conformal_factor_flux,
       const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
       const tnsr::II<DataVector, 3>& longitudinal_shift_excess,
+      const tnsr::I<DataVector, 3>& scalar_flux, const double& rolloff_location,
+      const double& rolloff_rate, const tnsr::I<DataVector, 3>& coordinates,
+      const Mesh<3>& mesh,
+      const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                            Frame::Inertial>& inv_jacobian,
       const Scalar<DataVector>& conformal_factor_correction,
       const Scalar<DataVector>& lapse_times_conformal_factor_correction,
       const tnsr::I<DataVector, 3>& shift_excess_correction,
