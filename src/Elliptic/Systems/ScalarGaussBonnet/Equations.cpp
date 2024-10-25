@@ -13,6 +13,7 @@
 #include "Elliptic/Systems/Xcts/FluxesAndSources.hpp"
 #include "Elliptic/Systems/Xcts/Geometry.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
+#include "PointwiseFunctions/Xcts/ExtrinsicCurvature.hpp"
 #include "Utilities/GenerateInstantiations.hpp"
 #include "Utilities/MakeWithValue.hpp"
 
@@ -169,27 +170,92 @@ tnsr::I<DataVector, 3> flux_part_linearization(
   return result;
 }
 
-void add_GB_terms(gsl::not_null<Scalar<DataVector>*> scalar_tensor_equation,
-                  const double eps2, const double eps4,
-                  const Scalar<DataVector>& weyl_electric,
-                  const Scalar<DataVector>& weyl_magnetic,
-                  const Scalar<DataVector>& field) {
+void add_GB_terms(
+    gsl::not_null<Scalar<DataVector>*> scalar_tensor_equation,
+    const double eps2, const double eps4,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const Scalar<DataVector>& scalar, const Mesh<3>& mesh,
+    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                          Frame::Inertial>& inv_jacobian,
+    const tnsr::ii<DataVector, 3>& conformal_metric,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+    const tnsr::II<DataVector, 3>&
+        longitudinal_shift_background_minus_dt_conformal_metric,
+    const Scalar<DataVector>& extrinsic_curvature_trace,
+    const tnsr::II<DataVector, 3>& longitudinal_shift_excess) {
+  Scalar<DataVector> conformal_factor;
+  get(conformal_factor) == 1 + get(conformal_factor_minus_one);
+  Scalar<DataVector> lapse;
+  get(lapse) ==
+      (1 + get(lapse_times_conformal_factor_minus_one)) / get(conformal_factor);
+  tnsr::II<DataVector, 3> longitudinal_shift_minus_dt_conformal_metric;
+  tenex::evaluate<ti::I, ti::J>(
+      make_not_null(&longitudinal_shift_minus_dt_conformal_metric),
+      longitudinal_shift_background_minus_dt_conformal_metric(ti::I, ti::J) +
+          longitudinal_shift_excess(ti::I, ti::J));
+  tnsr::II<DataVector, 3, Frame::Inertial> inv_spatial_metric;
+  tenex::evaluate<ti::I, ti::J>(make_not_null(&inv_spatial_metric),
+                                inv_conformal_metric(ti::I, ti::J) /
+                                    conformal_factor() / conformal_factor() /
+                                    conformal_factor() / conformal_factor());
+  tnsr::ii<DataVector, 3, Frame::Inertial> spatial_metric;
+  tenex::evaluate<ti::i, ti::j>(make_not_null(&inv_spatial_metric),
+                                _conformal_metric(ti::i, ti::j) *
+                                    conformal_factor() * conformal_factor() *
+                                    conformal_factor() * conformal_factor());
+  const tnsr::ii<DataType, 3> extrinsic_curvature = extrinsic_curvature(
+      conformal_factor, lapse, conformal_metric,
+      longitudinal_shift_minus_dt_conformal_metric, trace_extrinsic_curvature);
+
+  const auto deriv_spatial_metric =
+      partial_derivative(spatial_metric, mesh, inv_jacobian);
+
+  const auto spatial_christoffel =
+      gr::christoffel_second_kind(deriv_spatial_metric, inv_spatial_metric);
+
+  const auto deriv_spatial_christoffel =
+      partial_derivative(spatial_christoffel, mesh, inv_jacobian);
+
+  const auto spatial_ricci =
+      gr::ricci_tensor(spatial_christoffel, deriv_spatial_christoffel);
+
+  const auto deriv_extrinsic_curvature =
+      partial_derivative(extrinsic_curvature, mesh, inv_jacobian);
+  tnsr::ijj<DataVector, 3, Frame::Inertial> cov_deriv_extrinsic_curvature{};
+  tenex::evaluate<ti::i, ti::j, ti::k>(
+      make_not_null(&cov_deriv_extrinsic_curvature),
+      deriv_extrinsic_curvature(ti::i, ti::j, ti::k) -
+          spatial_christoffel(ti::L, ti::i, ti::j) *
+              extrinsic_curvature(ti::l, ti::k) -
+          spatial_christoffel(ti::L, ti::i, ti::k) *
+              extrinsic_curvature(ti::j, ti::l));
+
+  const auto weyl_electric =
+      gr::weyl_electric(spatial_ricci, extrinsic_curvature, inv_spatial_metric);
+  const auto weyl_electric_scalar =
+      gr::weyl_electric_scalar(weyl_electric, inv_spatial_metric);
+  const auto weyl_magnetic = gr::weyl_magnetic(
+      cov_deriv_extrinsic_curvature, spatial_metric, sqrt_det_spatial_metric);
+  const auto weyl_magnetic_scalar =
+      gr::weyl_magnetic_scalar(weyl_magnetic, inv_spatial_metric);
+
   get(*scalar_tensor_equation) -=
       2. * (weyl_electric.get() - weyl_magnetic.get()) *
-      (eps2 * field.get() + eps4 * cube(get(field)));
+      (eps2 * scalar.get() + eps4 * cube(get(scalar)));
 }
 
-void add_linearized_GB_terms(
-    gsl::not_null<Scalar<DataVector>*> linearized_scalar_tensor_equation,
-    const double eps2, const double eps4,
-    const Scalar<DataVector>& weyl_electric,
-    const Scalar<DataVector>& weyl_magnetic, const Scalar<DataVector>& field,
-    const Scalar<DataVector>& field_correction) {
-  get(*linearized_scalar_tensor_equation) -=
-      2. * (weyl_electric.get() - weyl_magnetic.get()) *
-      (eps2 * field_correction.get() +
-       3. * eps4 * square(get(field)) * field_correction.get());
-}
+// void add_linearized_GB_terms(
+//     gsl::not_null<Scalar<DataVector>*> linearized_scalar_tensor_equation,
+//     const double eps2, const double eps4,
+//     const Scalar<DataVector>& weyl_electric,
+//     const Scalar<DataVector>& weyl_magnetic, const Scalar<DataVector>& field,
+//     const Scalar<DataVector>& field_correction) {
+//   get(*linearized_scalar_tensor_equation) -=
+//       2. * (weyl_electric.get() - weyl_magnetic.get()) *
+//       (eps2 * field_correction.get() +
+//        3. * eps4 * square(get(field)) * field_correction.get());
+// }
 
 void Fluxes::apply(
     gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_conformal_factor,
@@ -368,8 +434,9 @@ void Sources::apply(
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
     const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
     const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
-    const double& eps4, const Scalar<DataVector>& weyl_electric,
-    const Scalar<DataVector>& weyl_magnetic,
+    const double& eps4, const Mesh<3>& mesh,
+    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                          Frame::Inertial>& inv_jacobian,
     const Scalar<DataVector>& conformal_factor_minus_one,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const tnsr::I<DataVector, 3>& shift_excess,
@@ -383,8 +450,12 @@ void Sources::apply(
                      lapse_times_conformal_factor_flux,
                      lapse_times_conformal_factor_minus_one,
                      conformal_factor_minus_one, conformal_factor_flux);
-  add_GB_terms(scalar_equation, eps2, eps4, weyl_electric, weyl_magnetic,
-               scalar);
+  add_GB_terms(scalar_tensor_equation, eps2, eps4,
+               lapse_times_conformal_factor_minus_one,
+               conformal_factor_minus_one, scalar, mesh, inv_jacobian,
+               conformal_metric, inv_conformal_metric,
+               longitudinal_shift_background_minus_dt_conformal_metric,
+               extrinsic_curvature_trace, longitudinal_shift_excess);
   ::Xcts::Sources<Equations::HamiltonianLapseAndShift, Geometry::Curved, 0>::
       apply(hamiltonian_constraint, lapse_equation, momentum_constraint,
             conformal_energy_density, conformal_stress_trace,
@@ -423,8 +494,9 @@ void LinearizedSources::apply(
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
     const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
     const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
-    const double& eps4, const Scalar<DataVector>& weyl_electric,
-    const Scalar<DataVector>& weyl_magnetic,
+    const double& eps4, const Mesh<3>& mesh,
+    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                          Frame::Inertial>& inv_jacobian,
     const Scalar<DataVector>& conformal_factor_minus_one,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const tnsr::I<DataVector, 3>& shift_excess,
@@ -434,9 +506,7 @@ void LinearizedSources::apply(
     const tnsr::II<DataVector, 3>& longitudinal_shift_excess,
     const tnsr::I<DataVector, 3>& scalar_flux, const double& rolloff_location,
     const double& rolloff_rate, const tnsr::I<DataVector, 3>& coordinates,
-    const Mesh<3>& mesh,
-    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
-                          Frame::Inertial>& inv_jacobian,
+
     const Scalar<DataVector>& conformal_factor_correction,
     const Scalar<DataVector>& lapse_times_conformal_factor_correction,
     const tnsr::I<DataVector, 3>& shift_excess_correction,
