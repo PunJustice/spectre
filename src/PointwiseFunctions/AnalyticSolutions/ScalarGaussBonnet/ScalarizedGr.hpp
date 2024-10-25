@@ -51,7 +51,7 @@ using gr_solution_vars =
 template <typename DataType>
 using ScalarizedGrVariablesCache =
     cached_temp_buffer_from_typelist<tmpl::push_back<
-        ::Xcts::AnalyticData::common_tags<DataType>,
+        ::Xcts::Solutions::common_tags<DataType>,
         hydro::Tags::MagneticFieldDotSpatialVelocity<DataType>,
         hydro::Tags::ComovingMagneticFieldSquared<DataType>,
         gr::Tags::Conformal<gr::Tags::EnergyDensity<DataType>, 0>,
@@ -60,12 +60,13 @@ using ScalarizedGrVariablesCache =
 
 template <typename DataType, bool HasMhd>
 struct ScalarizedGrVariables
-    : ::Xcts::AnalyticData::CommonVariables<
-          DataType, ScalarizedGrVariablesCache<DataType>> {
+    : ::Xcts::Solutions::CommonVariables<DataType,
+                                         ScalarizedGrVariablesCache<DataType>> {
   static constexpr size_t Dim = 3;
   using Cache = ScalarizedGrVariablesCache<DataType>;
-  using Base = ::Xcts::AnalyticData::CommonVariables<
-      DataType, ScalarizedGrVariablesCache<DataType>>;
+  using Base =
+      ::Xcts::Solutions::CommonVariables<DataType,
+                                         ScalarizedGrVariablesCache<DataType>>;
   using Base::operator();
 
   ScalarizedGrVariables(
@@ -77,7 +78,7 @@ struct ScalarizedGrVariables
       const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
           local_gr_solution,
       const tuples::tagged_tuple_from_typelist<
-          ::Xcts::AnalyticData::hydro_tags<DataType>>& local_hydro_solution)
+          ::Xcts::Solutions::hydro_tags<DataType>>& local_hydro_solution)
       : Base(std::move(local_mesh), std::move(local_inv_jacobian)),
         x(local_x),
         gr_solution(local_gr_solution),
@@ -87,7 +88,7 @@ struct ScalarizedGrVariables
   const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
       gr_solution;
   const tuples::tagged_tuple_from_typelist<
-      ::Xcts::AnalyticData::hydro_tags<DataType>>& hydro_solution;
+      ::Xcts::Solutions::hydro_tags<DataType>>& hydro_solution;
 
   void operator()(
       gsl::not_null<tnsr::ii<DataType, Dim>*> conformal_metric,
@@ -360,17 +361,16 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
       gr_solution =
           gr_solution_.variables(x, detail::gr_solution_vars<DataType, Dim>{});
     }
-    tuples::tagged_tuple_from_typelist<
-        ::Xcts::AnalyticData::hydro_tags<DataType>>
+    tuples::tagged_tuple_from_typelist<::Xcts::Solutions::hydro_tags<DataType>>
         hydro_solution;
     if constexpr (HasMhd) {
       if constexpr (is_analytic_solution_v<GrSolution>) {
         hydro_solution = gr_solution_.variables(
             x, std::numeric_limits<double>::signaling_NaN(),
-            ::Xcts::AnalyticData::hydro_tags<DataType>{});
+            ::Xcts::Solutions::hydro_tags<DataType>{});
       } else {
         hydro_solution = gr_solution_.variables(
-            x, ::Xcts::AnalyticData::hydro_tags<DataType>{});
+            x, ::Xcts::Solutions::hydro_tags<DataType>{});
       }
     }
     using VarsComputer = detail::ScalarizedGrVariables<DataType, HasMhd>;
@@ -380,7 +380,7 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
     const auto get_var = [&cache, &computer, &hydro_solution, &x](auto tag_v) {
       using tag = std::decay_t<decltype(tag_v)>;
       if constexpr (tmpl::list_contains_v<
-                        ::Xcts::AnalyticData::hydro_tags<DataType>, tag>) {
+                        ::Xcts::Solutions::hydro_tags<DataType>, tag>) {
         (void)cache;
         (void)computer;
         if constexpr (HasMhd) {

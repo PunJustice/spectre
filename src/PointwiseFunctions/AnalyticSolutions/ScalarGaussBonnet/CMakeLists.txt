@@ -16,6 +16,7 @@ spectre_target_headers(
   INCLUDE_DIRECTORY ${CMAKE_SOURCE_DIR}/src
   HEADERS
   ScalarizedGr.hpp
+  Factory.hpp
   )
 
 target_link_libraries(
