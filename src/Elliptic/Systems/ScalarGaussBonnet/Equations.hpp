@@ -104,20 +104,29 @@ tnsr::I<DataVector, 3> flux_part_linearization(
  * \Psi
  * + \epsilon_4 \Psi^3)$.
  */
-void add_GB_terms(gsl::not_null<Scalar<DataVector>*> scalar_tensor_equation,
-                  double eps2, double eps4,
-                  const Scalar<DataVector>& weyl_electric,
-                  const Scalar<DataVector>& weyl_magnetic,
-                  const Scalar<DataVector>& field);
+void add_GB_terms(
+    gsl::not_null<Scalar<DataVector>*> scalar_tensor_equation,
+    const double eps2, const double eps4,
+    const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
+    const Scalar<DataVector>& conformal_factor_minus_one,
+    const Scalar<DataVector>& scalar, const Mesh<3>& mesh,
+    const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                          Frame::Inertial>& inv_jacobian,
+    const tnsr::ii<DataVector, 3>& conformal_metric,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+    const tnsr::II<DataVector, 3>&
+        longitudinal_shift_background_minus_dt_conformal_metric,
+    const Scalar<DataVector>& extrinsic_curvature_trace,
+    const tnsr::II<DataVector, 3>& longitudinal_shift_excess);
 
-/*!
- * \brief Add sources arising from linearising the sGB coupling term.
- */
-void add_linearized_GB_terms(
-    gsl::not_null<Scalar<DataVector>*> linearized_scalar_tensor_equation,
-    double eps2, double eps4, const Scalar<DataVector>& weyl_electric,
-    const Scalar<DataVector>& weyl_magnetic, const Scalar<DataVector>& field,
-    const Scalar<DataVector>& field_correction);
+// /*!
+//  * \brief Add sources arising from linearising the sGB coupling term.
+//  */
+// void add_linearized_GB_terms(
+//     gsl::not_null<Scalar<DataVector>*> linearized_scalar_tensor_equation,
+//     double eps2, double eps4, const Scalar<DataVector>& weyl_electric,
+//     const Scalar<DataVector>& weyl_magnetic, const Scalar<DataVector>& field,
+//     const Scalar<DataVector>& field_correction);
 
 /*!
  * \brief Compute the fluxes \f$F^i\f$ for the scalar equation in sGB gravity on
@@ -263,8 +272,8 @@ struct Sources {
       ::Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
                                                    Frame::Inertial>,
       ::Xcts::Tags::ConformalRicciScalar<DataVector>, Tags::Epsilon2,
-      Tags::Epsilon4, gr::Tags::WeylElectricScalar<DataVector>,
-      gr::Tags::WeylMagneticScalar<DataVector>>;
+      Tags::Epsilon4, domain::Tags::Mesh<3>,
+      domain::Tags::InverseJacobian<3, Frame::ElementLogical, Frame::Inertial>>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -287,8 +296,9 @@ struct Sources {
       const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
-      const double& eps4, const Scalar<DataVector>& weyl_electric,
-      const Scalar<DataVector>& weyl_magnetic,
+      const double& eps4, const Mesh<3>& mesh,
+      const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                            Frame::Inertial>& inv_jacobian,
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
@@ -317,9 +327,7 @@ struct LinearizedSources {
       ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>,
       ::Tags::Flux<::ScalarTensor::Tags::Psi, tmpl::size_t<3>, Frame::Inertial>
           Tags::RolloffLocation,
-      Tags::RolloffRate, ::domain::Tags::Coordinates<3, Frame::Inertial>,
-      domain::Tags::Mesh<3>,
-      domain::Tags::InverseJacobian<3, Frame::ElementLogical, Frame::Inertial>>;
+      Tags::RolloffRate, ::domain::Tags::Coordinates<3, Frame::Inertial>>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
@@ -342,8 +350,9 @@ struct LinearizedSources {
       const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind,
       const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
       const Scalar<DataVector>& conformal_ricci_scalar, const double& eps2,
-      const double& eps4, const Scalar<DataVector>& weyl_electric,
-      const Scalar<DataVector>& weyl_magnetic,
+      const double& eps4, const Mesh<3>& mesh,
+      const InverseJacobian<DataVector, 3, Frame::ElementLogical,
+                            Frame::Inertial>& inv_jacobian,
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
@@ -353,9 +362,7 @@ struct LinearizedSources {
       const tnsr::II<DataVector, 3>& longitudinal_shift_excess,
       const tnsr::I<DataVector, 3>& scalar_flux, const double& rolloff_location,
       const double& rolloff_rate, const tnsr::I<DataVector, 3>& coordinates,
-      const Mesh<3>& mesh,
-      const InverseJacobian<DataVector, 3, Frame::ElementLogical,
-                            Frame::Inertial>& inv_jacobian,
+
       const Scalar<DataVector>& conformal_factor_correction,
       const Scalar<DataVector>& lapse_times_conformal_factor_correction,
       const tnsr::I<DataVector, 3>& shift_excess_correction,
