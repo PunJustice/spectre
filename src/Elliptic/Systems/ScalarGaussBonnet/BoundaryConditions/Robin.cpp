@@ -57,8 +57,7 @@ void Robin::apply(
       n_dot_scalar_gradient, *scalar, r);
 }
 
-template <>
-void Robin<Xcts::Equations::HamiltonianLapseAndShift>::apply_linearized(
+void Robin::apply_linearized(
     const gsl::not_null<Scalar<DataVector>*> conformal_factor_correction,
     const gsl::not_null<Scalar<DataVector>*>
         lapse_times_conformal_factor_correction,

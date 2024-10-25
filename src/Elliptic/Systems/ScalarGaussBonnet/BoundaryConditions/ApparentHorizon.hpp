@@ -156,11 +156,12 @@ class ApparentHorizon
       domain::Tags::UnnormalizedFaceNormalMagnitude<3>,
       domain::Tags::Coordinates<3, Frame::Inertial>,
       gr::Tags::TraceExtrinsicCurvature<DataVector>,
-      Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
-      Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<DataVector, 3,
-                                                              Frame::Inertial>,
-      Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      Tags::ConformalChristoffelSecondKind<DataVector, 3, Frame::Inertial>>;
+      ::Xcts::Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
+          DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                   Frame::Inertial>>;
   using volume_tags = tmpl::list<>;
 
   void apply(
@@ -196,13 +197,15 @@ class ApparentHorizon
           domain::Tags::UnnormalizedFaceNormal<3, Frame::Inertial>>,
       domain::Tags::Coordinates<3, Frame::Inertial>,
       gr::Tags::TraceExtrinsicCurvature<DataVector>,
-      Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<DataVector, 3,
-                                                              Frame::Inertial>,
-      Tags::ConformalFactorMinusOne<DataVector>,
-      Tags::LapseTimesConformalFactorMinusOne<DataVector>,
-      ::Tags::NormalDotFlux<Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>,
-      Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-      Tags::ConformalChristoffelSecondKind<DataVector, 3, Frame::Inertial>>;
+      ::Xcts::Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
+          DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+      ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
+      ::Tags::NormalDotFlux<
+          ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>,
+      ::Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
+      ::Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                   Frame::Inertial>>;
   using volume_tags_linearized = tmpl::list<>;
 
   void apply_linearized(

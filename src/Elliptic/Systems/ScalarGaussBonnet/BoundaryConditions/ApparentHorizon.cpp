@@ -70,7 +70,7 @@ void ApparentHorizon::apply(
     const tnsr::II<DataVector, 3>& longitudinal_shift_background,
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind) const {
-  ::Xcts::BoundaryConditions::apparent_horizon_impl<::Xcts::Geometry::Curved>(
+  ::Xcts::BoundaryConditions::apparent_horizon_impl(
       conformal_factor_minus_one, lapse_times_conformal_factor_minus_one,
       shift_excess, n_dot_conformal_factor_gradient,
       n_dot_lapse_times_conformal_factor_gradient,
@@ -112,8 +112,7 @@ void ApparentHorizon::apply_linearized(
     const tnsr::I<DataVector, 3>& n_dot_longitudinal_shift_excess,
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind) const {
-  ::Xcts::BoundaryConditions::linearized_apparent_horizon_impl<
-      ::Xcts::Geometry::Curved>(
+  ::Xcts::BoundaryConditions::linearized_apparent_horizon_impl(
       conformal_factor_correction, lapse_times_conformal_factor_correction,
       shift_excess_correction, n_dot_conformal_factor_gradient_correction,
       n_dot_lapse_times_conformal_factor_gradient_correction,

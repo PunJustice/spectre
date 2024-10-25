@@ -51,7 +51,7 @@ using gr_solution_vars =
 template <typename DataType>
 using ScalarizedGrVariablesCache =
     cached_temp_buffer_from_typelist<tmpl::push_back<
-        common_tags<DataType>,
+        ::Xcts::AnalyticData::common_tags<DataType>,
         hydro::Tags::MagneticFieldDotSpatialVelocity<DataType>,
         hydro::Tags::ComovingMagneticFieldSquared<DataType>,
         gr::Tags::Conformal<gr::Tags::EnergyDensity<DataType>, 0>,
@@ -60,10 +60,12 @@ using ScalarizedGrVariablesCache =
 
 template <typename DataType, bool HasMhd>
 struct ScalarizedGrVariables
-    : CommonVariables<DataType, ScalarizedGrVariablesCache<DataType>> {
+    : ::Xcts::AnalyticData::CommonVariables<
+          DataType, ScalarizedGrVariablesCache<DataType>> {
   static constexpr size_t Dim = 3;
   using Cache = ScalarizedGrVariablesCache<DataType>;
-  using Base = CommonVariables<DataType, ScalarizedGrVariablesCache<DataType>>;
+  using Base = ::Xcts::AnalyticData::CommonVariables<
+      DataType, ScalarizedGrVariablesCache<DataType>>;
   using Base::operator();
 
   ScalarizedGrVariables(
@@ -74,8 +76,8 @@ struct ScalarizedGrVariables
       const tnsr::I<DataType, 3>& local_x,
       const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
           local_gr_solution,
-      const tuples::tagged_tuple_from_typelist<hydro_tags<DataType>>&
-          local_hydro_solution)
+      const tuples::tagged_tuple_from_typelist<
+          ::Xcts::AnalyticData::hydro_tags<DataType>>& local_hydro_solution)
       : Base(std::move(local_mesh), std::move(local_inv_jacobian)),
         x(local_x),
         gr_solution(local_gr_solution),
@@ -84,8 +86,8 @@ struct ScalarizedGrVariables
   const tnsr::I<DataType, Dim>& x;
   const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
       gr_solution;
-  const tuples::tagged_tuple_from_typelist<hydro_tags<DataType>>&
-      hydro_solution;
+  const tuples::tagged_tuple_from_typelist<
+      ::Xcts::AnalyticData::hydro_tags<DataType>>& hydro_solution;
 
   void operator()(
       gsl::not_null<tnsr::ii<DataType, Dim>*> conformal_metric,
@@ -291,7 +293,7 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
   template <typename... Args,
             Requires<std::is_constructible_v<GrSolution, Args...>> = nullptr>
   explicit ScalarizedGr(double amplitude, Args&&... args)
-      : amplitude_(tamplitude), gr_solution_(std::forward<Args>(args)...) {}
+      : amplitude_(amplitude), gr_solution_(std::forward<Args>(args)...) {}
 
   const GrSolution& gr_solution() const { return gr_solution_; }
   const double& amplitude() const { return amplitude_; }
@@ -300,7 +302,7 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
   explicit ScalarizedGr(CkMigrateMessage* m)
       : elliptic::analytic_data::AnalyticSolution(m) {}
   using PUP::able::register_constructor;
-  Scalarized_PUPable_decl_template(ScalarizedGr);
+  WRAPPED_PUPable_decl_template(ScalarizedGr);
   std::unique_ptr<elliptic::analytic_data::AnalyticSolution> get_clone()
       const override {
     return std::make_unique<ScalarizedGr>(*this);
@@ -358,14 +360,17 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
       gr_solution =
           gr_solution_.variables(x, detail::gr_solution_vars<DataType, Dim>{});
     }
-    tuples::tagged_tuple_from_typelist<hydro_tags<DataType>> hydro_solution;
+    tuples::tagged_tuple_from_typelist<
+        ::Xcts::AnalyticData::hydro_tags<DataType>>
+        hydro_solution;
     if constexpr (HasMhd) {
       if constexpr (is_analytic_solution_v<GrSolution>) {
         hydro_solution = gr_solution_.variables(
             x, std::numeric_limits<double>::signaling_NaN(),
-            hydro_tags<DataType>{});
+            ::Xcts::AnalyticData::hydro_tags<DataType>{});
       } else {
-        hydro_solution = gr_solution_.variables(x, hydro_tags<DataType>{});
+        hydro_solution = gr_solution_.variables(
+            x, ::Xcts::AnalyticData::hydro_tags<DataType>{});
       }
     }
     using VarsComputer = detail::ScalarizedGrVariables<DataType, HasMhd>;
@@ -374,7 +379,8 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
     VarsComputer computer{mesh, inv_jacobian, x, gr_solution, hydro_solution};
     const auto get_var = [&cache, &computer, &hydro_solution, &x](auto tag_v) {
       using tag = std::decay_t<decltype(tag_v)>;
-      if constexpr (tmpl::list_contains_v<hydro_tags<DataType>, tag>) {
+      if constexpr (tmpl::list_contains_v<
+                        ::Xcts::AnalyticData::hydro_tags<DataType>, tag>) {
         (void)cache;
         (void)computer;
         if constexpr (HasMhd) {
@@ -382,7 +388,8 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
           return get<tag>(hydro_solution);
         } else {
           (void)hydro_solution;
-          return get<tag>(Flatness{}.variables(x, tmpl::list<tag>{}));
+          return get<tag>(
+              ::Xcts::Solutions::Flatness{}.variables(x, tmpl::list<tag>{}));
         }
       } else {
         (void)hydro_solution;
@@ -393,10 +400,10 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
     return {get_var(RequestedTags{})...};
   }
 
-  friend bool operator==(const ScalarizedGr<GrSolution, bool HasMhd>& lhs,
-                         const ScalarizedGr<GrSolution, bool HasMhd>& rhs) {
+  friend bool operator==(const ScalarizedGr<GrSolution, HasMhd>& lhs,
+                         const ScalarizedGr<GrSolution, HasMhd>& rhs) {
     return ((lhs.gr_solution_ == rhs.gr_solution_) &&
-            (lhs.amplitude_ == rhs.amplitude_))
+            (lhs.amplitude_ == rhs.amplitude_));
   }
 
   double amplitude_;
@@ -404,8 +411,8 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
 };
 
 template <typename GrSolution, bool HasMhd>
-inline bool operator!=(const ScalarizedGr<GrSolution, bool HasMhd>& lhs,
-                       const ScalarizedGr<GrSolution, bool HasMhd>& rhs) {
+inline bool operator!=(const ScalarizedGr<GrSolution, HasMhd>& lhs,
+                       const ScalarizedGr<GrSolution, HasMhd>& rhs) {
   return not(lhs == rhs);
 }
 

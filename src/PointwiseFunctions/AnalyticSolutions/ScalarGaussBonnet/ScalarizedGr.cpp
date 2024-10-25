@@ -254,7 +254,7 @@ template <typename DataType, bool HasMhd>
 void ScalarizedGrVariables<DataType, HasMhd>::operator()(
     const gsl::not_null<tnsr::iJ<DataType, Dim>*> deriv_shift_excess,
     const gsl::not_null<Cache*> /*cache*/,
-    ::Tags::deriv<Tags::ShiftExcess<DataType, 3, Frame::Inertial>,
+    ::Tags::deriv<Xcts::Tags::ShiftExcess<DataType, 3, Frame::Inertial>,
                   tmpl::size_t<3>, Frame::Inertial> /*meta*/) const {
   *deriv_shift_excess =
       get<::Tags::deriv<gr::Tags::Shift<DataType, Dim>, tmpl::size_t<Dim>,

@@ -33,3 +33,5 @@ target_link_libraries(
   INTERFACE
   LinearOperators
   )
+
+add_subdirectory(BoundaryConditions)

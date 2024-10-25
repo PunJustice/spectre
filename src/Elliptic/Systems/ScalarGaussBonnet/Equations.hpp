@@ -8,7 +8,10 @@
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "Domain/Tags.hpp"
 #include "Elliptic/Systems/ScalarGaussBonnet/Tags.hpp"
+#include "Elliptic/Systems/Xcts/Geometry.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
+#include "NumericalAlgorithms/LinearOperators/Divergence.hpp"
+#include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "Utilities/Gsl.hpp"
 #include "Utilities/MakeWithValue.hpp"
@@ -70,13 +73,15 @@ void add_curved_sources(
     const tnsr::I<DataVector, 3>& conformal_factor_flux);
 
 tnsr::I<DataVector, 3> curved_sources(
-    const tnsr::ii<DataVector, 3>& conformal_metric,
+    const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
     const tnsr::I<DataVector, 3>& flux_for_field,
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
-    const tnsr::I<DataVector, 3>& conformal_factor_flux);
+    const tnsr::I<DataVector, 3>& conformal_factor_flux,
+    const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
+    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux_correction);
 
 tnsr::I<DataVector, 3> source_part_linearization(
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
@@ -91,7 +96,7 @@ tnsr::I<DataVector, 3> flux_part_linearization(
     const InverseJacobian<DataVector, 3, Frame::ElementLogical,
                           Frame::Inertial>& inv_jacobian,
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
-    const tnsr::i<DataVector, 3>& scalar,
+    const Scalar<DataVector>& scalar,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_correction,
@@ -172,6 +177,7 @@ struct Fluxes {
           flux_for_lapse_times_conformal_factor,
       gsl::not_null<tnsr::II<DataVector, 3>*> longitudinal_shift_excess,
       gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
       const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
       const double& rolloff_location, const double& rolloff_rate,
@@ -203,6 +209,7 @@ struct LinearizedFluxes {
       gsl::not_null<tnsr::II<DataVector, 3>*>
           longitudinal_shift_excess_correction,
       gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar_correction,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
       const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
       const double& rolloff_location, const double& rolloff_rate,
@@ -228,14 +235,15 @@ struct LinearizedFluxes {
       gsl::not_null<tnsr::II<DataVector, 3>*>
           longitudinal_shift_excess_correction,
       gsl::not_null<tnsr::I<DataVector, 3>*> flux_for_scalar_correction,
+      const tnsr::ii<DataVector, 3>& conformal_metric,
       const tnsr::II<DataVector, 3>& inv_conformal_metric,
       const tnsr::Ijj<DataVector, 3>& christoffel_second_kind,
       const double& rolloff_location, const double& rolloff_rate,
       const tnsr::I<DataVector, 3>& shift_background,
+      const tnsr::I<DataVector, 3>& coordinates,
       const Scalar<DataVector>& conformal_factor_minus_one,
       const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
       const tnsr::I<DataVector, 3>& shift_excess,
-      const tnsr::I<DataVector, 3>& coordinates,
       const tnsr::i<DataVector, 3>& face_normal,
       const tnsr::I<DataVector, 3>& face_normal_vector,
       const Scalar<DataVector>& conformal_factor_correction,
@@ -319,15 +327,16 @@ struct LinearizedSources {
       ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
-      ::ScalarTensor::Tags::Psi,
+      ::CurvedScalarWave::Tags::Psi,
       ::Tags::Flux<::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       ::Tags::Flux<::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>,
-      ::Tags::Flux<::ScalarTensor::Tags::Psi, tmpl::size_t<3>, Frame::Inertial>
-          Tags::RolloffLocation,
-      Tags::RolloffRate, ::domain::Tags::Coordinates<3, Frame::Inertial>>;
+      ::Tags::Flux<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
+                   Frame::Inertial>,
+      Tags::RolloffLocation, Tags::RolloffRate,
+      ::domain::Tags::Coordinates<3, Frame::Inertial>>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
