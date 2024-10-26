@@ -20,7 +20,7 @@
 #include "NumericalAlgorithms/DiscontinuousGalerkin/NormalDotFlux.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Xcts/Factory.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Christoffel.hpp"
-#include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/InitialGuess.hpp"
 #include "Utilities/CallWithDynamicType.hpp"
 #include "Utilities/ConstantExpressions.hpp"
 #include "Utilities/EqualWithinRoundoff.hpp"
@@ -32,9 +32,9 @@ namespace sgb::BoundaryConditions {
 
 ApparentHorizon::ApparentHorizon(
     std::array<double, 3> center, std::array<double, 3> rotation,
-    std::optional<std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>
+    std::optional<std::unique_ptr<elliptic::analytic_data::InitialGuess>>
         solution_for_lapse,
-    std::optional<std::unique_ptr<elliptic::analytic_data::AnalyticSolution>>
+    std::optional<std::unique_ptr<elliptic::analytic_data::InitialGuess>>
         solution_for_negative_expansion,
     const Options::Context& /*context*/)
     : center_(center),
@@ -70,7 +70,7 @@ void ApparentHorizon::apply(
     const tnsr::II<DataVector, 3>& longitudinal_shift_background,
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind) const {
-  ::Xcts::BoundaryConditions::apparent_horizon_impl(
+  ::Xcts::BoundaryConditions::apparent_horizon_impl<Xcts::Geometry::Curved>(
       conformal_factor_minus_one, lapse_times_conformal_factor_minus_one,
       shift_excess, n_dot_conformal_factor_gradient,
       n_dot_lapse_times_conformal_factor_gradient,
@@ -112,7 +112,8 @@ void ApparentHorizon::apply_linearized(
     const tnsr::I<DataVector, 3>& n_dot_longitudinal_shift_excess,
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::Ijj<DataVector, 3>& conformal_christoffel_second_kind) const {
-  ::Xcts::BoundaryConditions::linearized_apparent_horizon_impl(
+  ::Xcts::BoundaryConditions::linearized_apparent_horizon_impl<
+      Xcts::Geometry::Curved>(
       conformal_factor_correction, lapse_times_conformal_factor_correction,
       shift_excess_correction, n_dot_conformal_factor_gradient_correction,
       n_dot_lapse_times_conformal_factor_gradient_correction,

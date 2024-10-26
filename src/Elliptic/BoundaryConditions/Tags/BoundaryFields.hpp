@@ -39,7 +39,7 @@ struct BoundaryFieldsCompute : db::ComputeTag,
            "Slicing fields to the boundary currently supports only "
            "Gauss-Lobatto grids. Add support to "
            "'elliptic::Tags::BoundaryFieldsCompute'.");
-    for (const auto& direction : element.external_boundaries()) {
+    for (const auto& direction : Direction<Dim>::all_directions()) {
       data_on_slice(make_not_null(&((*vars_on_face)[direction])), vars,
                     mesh.extents(), direction.dimension(),
                     index_to_slice_at(mesh.extents(), direction));
@@ -70,7 +70,7 @@ struct BoundaryFluxesCompute
            "Slicing fluxes to the boundary currently supports only "
            "Gauss-Lobatto grids. Add support to "
            "'elliptic::Tags::BoundaryFluxesCompute'.");
-    for (const auto& direction : element.external_boundaries()) {
+    for (const auto& direction : Direction<Dim>::all_directions()) {
       const auto fluxes_on_face =
           data_on_slice(fluxes, mesh.extents(), direction.dimension(),
                         index_to_slice_at(mesh.extents(), direction));

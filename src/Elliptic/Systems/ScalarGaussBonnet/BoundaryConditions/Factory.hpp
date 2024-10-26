@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "Elliptic/Systems/Poisson/BoundaryConditions/Robin.hpp"
 #include "Elliptic/Systems/ScalarGaussBonnet/BoundaryConditions/ApparentHorizon.hpp"
 #include "Elliptic/Systems/ScalarGaussBonnet/BoundaryConditions/Robin.hpp"
 #include "Utilities/TMPL.hpp"

@@ -39,6 +39,6 @@ target_link_libraries(
   Utilities
   Xcts
   XctsAnalyticData
-  XctsAnalyticSolutions
+  XctsSolutions
   XctsPointwiseFunctions
   )

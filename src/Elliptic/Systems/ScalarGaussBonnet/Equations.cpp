@@ -110,6 +110,7 @@ tnsr::I<DataVector, 3> curved_sources(
     result.get(i) += 5. * conformal_factor_flux.get(i) /
                      (1 + get(conformal_factor_minus_one));
   }
+  return result;
 }
 
 // Returns linearisation of source w/ respect to xcts variables

@@ -218,6 +218,7 @@ struct Sources<Equations::Hamiltonian, Geometry::FlatCartesian,
                           ConformalMatterScale>,
       gr::Tags::TraceExtrinsicCurvature<DataVector>,
       Tags::LongitudinalShiftMinusDtConformalMetricOverLapseSquare<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       const Scalar<DataVector>& conformal_energy_density,
@@ -235,6 +236,7 @@ struct Sources<Equations::Hamiltonian, Geometry::Curved, ConformalMatterScale> {
                        ConformalMatterScale>::argument_tags,
       Tags::ConformalChristoffelContracted<DataVector, 3, Frame::Inertial>,
       Tags::ConformalRicciScalar<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       const Scalar<DataVector>& conformal_energy_density,
@@ -259,6 +261,7 @@ struct Sources<Equations::HamiltonianAndLapse, Geometry::FlatCartesian,
       ::Tags::dt<gr::Tags::TraceExtrinsicCurvature<DataVector>>,
       Tags::LongitudinalShiftMinusDtConformalMetricSquare<DataVector>,
       Tags::ShiftDotDerivExtrinsicCurvatureTrace<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -283,6 +286,7 @@ struct Sources<Equations::HamiltonianAndLapse, Geometry::Curved,
                        ConformalMatterScale>::argument_tags,
       Tags::ConformalChristoffelContracted<DataVector, 3, Frame::Inertial>,
       Tags::ConformalRicciScalar<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -320,6 +324,7 @@ struct Sources<Equations::HamiltonianLapseAndShift, Geometry::FlatCartesian,
                                                               Frame::Inertial>,
       ::Tags::div<Tags::LongitudinalShiftBackgroundMinusDtConformalMetric<
           DataVector, 3, Frame::Inertial>>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -356,6 +361,7 @@ struct Sources<Equations::HamiltonianLapseAndShift, Geometry::Curved,
       Tags::ConformalChristoffelSecondKind<DataVector, 3, Frame::Inertial>,
       Tags::ConformalChristoffelContracted<DataVector, 3, Frame::Inertial>,
       Tags::ConformalRicciScalar<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -402,6 +408,7 @@ struct LinearizedSources<Equations::Hamiltonian, Geometry::FlatCartesian,
       typename Sources<Equations::Hamiltonian, Geometry::FlatCartesian,
                        ConformalMatterScale>::argument_tags,
       Tags::ConformalFactorMinusOne<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       const Scalar<DataVector>& conformal_energy_density,
@@ -421,6 +428,7 @@ struct LinearizedSources<Equations::Hamiltonian, Geometry::Curved,
       tmpl::push_back<typename Sources<Equations::Hamiltonian, Geometry::Curved,
                                        ConformalMatterScale>::argument_tags,
                       Tags::ConformalFactorMinusOne<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       const Scalar<DataVector>& conformal_energy_density,
@@ -442,6 +450,7 @@ struct LinearizedSources<Equations::HamiltonianAndLapse,
                        ConformalMatterScale>::argument_tags,
       Tags::ConformalFactorMinusOne<DataVector>,
       Tags::LapseTimesConformalFactorMinusOne<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
@@ -469,6 +478,7 @@ struct LinearizedSources<Equations::HamiltonianAndLapse, Geometry::Curved,
                        ConformalMatterScale>::argument_tags,
       Tags::ConformalFactorMinusOne<DataVector>,
       Tags::LapseTimesConformalFactorMinusOne<DataVector>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
@@ -505,6 +515,7 @@ struct LinearizedSources<Equations::HamiltonianLapseAndShift,
       ::Tags::Flux<Tags::LapseTimesConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,
@@ -549,6 +560,7 @@ struct LinearizedSources<Equations::HamiltonianLapseAndShift, Geometry::Curved,
       ::Tags::Flux<Tags::LapseTimesConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>>;
+  using volume_tags = tmpl::list<>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,

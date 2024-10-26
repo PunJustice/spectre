@@ -146,9 +146,8 @@ struct Fluxes {
       Tags::RolloffLocation, Tags::RolloffRate,
       ::Xcts::Tags::ShiftBackground<DataVector, 3, Frame::Inertial>,
       ::domain::Tags::Coordinates<3, Frame::Inertial>>;
-  using volume_tags = tmpl::list<>;
-  using const_global_cache_tags =
-      tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
+  using volume_tags = tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
+  using const_global_cache_tags = volume_tags;
   static constexpr bool is_trivial = false;
   static constexpr bool is_discontinuous = false;
   static void apply(
@@ -196,9 +195,8 @@ struct LinearizedFluxes {
       Fluxes::argument_tags, ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>>;
-  using volume_tags = tmpl::list<>;
-  using const_global_cache_tags =
-      tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
+  using volume_tags = tmpl::list<Tags::RolloffLocation, Tags::RolloffRate>;
+  using const_global_cache_tags = volume_tags;
   static constexpr bool is_trivial = false;
   static constexpr bool is_discontinuous = false;
   static void apply(
@@ -282,6 +280,7 @@ struct Sources {
       ::Xcts::Tags::ConformalRicciScalar<DataVector>, Tags::Epsilon2,
       Tags::Epsilon4, domain::Tags::Mesh<3>,
       domain::Tags::InverseJacobian<3, Frame::ElementLogical, Frame::Inertial>>;
+  using const_global_cache_tags = tmpl::list<Tags::Epsilon2, Tags::Epsilon4>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> lapse_equation,
@@ -326,17 +325,18 @@ struct LinearizedSources {
       typename Sources::argument_tags,
       ::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
       ::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
-      ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>,
-      ::CurvedScalarWave::Tags::Psi,
+      ::Xcts::Tags::ShiftExcess<DataVector, 3, Frame::Inertial>, Tags::Psi,
       ::Tags::Flux<::Xcts::Tags::ConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       ::Tags::Flux<::Xcts::Tags::LapseTimesConformalFactorMinusOne<DataVector>,
                    tmpl::size_t<3>, Frame::Inertial>,
       ::Xcts::Tags::LongitudinalShiftExcess<DataVector, 3, Frame::Inertial>,
-      ::Tags::Flux<::CurvedScalarWave::Tags::Psi, tmpl::size_t<3>,
-                   Frame::Inertial>,
+      ::Tags::Flux<Tags::Psi, tmpl::size_t<3>, Frame::Inertial>,
       Tags::RolloffLocation, Tags::RolloffRate,
       ::domain::Tags::Coordinates<3, Frame::Inertial>>;
+  using const_global_cache_tags =
+      tmpl::list<Tags::Epsilon2, Tags::Epsilon4, Tags::RolloffLocation,
+                 Tags::RolloffRate>;
   static void apply(
       gsl::not_null<Scalar<DataVector>*> linearized_hamiltonian_constraint,
       gsl::not_null<Scalar<DataVector>*> linearized_lapse_equation,

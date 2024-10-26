@@ -361,6 +361,37 @@ void ScalarizedGrVariables<DataType, HasMhd>::operator()(
 
 template <typename DataType, bool HasMhd>
 void ScalarizedGrVariables<DataType, HasMhd>::operator()(
+    const gsl::not_null<Scalar<DataType>*> scalar,
+    [[maybe_unused]] const gsl::not_null<Cache*> cache,
+    sgb::Tags::Psi /*meta*/) const {
+  DataType r = magnitude(x).get();
+  DataType result = amplitude / r;
+  get(*scalar) = result;
+}
+
+template <typename DataType, bool HasMhd>
+void ScalarizedGrVariables<DataType, HasMhd>::operator()(
+    gsl::not_null<tnsr::I<DataType, Dim>*> shift, gsl::not_null<Cache*> cache,
+    gr::Tags::Shift<DataType, Dim, Frame::Inertial> /*meta*/) const {
+  const auto& shift_excess = cache->get_var(
+      *this, Xcts::Tags::ShiftExcess<DataType, Dim, Frame::Inertial>{});
+  const auto& shift_background = cache->get_var(
+      *this, Xcts::Tags::ShiftBackground<DataType, Dim, Frame::Inertial>{});
+  for (size_t i = 0; i < Dim; ++i) {
+    shift->get(i) = shift_excess.get(i) + shift_background.get(i);
+  }
+}
+
+template <typename DataType, bool HasMhd>
+void ScalarizedGrVariables<DataType, HasMhd>::operator()(
+    const gsl::not_null<Scalar<DataType>*> scalar_source,
+    [[maybe_unused]] const gsl::not_null<Cache*> cache,
+    ::Tags::FixedSource<sgb::Tags::Psi> /*meta*/) const {
+  std::fill(scalar_source->begin(), scalar_source->end(), 0.);
+}
+
+template <typename DataType, bool HasMhd>
+void ScalarizedGrVariables<DataType, HasMhd>::operator()(
     const gsl::not_null<Scalar<DataType>*> stress_trace,
     [[maybe_unused]] const gsl::not_null<Cache*> cache,
     gr::Tags::Conformal<gr::Tags::StressTrace<DataType>, 0> /*meta*/) const {

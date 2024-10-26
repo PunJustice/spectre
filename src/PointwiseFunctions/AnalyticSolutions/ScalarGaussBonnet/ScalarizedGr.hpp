@@ -12,18 +12,20 @@
 #include "DataStructures/CachedTempBuffer.hpp"
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
+#include "Elliptic/Systems/ScalarGaussBonnet/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
-#include "Evolution/Systems/CurvedScalarWave/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/Divergence.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/String.hpp"
+#include "PointwiseFunctions/AnalyticData/Xcts/CommonVariables.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/AnalyticSolution.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Xcts/CommonVariables.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Xcts/Flatness.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags.hpp"
 #include "PointwiseFunctions/GeneralRelativity/Tags/Conformal.hpp"
 #include "PointwiseFunctions/Hydro/Tags.hpp"
-#include "PointwiseFunctions/InitialDataUtilities/AnalyticSolution.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/Background.hpp"
+#include "PointwiseFunctions/InitialDataUtilities/InitialGuess.hpp"
 #include "Utilities/Gsl.hpp"
 #include "Utilities/PrettyType.hpp"
 #include "Utilities/Requires.hpp"
@@ -56,17 +58,17 @@ using ScalarizedGrVariablesCache =
         hydro::Tags::ComovingMagneticFieldSquared<DataType>,
         gr::Tags::Conformal<gr::Tags::EnergyDensity<DataType>, 0>,
         gr::Tags::Conformal<gr::Tags::StressTrace<DataType>, 0>,
-        gr::Tags::Conformal<gr::Tags::MomentumDensity<DataType, 3>, 0>>>;
+        gr::Tags::Conformal<gr::Tags::MomentumDensity<DataType, 3>, 0>,
+        sgb::Tags::Psi, ::Tags::FixedSource<sgb::Tags::Psi>>>;
 
 template <typename DataType, bool HasMhd>
 struct ScalarizedGrVariables
-    : ::Xcts::Solutions::CommonVariables<DataType,
-                                         ScalarizedGrVariablesCache<DataType>> {
+    : ::Xcts::AnalyticData::CommonVariables<
+          DataType, ScalarizedGrVariablesCache<DataType>> {
   static constexpr size_t Dim = 3;
   using Cache = ScalarizedGrVariablesCache<DataType>;
-  using Base =
-      ::Xcts::Solutions::CommonVariables<DataType,
-                                         ScalarizedGrVariablesCache<DataType>>;
+  using Base = ::Xcts::AnalyticData::CommonVariables<
+      DataType, ScalarizedGrVariablesCache<DataType>>;
   using Base::operator();
 
   ScalarizedGrVariables(
@@ -78,17 +80,20 @@ struct ScalarizedGrVariables
       const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
           local_gr_solution,
       const tuples::tagged_tuple_from_typelist<
-          ::Xcts::Solutions::hydro_tags<DataType>>& local_hydro_solution)
+          ::Xcts::AnalyticData::hydro_tags<DataType>>& local_hydro_solution,
+      double amplitude)
       : Base(std::move(local_mesh), std::move(local_inv_jacobian)),
         x(local_x),
         gr_solution(local_gr_solution),
-        hydro_solution(local_hydro_solution) {}
+        hydro_solution(local_hydro_solution),
+        amplitude(amplitude) {}
 
   const tnsr::I<DataType, Dim>& x;
   const tuples::tagged_tuple_from_typelist<gr_solution_vars<DataType, Dim>>&
       gr_solution;
   const tuples::tagged_tuple_from_typelist<
-      ::Xcts::Solutions::hydro_tags<DataType>>& hydro_solution;
+      ::Xcts::AnalyticData::hydro_tags<DataType>>& hydro_solution;
+  const double amplitude;
 
   void operator()(
       gsl::not_null<tnsr::ii<DataType, Dim>*> conformal_metric,
@@ -105,19 +110,17 @@ struct ScalarizedGrVariables
       ::Tags::deriv<Xcts::Tags::ConformalMetric<DataType, Dim, Frame::Inertial>,
                     tmpl::size_t<Dim>, Frame::Inertial> /*meta*/)
       const override;
-  void operator()(
-      gsl::not_null<tnsr::ii<DataType, Dim>*> spatial_metric,
-      gsl::not_null<Cache*> cache,
-      gr::Tags::SpatialMetric<DataType, Dim> /*meta*/) const override;
-  void operator()(
-      gsl::not_null<tnsr::II<DataType, Dim>*> inv_spatial_metric,
-      gsl::not_null<Cache*> cache,
-      gr::Tags::InverseSpatialMetric<DataType, Dim> /*meta*/) const override;
+  void operator()(gsl::not_null<tnsr::ii<DataType, Dim>*> spatial_metric,
+                  gsl::not_null<Cache*> cache,
+                  gr::Tags::SpatialMetric<DataType, Dim> /*meta*/) const;
+  void operator()(gsl::not_null<tnsr::II<DataType, Dim>*> inv_spatial_metric,
+                  gsl::not_null<Cache*> cache,
+                  gr::Tags::InverseSpatialMetric<DataType, Dim> /*meta*/) const;
   void operator()(
       gsl::not_null<tnsr::ijj<DataType, Dim>*> deriv_spatial_metric,
       gsl::not_null<Cache*> cache,
       ::Tags::deriv<gr::Tags::SpatialMetric<DataType, Dim>, tmpl::size_t<Dim>,
-                    Frame::Inertial> /*meta*/) const override;
+                    Frame::Inertial> /*meta*/) const;
   void operator()(
       gsl::not_null<Scalar<DataType>*> trace_extrinsic_curvature,
       gsl::not_null<Cache*> cache,
@@ -127,39 +130,34 @@ struct ScalarizedGrVariables
       gsl::not_null<Cache*> cache,
       ::Tags::dt<gr::Tags::TraceExtrinsicCurvature<DataType>> /*meta*/)
       const override;
-  void operator()(
-      gsl::not_null<Scalar<DataType>*> conformal_factor,
-      gsl::not_null<Cache*> cache,
-      Xcts::Tags::ConformalFactor<DataType> /*meta*/) const override;
-  void operator()(
-      gsl::not_null<Scalar<DataType>*> conformal_factor_minus_one,
-      gsl::not_null<Cache*> cache,
-      Xcts::Tags::ConformalFactorMinusOne<DataType> /*meta*/) const override;
+  void operator()(gsl::not_null<Scalar<DataType>*> conformal_factor,
+                  gsl::not_null<Cache*> cache,
+                  Xcts::Tags::ConformalFactor<DataType> /*meta*/) const;
+  void operator()(gsl::not_null<Scalar<DataType>*> conformal_factor_minus_one,
+                  gsl::not_null<Cache*> cache,
+                  Xcts::Tags::ConformalFactorMinusOne<DataType> /*meta*/) const;
   void operator()(
       gsl::not_null<tnsr::i<DataType, Dim>*> conformal_factor_gradient,
       gsl::not_null<Cache*> cache,
       ::Tags::deriv<Xcts::Tags::ConformalFactorMinusOne<DataType>,
-                    tmpl::size_t<Dim>, Frame::Inertial> /*meta*/)
-      const override;
+                    tmpl::size_t<Dim>, Frame::Inertial> /*meta*/) const;
   void operator()(gsl::not_null<Scalar<DataType>*> lapse,
                   gsl::not_null<Cache*> cache,
-                  gr::Tags::Lapse<DataType> /*meta*/) const override;
+                  gr::Tags::Lapse<DataType> /*meta*/) const;
   void operator()(
       gsl::not_null<Scalar<DataType>*> lapse_times_conformal_factor_minus_one,
       gsl::not_null<Cache*> cache,
-      Xcts::Tags::LapseTimesConformalFactorMinusOne<DataType> /*meta*/)
-      const override;
+      Xcts::Tags::LapseTimesConformalFactorMinusOne<DataType> /*meta*/) const;
   void operator()(
       gsl::not_null<Scalar<DataType>*> lapse_times_conformal_factor,
       gsl::not_null<Cache*> cache,
-      Xcts::Tags::LapseTimesConformalFactor<DataType> /*meta*/) const override;
+      Xcts::Tags::LapseTimesConformalFactor<DataType> /*meta*/) const;
   void operator()(
       gsl::not_null<tnsr::i<DataType, Dim>*>
           lapse_times_conformal_factor_gradient,
       gsl::not_null<Cache*> cache,
       ::Tags::deriv<Xcts::Tags::LapseTimesConformalFactorMinusOne<DataType>,
-                    tmpl::size_t<Dim>, Frame::Inertial> /*meta*/)
-      const override;
+                    tmpl::size_t<Dim>, Frame::Inertial> /*meta*/) const;
   void operator()(
       gsl::not_null<tnsr::I<DataType, Dim>*> shift_background,
       gsl::not_null<Cache*> cache,
@@ -173,17 +171,18 @@ struct ScalarizedGrVariables
   void operator()(
       gsl::not_null<tnsr::I<DataType, Dim>*> shift_excess,
       gsl::not_null<Cache*> cache,
-      Xcts::Tags::ShiftExcess<DataType, Dim, Frame::Inertial> /*meta*/)
-      const override;
+      Xcts::Tags::ShiftExcess<DataType, Dim, Frame::Inertial> /*meta*/) const;
+  void operator()(
+      gsl::not_null<tnsr::I<DataType, Dim>*> shift, gsl::not_null<Cache*> cache,
+      gr::Tags::Shift<DataType, Dim, Frame::Inertial> /*meta*/) const;
   void operator()(
       gsl::not_null<tnsr::iJ<DataType, Dim>*> deriv_shift_excess,
       gsl::not_null<Cache*> cache,
       ::Tags::deriv<Xcts::Tags::ShiftExcess<DataType, 3, Frame::Inertial>,
-                    tmpl::size_t<3>, Frame::Inertial> /*meta*/) const override;
-  void operator()(
-      gsl::not_null<tnsr::ii<DataType, 3>*> extrinsic_curvature,
-      gsl::not_null<Cache*> cache,
-      gr::Tags::ExtrinsicCurvature<DataType, 3> /*meta*/) const override;
+                    tmpl::size_t<3>, Frame::Inertial> /*meta*/) const;
+  void operator()(gsl::not_null<tnsr::ii<DataType, 3>*> extrinsic_curvature,
+                  gsl::not_null<Cache*> cache,
+                  gr::Tags::ExtrinsicCurvature<DataType, 3> /*meta*/) const;
   void operator()(
       gsl::not_null<Scalar<DataType>*> magnetic_field_dot_spatial_velocity,
       gsl::not_null<Cache*> cache,
@@ -204,6 +203,11 @@ struct ScalarizedGrVariables
                   gsl::not_null<Cache*> cache,
                   gr::Tags::Conformal<gr::Tags::MomentumDensity<DataType, Dim>,
                                       0> /*meta*/) const;
+  void operator()(gsl::not_null<Scalar<DataType>*> scalar,
+                  gsl::not_null<Cache*> cache, sgb::Tags::Psi /*meta*/) const;
+  void operator()(gsl::not_null<Scalar<DataType>*> scalar_source,
+                  gsl::not_null<Cache*> cache,
+                  ::Tags::FixedSource<sgb::Tags::Psi> /*meta*/) const;
 };
 
 }  // namespace detail
@@ -271,7 +275,8 @@ template <typename GrSolution, bool HasMhd = false>
 class ScalarizedGr;
 
 template <typename GrSolution, bool HasMhd>
-class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
+class ScalarizedGr : public elliptic::analytic_data::Background,
+                     public elliptic::analytic_data::InitialGuess {
  public:
   static constexpr size_t Dim = 3;
   struct Amplitude {
@@ -301,13 +306,10 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
 
   /// \cond
   explicit ScalarizedGr(CkMigrateMessage* m)
-      : elliptic::analytic_data::AnalyticSolution(m) {}
+      : elliptic::analytic_data::Background(m),
+        elliptic::analytic_data::InitialGuess(m) {}
   using PUP::able::register_constructor;
   WRAPPED_PUPable_decl_template(ScalarizedGr);
-  std::unique_ptr<elliptic::analytic_data::AnalyticSolution> get_clone()
-      const override {
-    return std::make_unique<ScalarizedGr>(*this);
-  }
   /// \endcond
 
   template <typename DataType, typename... RequestedTags>
@@ -327,17 +329,10 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
     return variables_impl<DataVector>(x, mesh, inv_jacobian,
                                       tmpl::list<RequestedTags...>{});
   }
-  template <typename DataType>
-  tuples::TaggedTuple<::CurvedScalarWave::Tags::Psi> variables(
-      const tnsr::I<DataType, 3>& x,
-      tmpl::list<::CurvedScalarWave::Tags::Psi> /*meta*/) const {
-    DataType r = magnitude(x).get();
-    DataType result = amplitude_ / r;
-    return Scalar<DataType>{result};
-  }
 
   void pup(PUP::er& p) override {
-    elliptic::analytic_data::AnalyticSolution::pup(p);
+    elliptic::analytic_data::Background::pup(p);
+    elliptic::analytic_data::InitialGuess::pup(p);
     p | amplitude_;
     p | gr_solution_;
   }
@@ -361,26 +356,29 @@ class ScalarizedGr : public elliptic::analytic_data::AnalyticSolution {
       gr_solution =
           gr_solution_.variables(x, detail::gr_solution_vars<DataType, Dim>{});
     }
-    tuples::tagged_tuple_from_typelist<::Xcts::Solutions::hydro_tags<DataType>>
+    double amplitude = amplitude_;
+    tuples::tagged_tuple_from_typelist<
+        ::Xcts::AnalyticData::hydro_tags<DataType>>
         hydro_solution;
     if constexpr (HasMhd) {
       if constexpr (is_analytic_solution_v<GrSolution>) {
         hydro_solution = gr_solution_.variables(
             x, std::numeric_limits<double>::signaling_NaN(),
-            ::Xcts::Solutions::hydro_tags<DataType>{});
+            ::Xcts::AnalyticData::hydro_tags<DataType>{});
       } else {
         hydro_solution = gr_solution_.variables(
-            x, ::Xcts::Solutions::hydro_tags<DataType>{});
+            x, ::Xcts::AnalyticData::hydro_tags<DataType>{});
       }
     }
     using VarsComputer = detail::ScalarizedGrVariables<DataType, HasMhd>;
     const size_t num_points = get_size(*x.begin());
     typename VarsComputer::Cache cache{num_points};
-    VarsComputer computer{mesh, inv_jacobian, x, gr_solution, hydro_solution};
+    VarsComputer computer{mesh,        inv_jacobian,   x,
+                          gr_solution, hydro_solution, amplitude};
     const auto get_var = [&cache, &computer, &hydro_solution, &x](auto tag_v) {
       using tag = std::decay_t<decltype(tag_v)>;
       if constexpr (tmpl::list_contains_v<
-                        ::Xcts::Solutions::hydro_tags<DataType>, tag>) {
+                        ::Xcts::AnalyticData::hydro_tags<DataType>, tag>) {
         (void)cache;
         (void)computer;
         if constexpr (HasMhd) {
