@@ -9,6 +9,7 @@
 
 #include "DataStructures/DataBox/Prefixes.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
+#include "Elliptic/Systems/ScalarGaussBonnet/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/Divergence.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
@@ -113,6 +114,7 @@ class Flatness : public elliptic::analytic_data::AnalyticSolution {
         gr::Tags::Conformal<gr::Tags::StressTrace<DataType>, 8>,
         gr::Tags::Conformal<gr::Tags::MomentumDensity<DataType, 3>, 8>,
         ::Tags::FixedSource<Tags::ConformalFactorMinusOne<DataType>>,
+        ::Tags::FixedSource<sgb::Tags::Psi>,
         ::Tags::FixedSource<Tags::LapseTimesConformalFactorMinusOne<DataType>>,
         ::Tags::FixedSource<Tags::ShiftExcess<DataType, 3, Frame::Inertial>>,
         hydro::Tags::RestMassDensity<DataType>, hydro::Tags::Pressure<DataType>,
@@ -123,7 +125,7 @@ class Flatness : public elliptic::analytic_data::AnalyticSolution {
                    Tags::LapseTimesConformalFactor<DataType>,
                    gr::Tags::Lapse<DataType>,
                    hydro::Tags::SpecificEnthalpy<DataType>,
-                   hydro::Tags::LorentzFactor<DataType>>;
+                   hydro::Tags::LorentzFactor<DataType>, sgb::Tags::Psi>;
     using supported_tags_metric =
         tmpl::list<Tags::ConformalMetric<DataType, 3, Frame::Inertial>,
                    Tags::InverseConformalMetric<DataType, 3, Frame::Inertial>,
