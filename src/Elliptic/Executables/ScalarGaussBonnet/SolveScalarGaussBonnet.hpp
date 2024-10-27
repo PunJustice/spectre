@@ -112,7 +112,10 @@ struct Metavariables {
 
   struct factory_creation
       : tt::ConformsTo<Options::protocols::FactoryCreation> {
-    using analytic_solutions_and_data = sgb::Solutions::all_analytic_solutions;
+    using analytic_solutions_and_data = tmpl::flatten<tmpl::list<
+        sgb::Solutions::all_analytic_solutions,
+        Xcts::AnalyticData::Binary<elliptic::analytic_data::Background,
+                                   sgb::Solutions::all_analytic_solutions>>>;
     // using analytic_solutions_and_data = tmpl::push_back<
     //     Xcts::Solutions::all_analytic_solutions,
     //     Xcts::AnalyticData::Binary<elliptic::analytic_data::AnalyticSolution,

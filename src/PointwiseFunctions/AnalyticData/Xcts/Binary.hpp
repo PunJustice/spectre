@@ -12,6 +12,7 @@
 #include "DataStructures/TempBuffer.hpp"
 #include "DataStructures/Tensor/EagerMath/Magnitude.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
+#include "Elliptic/Systems/ScalarGaussBonnet/Tags.hpp"
 #include "Elliptic/Systems/Xcts/Tags.hpp"
 #include "NumericalAlgorithms/LinearOperators/PartialDerivatives.hpp"
 #include "Options/Auto.hpp"
@@ -53,7 +54,8 @@ using BinaryVariablesCache = cached_temp_buffer_from_typelist<tmpl::append<
         // For initial guesses
         Tags::ConformalFactorMinusOne<DataType>,
         Tags::LapseTimesConformalFactorMinusOne<DataType>,
-        Tags::ShiftExcess<DataType, 3, Frame::Inertial>>,
+        Tags::ShiftExcess<DataType, 3, Frame::Inertial>, sgb::Tags::Psi,
+        ::Tags::FixedSource<sgb::Tags::Psi>>,
     hydro_tags<DataType>>>;
 
 template <typename DataType>
@@ -76,7 +78,8 @@ struct BinaryVariables
           gr::Tags::Conformal<gr::Tags::MomentumDensity<DataType, Dim>, 0>,
           Tags::ConformalFactorMinusOne<DataType>,
           Tags::LapseTimesConformalFactorMinusOne<DataType>,
-          Tags::ShiftExcess<DataType, Dim, Frame::Inertial>>,
+          Tags::ShiftExcess<DataType, Dim, Frame::Inertial>, sgb::Tags::Psi,
+          ::Tags::FixedSource<sgb::Tags::Psi>>,
       hydro_tags<DataType>>;
 
   BinaryVariables(
@@ -210,6 +213,16 @@ struct BinaryVariables
       const gsl::not_null<Cache*> cache,
       Tags::LapseTimesConformalFactorMinusOne<DataType> meta) const {
     superposition(lapse_times_conformal_factor_minus_one, cache, meta);
+  }
+  void operator()(const gsl::not_null<Scalar<DataVector>*> scalar,
+                  const gsl::not_null<Cache*> cache,
+                  sgb::Tags::Psi meta) const {
+    superposition<false>(scalar, cache, meta);
+  }
+  void operator()(const gsl::not_null<Scalar<DataVector>*> scalar,
+                  const gsl::not_null<Cache*> cache,
+                  ::Tags::FixedSource<sgb::Tags::Psi> meta) const {
+    superposition<false>(scalar, cache, meta);
   }
   void operator()(
       const gsl::not_null<tnsr::I<DataType, Dim>*> shift_excess,
