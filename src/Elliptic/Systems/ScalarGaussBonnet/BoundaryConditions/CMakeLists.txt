@@ -30,6 +30,7 @@ target_link_libraries(
   ErrorHandling
   XctsBoundaryConditions
   XctsSolutions
+  Xcts
   Options
   Serialization
   Utilities
