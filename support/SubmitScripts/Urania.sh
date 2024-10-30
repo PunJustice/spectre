@@ -25,6 +25,7 @@ CHARM_PPN=$(expr ${SLURM_CPUS_PER_TASK} - 2)
 {% block list_modules %}
 # Load compiler and MPI modules with explicit version specifications,
 # consistently with the versions used to build the executable.
+export SPECTRE_HOME=/u/guilara/repos/spectre
 source ${SPECTRE_HOME}/support/Environments/urania.sh
 spectre_load_modules
 spectre_setup_charm_paths
