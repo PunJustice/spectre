@@ -30,6 +30,9 @@ source ${SPECTRE_HOME}/support/Environments/urania.sh
 spectre_load_modules
 spectre_setup_charm_paths
 
+export UCX_IB_RCACHE_MAX_REGIONS=30000
+ucx_info -c
+
 {% endblock %}
 
 {% block run_command %}
