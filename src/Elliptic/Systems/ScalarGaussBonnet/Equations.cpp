@@ -597,13 +597,15 @@ void LinearizedSources::apply(
   }
   const auto lowered_linearized_source =
       raise_or_lower_index(linearized_sources, conformal_metric);
+  const auto lowered_linearized_fluxes =
+      raise_or_lower_index(linearized_fluxes, conformal_metric);
   add_curved_sources(linearized_scalar_equation, conformal_metric,
                      conformal_christoffel_contracted, scalar_flux_correction,
                      lapse_times_conformal_factor_flux,
                      lapse_times_conformal_factor_minus_one,
                      conformal_factor_minus_one, conformal_factor_flux);
   get(*linearized_scalar_equation) -=
-      get(dot_product(sources, linearized_fluxes));
+      get(dot_product(sources, lowered_linearized_fluxes));
   get(*linearized_scalar_equation) -=
       get(dot_product(lowered_linearized_source, scalar_flux));
 }
