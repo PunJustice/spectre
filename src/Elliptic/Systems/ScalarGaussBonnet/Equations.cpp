@@ -595,7 +595,8 @@ void LinearizedSources::apply(
   for (size_t i = 0; i < 3; i++) {
     get(*linearized_scalar_equation) -= derivative_flux_terms.get(i, i);
   }
-  const auto lowered_source = raise_or_lower_index(sources, conformal_metric);
+  const auto lowered_linearized_source =
+      raise_or_lower_index(linearized_sources, conformal_metric);
   add_curved_sources(linearized_scalar_equation, conformal_metric,
                      conformal_christoffel_contracted, scalar_flux_correction,
                      lapse_times_conformal_factor_flux,
@@ -603,7 +604,8 @@ void LinearizedSources::apply(
                      conformal_factor_minus_one, conformal_factor_flux);
   get(*linearized_scalar_equation) -=
       get(dot_product(sources, linearized_fluxes));
-  get(*linearized_scalar_equation) -= get(dot_product(sources, scalar_flux));
+  get(*linearized_scalar_equation) -=
+      get(dot_product(lowered_linearized_source, scalar_flux));
 }
 
 }  // namespace sgb
