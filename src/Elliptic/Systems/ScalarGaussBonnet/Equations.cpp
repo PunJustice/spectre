@@ -593,7 +593,7 @@ void LinearizedSources::apply(
   const auto derivative_flux_terms =
       partial_derivative(linearized_fluxes, mesh, inv_jacobian);
   for (size_t i = 0; i < 3; i++) {
-    get(*linearized_scalar_equation) += derivative_flux_terms.get(i, i);
+    get(*linearized_scalar_equation) -= derivative_flux_terms.get(i, i);
   }
   const auto lowered_source = raise_or_lower_index(sources, conformal_metric);
   add_curved_sources(linearized_scalar_equation, conformal_metric,
