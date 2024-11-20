@@ -53,6 +53,12 @@ def prepare_scalar_solve(
     orbital_angular_velocity = binary_data["AngularVelocity"]
     radial_expansion_velocity = binary_data["Expansion"]
 
+    mass_ratio = M_input_A / M_input_B
+    x_offset = x_A - 1.0 / (1.0 + mass_ratio) * separation
+    y_offset, z_offset = binary_data["CenterOfMassOffset"]
+    center_of_mass_offset = [x_offset, y_offset, z_offset]
+    linear_velocity = binary_data["LinearVelocity"]
+
     inner_radius_A = binary_domain["ObjectA"]["InnerRadius"]
     inner_radius_B = binary_domain["ObjectB"]["InnerRadius"]
 
@@ -131,6 +137,9 @@ def prepare_scalar_solve(
         roll_off_rate=roll_off_rate,
         initial_guess_amplitude_a=initial_guess_amplitude_M_A,
         initial_guess_amplitude_b=initial_guess_amplitude_M_B,
+        # Control parameters
+        center_of_mass_offset=center_of_mass_offset,
+        linear_velocity=linear_velocity,
         id_run_dir=id_run_dir,
         pipeline_dir=pipeline_dir,
         control=False,
@@ -161,6 +170,9 @@ def generate_scalar_tensor_id(
     initial_guess_amplitude_a: float,
     initial_guess_amplitude_b: float,
     id_run_dir: Union[str, Path],
+    # Control parameters
+    center_of_mass_offset: Sequence[float] = [0.0, 0.0, 0.0],
+    linear_velocity: Sequence[float] = [0.0, 0.0, 0.0],
     # Resolution
     refinement_level: int = 1,
     polynomial_order: int = 6,
@@ -253,6 +265,8 @@ def generate_scalar_tensor_id(
         separation=separation,
         orbital_angular_velocity=orbital_angular_velocity,
         radial_expansion_velocity=radial_expansion_velocity,
+        center_of_mass_offset=center_of_mass_offset,
+        linear_velocity=linear_velocity,
         refinement_level=refinement_level,
         polynomial_order=polynomial_order,
     )
