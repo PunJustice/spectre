@@ -11,16 +11,16 @@ import click
 import numpy as np
 from rich.pretty import pretty_repr
 
-from spectre.Pipelines.EccentricityControl.InitialOrbitalParameters import (
-    initial_orbital_parameters,
-)
 from spectre.Pipelines.Bbh.InitialData import generate_id
 from spectre.Pipelines.Bbh.PostprocessId import (
     postprocess_id,
     postprocess_st_id,
 )
-from spectre.support.Schedule import schedule, scheduler_options
 from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
+from spectre.Pipelines.EccentricityControl.InitialOrbitalParameters import (
+    initial_orbital_parameters,
+)
+from spectre.support.Schedule import schedule, scheduler_options
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,10 @@ def generate_chain(
     ID_INPUT_FILE_TEMPLATE = (
         f"{spectre_home_dir}/support/Pipelines/Bbh/{ID_INPUT_FILE_NAME}"
     )
-    ID_POSTPROC_INPUT_FILE_TEMPLATE = f"{spectre_home_dir}/support/Pipelines/Bbh/{ID_POSTPROC_INPUT_FILE_NAME}"
+    ID_POSTPROC_INPUT_FILE_TEMPLATE = (
+        f"{spectre_home_dir}       "
+        f" /support/Pipelines/Bbh/{ID_POSTPROC_INPUT_FILE_NAME}"
+    )
     SCALAR_ID_INPUT_FILE_TEMPLATE = (
         f"{spectre_home_dir}/support/Pipelines/Bbh/{SCALAR_ID_INPUT_FILE_NAME}"
     )
@@ -325,7 +328,7 @@ def generate_chain(
                     " {SurfaceAverageOfScalarAhA}, {AreaAhB},"
                     " {IrreducibleMassAhB}, {ChristodoulouMassAhB},"
                     " {DimensionlessSpinMagnitudeAhB},"
-                    " {SurfaceAverageOfScalarAhB} \n".format(
+                    " {SurfaceAverageOfScalarAhB}, {ScalarCharge} \n".format(
                         **final_horizon_values
                     )
                 )
@@ -351,15 +354,18 @@ if __name__ == "__main__":
     # Need to specify the build and chain directories
     spectre_home_dir = "/u/guilara/repos/others_spectre/PJSpectre/spectre"
     build_dir = f"{spectre_home_dir}/build_pip_st"
-    chain_dir = "/urania/ptmp/guilara/spectre/Elliptic/Binary/2024/STTests/Pipeline/TestID/ChainDir"
+    chain_dir = ""
 
     # Notes:
-    # - If you change the yaml files make sure the XYZChain.yaml and the XYZ.yaml
+    # - If you change the yaml files make sure the
+    #   XYZChain.yaml and
+    #   the XYZ.yaml
     #   version are identical except for the 'Next' arguments.
     # - Adjust the number of nodes in the submit script.
     # - Use distances << 60 M (where the envelope fixed radius is)
     #   until we automatically scale it (linearly with separation?).
-    # - Send different parities in different jobs to avoid confusion and sorting.
+    # - Send different parities in different jobs to avoid
+    #   confusion and sorting.
     # - Use only one sequence for the orbital parameters (separation or orbital
     #   frequency).
     # - Xcts solutions are stored in XctsXX/ folders. Scalar solutions using
