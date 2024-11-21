@@ -21,7 +21,7 @@ namespace ScalarTensor::py_bindings {
 
 void bind_st_charge_impl(py::module& m) {
   m.def(
-      "st_horizon_quantities",
+      "st_charge",
       [](ylm::Strahlkorper<Frame::Inertial> sphere,
          tnsr::ii<DataVector, 3, Frame::Inertial> spatial_metric,
          tnsr::II<DataVector, 3, Frame::Inertial> inv_spatial_metric,
@@ -54,10 +54,9 @@ void bind_st_charge_impl(py::module& m) {
             std::move(sphere), std::move(spatial_metric),
             std::move(inv_spatial_metric), std::move(phi));
         py::dict result{};
-        result["SurfaceAverageOfScalar"] =
-            db::get<gr::surfaces::Tags::SurfaceIntegral<
-                ScalarTensor::StrahlkorperScalar::Tags::ScalarChargeIntegrand,
-                ::Frame::Inertial>>(box);
+        result["ScalarCharge"] = db::get<gr::surfaces::Tags::SurfaceIntegral<
+            ScalarTensor::StrahlkorperScalar::Tags::ScalarChargeIntegrand,
+            ::Frame::Inertial>>(box);
         return result;
       },
       py::arg("sphere"), py::arg("spatial_metric"),

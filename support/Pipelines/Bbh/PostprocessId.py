@@ -20,6 +20,7 @@ from spectre.Pipelines.Bbh.FindHorizon import (
     vec_to_string,
 )
 from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
+from spectre.PointwiseFunctions.ScalarTensor import st_charge
 from spectre.SphericalHarmonics import Strahlkorper
 from spectre.support.Schedule import schedule, scheduler_options
 from spectre.Visualization.OpenVolfiles import open_volfiles
@@ -304,6 +305,44 @@ def postprocess_st_id(
         #     )
 
     logger.info(f"Horizons found and written to {horizons_file}.")
+    strahlkorper = Strahlkorper(
+        l_max=12,
+        radius=1e4,
+        center=[0.0, 0.0, 0.0],
+    )
+    tensor_names = [
+        "SpatialMetric",
+        "InverseSpatialMetric",
+        "Phi",
+    ]
+    (
+        spatial_metric,
+        inv_spatial_metric,
+        phi,
+    ) = interpolate_tensors_to_points(
+        id_volfiles,
+        id_subfile_name,
+        observation_id=obs_id,
+        target_points=cartesian_coords(strahlkorper),
+        tensor_names=tensor_names,
+        tensor_types=[
+            tnsr.ii[DataVector, 3],
+            tnsr.II[DataVector, 3],
+            tnsr.i[DataVector, 3],
+        ],
+    )
+    charge_quantities = st_charge(
+        strahlkorper,
+        spatial_metric=spatial_metric,
+        inv_spatial_metric=inv_spatial_metric,
+        psi_scalar=phi,
+    )
+    for key in charge_quantities.keys():
+        horizons_summary.update(
+            {
+                key: charge_quantities[key],
+            }
+        )
 
     # Start the inspiral from the ID if requested
     if evolve:
