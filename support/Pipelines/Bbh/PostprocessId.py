@@ -9,6 +9,8 @@ from typing import Optional, Union
 import click
 import yaml
 
+from spectre.DataStructures import DataVector
+from spectre.DataStructures.Tensor import Scalar, tnsr
 from spectre.IO.Exporter import interpolate_tensors_to_points
 from spectre.Pipelines.Bbh.ControlId import (
     DEFAULT_MAX_ITERATIONS,
