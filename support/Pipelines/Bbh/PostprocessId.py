@@ -23,7 +23,7 @@ from spectre.Pipelines.Bbh.FindHorizon import (
 from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
 from spectre.PointwiseFunctions.ScalarTensor import st_charge
 from spectre.SphericalHarmonics import Strahlkorper
-from spectre.support.Schedule import schedule, scheduler_option
+from spectre.support.Schedule import schedule, scheduler_options
 from spectre.Visualization.OpenVolfiles import open_volfiles
 from spectre.Visualization.ReadH5 import select_observation
 from spectre.Visualization.ReadInputFile import find_event
