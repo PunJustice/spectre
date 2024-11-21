@@ -9,6 +9,7 @@ from typing import Optional, Union
 import click
 import yaml
 
+from spectre.IO.Exporter import interpolate_tensors_to_points
 from spectre.Pipelines.Bbh.ControlId import (
     DEFAULT_MAX_ITERATIONS,
     DEFAULT_RESIDUAL_TOLERANCE,
@@ -22,7 +23,7 @@ from spectre.Pipelines.Bbh.FindHorizon import (
 from spectre.Pipelines.Bbh.SolveST import prepare_scalar_solve
 from spectre.PointwiseFunctions.ScalarTensor import st_charge
 from spectre.SphericalHarmonics import Strahlkorper
-from spectre.support.Schedule import schedule, scheduler_options
+from spectre.support.Schedule import schedule, scheduler_option
 from spectre.Visualization.OpenVolfiles import open_volfiles
 from spectre.Visualization.ReadH5 import select_observation
 from spectre.Visualization.ReadInputFile import find_event
