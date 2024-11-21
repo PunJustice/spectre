@@ -338,7 +338,7 @@ def postprocess_st_id(
         strahlkorper,
         spatial_metric=spatial_metric,
         inv_spatial_metric=inv_spatial_metric,
-        psi_scalar=phi,
+        phi=phi,
     )
     for key in charge_quantities.keys():
         horizons_summary.update(
