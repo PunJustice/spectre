@@ -4,7 +4,7 @@
 import glob
 import logging
 from pathlib import Path
-from typing import Optional, Union
+from typing import Dict, Optional, Sequence, Union
 
 import click
 import yaml
@@ -15,6 +15,7 @@ from spectre.IO.Exporter import interpolate_tensors_to_points
 from spectre.Pipelines.Bbh.ControlId import (
     DEFAULT_MAX_ITERATIONS,
     DEFAULT_RESIDUAL_TOLERANCE,
+    SupportedParams,
     control_id,
 )
 from spectre.Pipelines.Bbh.FindHorizon import (
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 def postprocess_id(
     id_input_file_path: Union[str, Path],
     id_run_dir: Optional[Union[str, Path]] = None,
-    horizon_l_max: int = 12,
+    horizon_l_max: int = 16,
     horizons_file: Optional[Union[str, Path]] = None,
     control: bool = True,
     control_residual_tolerance: float = DEFAULT_RESIDUAL_TOLERANCE,
@@ -49,6 +50,7 @@ def postprocess_id(
     initial_guess_same_parity: bool = True,
     scalar_solve: bool = False,
     id_input_file_template: Optional[Union[str, Path]] = None,
+    control_params: Dict[SupportedParams, Union[float, Sequence[float]]] = {},
     evolve: bool = False,
     pipeline_dir: Optional[Union[str, Path]] = None,
     **scheduler_kwargs,
@@ -83,11 +85,13 @@ def postprocess_id(
       horizon_l_max: Maximum l-mode for the horizon search.
       horizons_file: Path to the file where the horizon data is written to.
         Default is 'Horizons.h5' in the 'id_run_dir'.
-      control: Control BBH physical parameters (default: False).
+      control: Control BBH physical parameters (default: True).
       control_residual_tolerance: Residual tolerance used for control.
       control_max_iterations: Maximum of iterations allowed for control.
       control_refinement_level: h-refinement used for control.
       control_polynomial_order: p-refinement used for control.
+      control_params: Dictionary used to customize control. See ControlId.py
+        for details.
       evolve: Evolve the initial data after postprocessing (default: False).
       pipeline_dir: Directory where steps in the pipeline are created.
         Required if 'evolve' is set to True.
@@ -96,6 +100,9 @@ def postprocess_id(
     with open(id_input_file_path, "r") as open_input_file:
         _, id_input_file = yaml.safe_load_all(open_input_file)
     x_B, x_A = id_input_file["Background"]["Binary"]["XCoords"]
+    y_offset, z_offset = id_input_file["Background"]["Binary"][
+        "CenterOfMassOffset"
+    ]
     id_domain = id_input_file["DomainCreator"]["BinaryCompactObject"]
     excision_radius_A = id_domain[f"ObjectA"]["InnerRadius"]
     excision_radius_B = id_domain[f"ObjectB"]["InnerRadius"]
@@ -124,7 +131,7 @@ def postprocess_id(
             initial_guess=Strahlkorper(
                 l_max=horizon_l_max,
                 radius=excision_radius * 1.5,
-                center=[xcoord, 0.0, 0.0],
+                center=[xcoord, y_offset, z_offset],
             ),
             output_surfaces_file=horizons_file,
             output_coeffs_subfile=f"{object_label}/Coefficients",
@@ -141,7 +148,8 @@ def postprocess_id(
 
     if control:
         last_control_run_dir = control_id(
-            id_input_file_path,
+            id_input_file_path=id_input_file_path,
+            control_params=control_params,
             id_run_dir=id_run_dir,
             residual_tolerance=control_residual_tolerance,
             max_iterations=control_max_iterations,
@@ -427,7 +435,7 @@ def postprocess_st_id(
     "--horizon-l-max",
     type=click.IntRange(0, None),
     help="Maximum l-mode for the horizon search.",
-    default=12,
+    default=16,
     show_default=True,
 )
 @click.option(

@@ -15,6 +15,7 @@
 #include "Elliptic/DiscontinuousGalerkin/DgElementArray.hpp"
 #include "Elliptic/Executables/Solver.hpp"
 #include "Elliptic/Systems/Xcts/BoundaryConditions/Factory.hpp"
+#include "Elliptic/Systems/Xcts/Events/ObserveAdmIntegrals.hpp"
 #include "Elliptic/Systems/Xcts/FirstOrderSystem.hpp"
 #include "Elliptic/Systems/Xcts/HydroQuantities.hpp"
 #include "Elliptic/Triggers/Factory.hpp"
@@ -69,6 +70,8 @@ struct Metavariables {
   using spacetime_quantities_compute = Xcts::Tags::SpacetimeQuantitiesCompute<
       tmpl::list<Xcts::Tags::ConformalFactor<DataVector>,
                  Xcts::Tags::LapseTimesConformalFactor<DataVector>,
+                 ::Tags::deriv<Xcts::Tags::ConformalFactor<DataVector>,
+                               tmpl::size_t<3>, Frame::Inertial>,
                  gr::Tags::HamiltonianConstraint<DataVector>,
                  gr::Tags::MomentumConstraint<DataVector, 3>,
                  gr::Tags::SpatialMetric<DataVector, 3>,
@@ -132,6 +135,8 @@ struct Metavariables {
         tmpl::pair<Event,
                    tmpl::flatten<tmpl::list<
                        Events::Completion,
+                       Events::ObserveAdmIntegrals<
+                           LinearSolver::multigrid::Tags::IsFinestGrid>,
                        dg::Events::field_observations<
                            volume_dim, observe_fields, observer_compute_tags,
                            LinearSolver::multigrid::Tags::IsFinestGrid>>>>,

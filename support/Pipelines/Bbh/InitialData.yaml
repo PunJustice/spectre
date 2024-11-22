@@ -19,6 +19,19 @@ Next:
     dimensionless_coupling_quartic: {{ Epsilon4 }}
     initial_guess_same_parity: {{ IDParity }}
     scalar_solve: {{ scalar_solve }}
+    control_params:
+      mass_A: {{ MassRight }}
+      mass_B: {{ MassLeft }}
+      spin_A:
+        - {{ DimensionlessSpinRight_x }}
+        - {{ DimensionlessSpinRight_y }}
+        - {{ DimensionlessSpinRight_z }}
+      spin_B:
+        - {{ DimensionlessSpinLeft_x }}
+        - {{ DimensionlessSpinLeft_y }}
+        - {{ DimensionlessSpinLeft_z }}
+      center_of_mass: [0., 0., 0.]
+      linear_momentum: [0., 0., 0.]
     evolve: {{ evolve }}
     scheduler: {{ scheduler | default("None") }}
     copy_executable: {{ copy_executable | default("None") }}
@@ -33,6 +46,9 @@ Parallelization:
 Background: &background
   Binary:
     XCoords: [&x_left {{ XLeft }}, &x_right {{ XRight }}]
+    CenterOfMassOffset:
+      - &y_offset {{ CenterOfMassOffset_y }}
+      - &z_offset {{ CenterOfMassOffset_z }}
     ObjectLeft: &kerr_left
       KerrSchild:
         Mass: &mass_left {{ MassLeft }}
@@ -53,7 +69,10 @@ Background: &background
         Velocity: [0., 0., 0.]
     AngularVelocity: {{ OrbitalAngularVelocity }}
     Expansion: {{ RadialExpansionVelocity }}
-    LinearVelocity: [0., 0., 0.]
+    LinearVelocity:
+      - {{ LinearVelocity_x }}
+      - {{ LinearVelocity_y }}
+      - {{ LinearVelocity_z }}
     FalloffWidths:
       - {{ FalloffWidthLeft }}
       - {{ FalloffWidthRight }}
@@ -69,7 +88,7 @@ DomainCreator:
       Interior:
         ExciseWithBoundaryCondition:
           ApparentHorizon:
-            Center: [*x_right, 0., 0.]
+            Center: [*x_right, *y_offset, *z_offset]
             Rotation:
               - {{ HorizonRotationRight_x }}
               - {{ HorizonRotationRight_y }}
@@ -84,7 +103,7 @@ DomainCreator:
       Interior:
         ExciseWithBoundaryCondition:
           ApparentHorizon:
-            Center: [*x_left, 0., 0.]
+            Center: [*x_left, *y_offset, *z_offset]
             Rotation:
               - {{ HorizonRotationLeft_x }}
               - {{ HorizonRotationLeft_y }}
@@ -92,6 +111,7 @@ DomainCreator:
             Lapse: *kerr_left
             NegativeExpansion: *kerr_left
       UseLogarithmicMap: True
+    CenterOfMassOffset: [*y_offset, *z_offset]
     Envelope:
       Radius: &outer_shell_inner_radius {{ EnvelopeRadius }}
       RadialDistribution: Projective
@@ -234,6 +254,7 @@ EventsAndTriggers:
           InterpolateToMesh: None
           CoordinatesFloatingPointType: Double
           FloatingPointTypes: [Double]
+      - ObserveAdmIntegrals
 
 RandomizeInitialGuess: None
 

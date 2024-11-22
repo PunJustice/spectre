@@ -219,6 +219,16 @@ def generate_chain(
             polynomial_order=polynomial_order,
         )
 
+        # Need to define control params target
+        control_params = dict(
+            mass_A=mass_a,
+            mass_B=mass_b,
+            spin_A=dimensionless_spin_a,
+            spin_B=dimensionless_spin_b,
+            center_of_mass=[0.0, 0.0, 0.0],
+            linear_momentum=[0.0, 0.0, 0.0],
+        )
+
         # Postprocess. Find Horizons and do control loop
         # Note: The control loop uses Next to compute the horizons.
         # It also uses the InitialData.yaml template -- since the
@@ -247,6 +257,7 @@ def generate_chain(
             # initial_guess_same_parity=id_parity,
             # Use the template here. Exclude Next
             id_input_file_template=ID_POSTPROC_INPUT_FILE_TEMPLATE,
+            control_params=control_params,
             executable=xcts_executable_path,
             validate=False,
             # Check this argument
@@ -265,6 +276,7 @@ def generate_chain(
                     f"{xcts_run_dir}/ScalarSolve{scalar_iteration:02}"
                 )
 
+                # It will read the controlled parameters from the last iteration
                 prepare_scalar_solve(
                     # Need to know the path to the last control solve
                     # id_input_file_path=f"{xcts_run_dir}/{ID_INPUT_FILE_NAME}",

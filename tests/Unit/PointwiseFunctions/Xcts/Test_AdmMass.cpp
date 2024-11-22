@@ -9,6 +9,7 @@
 #include "DataStructures/Tensor/Slice.hpp"
 #include "DataStructures/Tensor/Tensor.hpp"
 #include "Domain/AreaElement.hpp"
+#include "Domain/CoordinateMaps/CoordinateMap.hpp"
 #include "Domain/CreateInitialElement.hpp"
 #include "Domain/Creators/Sphere.hpp"
 #include "Domain/ElementMap.hpp"
@@ -16,8 +17,6 @@
 #include "Domain/FaceNormal.hpp"
 #include "Domain/InterfaceLogicalCoordinates.hpp"
 #include "Domain/Structure/InitialElementIds.hpp"
-#include "Framework/CheckWithRandomValues.hpp"
-#include "Framework/SetupLocalPythonEnvironment.hpp"
 #include "NumericalAlgorithms/LinearOperators/DefiniteIntegral.hpp"
 #include "NumericalAlgorithms/Spectral/LogicalCoordinates.hpp"
 #include "NumericalAlgorithms/Spectral/Mesh.hpp"
@@ -25,11 +24,9 @@
 #include "PointwiseFunctions/AnalyticSolutions/Xcts/Schwarzschild.hpp"
 #include "PointwiseFunctions/AnalyticSolutions/Xcts/WrappedGr.hpp"
 #include "PointwiseFunctions/Xcts/AdmLinearMomentum.hpp"
+#include "PointwiseFunctions/Xcts/AdmMass.hpp"
 
 namespace {
-
-using Schwarzschild = Xcts::Solutions::Schwarzschild;
-using KerrSchild = Xcts::Solutions::WrappedGr<gr::Solutions::KerrSchild>;
 
 template <typename Solution>
 void test_infinite_surface_integral(const double distance, const double mass,
@@ -40,7 +37,7 @@ void test_infinite_surface_integral(const double distance, const double mass,
   const size_t h_refinement = 1;
   const size_t p_refinement = 6;
   const domain::creators::Sphere shell{
-      /* inner_radius */ horizon_radius,
+      /* inner_radius */ 1.1 * horizon_radius,
       /* outer_radius */ distance,
       /* interior */ domain::creators::Sphere::Excision{},
       /* initial_refinement */ h_refinement,
@@ -57,7 +54,7 @@ void test_infinite_surface_integral(const double distance, const double mass,
                           Spectral::Quadrature::GaussLobatto};
 
   // Initialize surface integral
-  tnsr::I<double, 3> surface_integral({0., 0., 0.});
+  Scalar<double> surface_integral(0.);
 
   // Compute integrals by summing over each element
   for (const auto& element_id : element_ids) {
@@ -83,72 +80,78 @@ void test_infinite_surface_integral(const double distance, const double mass,
         continue;
       }
 
-      // Get coordinates
+      // Get interface coordinates
       const auto logical_coords =
           interface_logical_coordinates(face_mesh, boundary_direction);
       const auto inertial_coords = logical_to_inertial_map(logical_coords);
       const auto inv_jacobian =
           logical_to_inertial_map.inv_jacobian(logical_coords);
 
-      // Get required fields
+      // Get required fields on the interface
       const auto background_fields = solution.variables(
           inertial_coords,
           tmpl::list<
-              Xcts::Tags::ConformalFactor<DataVector>,
-              gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
-              gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
-              gr::Tags::TraceExtrinsicCurvature<DataVector>>{});
-      const auto& conformal_factor =
-          get<Xcts::Tags::ConformalFactor<DataVector>>(background_fields);
-      const auto& inv_spatial_metric =
-          get<gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>>(
+              ::Tags::deriv<Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+                            tmpl::size_t<3>, Frame::Inertial>,
+              Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+              Xcts::Tags::InverseConformalMetric<DataVector, 3,
+                                                 Frame::Inertial>,
+              Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                         Frame::Inertial>,
+              Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
+                                                         Frame::Inertial>>{});
+      const auto& deriv_conformal_factor =
+          get<::Tags::deriv<Xcts::Tags::ConformalFactorMinusOne<DataVector>,
+                            tmpl::size_t<3>, Frame::Inertial>>(
               background_fields);
-      const auto& extrinsic_curvature =
-          get<gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>>(
+      const auto& conformal_metric =
+          get<Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>>(
               background_fields);
-      const auto& trace_extrinsic_curvature =
-          get<gr::Tags::TraceExtrinsicCurvature<DataVector>>(background_fields);
+      const auto& inv_conformal_metric = get<
+          Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>(
+          background_fields);
+      const auto& conformal_christoffel_second_kind =
+          get<Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
+                                                         Frame::Inertial>>(
+              background_fields);
+      const auto& conformal_christoffel_contracted =
+          get<Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
+                                                         Frame::Inertial>>(
+              background_fields);
 
-      // Compute the inverse extrinsic curvature
-      tnsr::II<DataVector, 3> inv_extrinsic_curvature;
-      tenex::evaluate<ti::I, ti::J>(make_not_null(&inv_extrinsic_curvature),
-                                    inv_spatial_metric(ti::I, ti::K) *
-                                        inv_spatial_metric(ti::J, ti::L) *
-                                        extrinsic_curvature(ti::k, ti::l));
+      // Compute conformal area element
+      const auto sqrt_det_conformal_metric =
+          Scalar<DataVector>(sqrt(get(determinant(conformal_metric))));
+      const auto conformal_area_element =
+          area_element(inv_jacobian, boundary_direction, inv_conformal_metric,
+                       sqrt_det_conformal_metric);
 
-      // Compute Euclidean area element
-      const auto flat_area_element =
-          euclidean_area_element(inv_jacobian, boundary_direction);
-
-      // Compute Euclidean face normal
-      auto flat_face_normal = unnormalized_face_normal(
+      // Compute conformal face normal
+      auto conformal_face_normal = unnormalized_face_normal(
           face_mesh, logical_to_inertial_map, boundary_direction);
-      const auto face_normal_magnitude = magnitude(flat_face_normal);
+      const auto face_normal_magnitude =
+          magnitude(conformal_face_normal, inv_conformal_metric);
       for (size_t d = 0; d < 3; ++d) {
-        flat_face_normal.get(d) /= get(face_normal_magnitude);
+        conformal_face_normal.get(d) /= get(face_normal_magnitude);
       }
 
-      // Evaluate surface integral
-      const auto surface_integrand =
-          Xcts::adm_linear_momentum_surface_integrand(
-              conformal_factor, inv_spatial_metric, inv_extrinsic_curvature,
-              trace_extrinsic_curvature);
-      const auto contracted_integrand = tenex::evaluate<ti::I>(
-          surface_integrand(ti::I, ti::J) * flat_face_normal(ti::j));
-      for (int I = 0; I < 3; I++) {
-        surface_integral.get(I) += definite_integral(
-            contracted_integrand.get(I) * get(flat_area_element), face_mesh);
-      }
+      // Compute and contract surface integrand
+      const auto surface_integrand = Xcts::adm_mass_surface_integrand(
+          deriv_conformal_factor, inv_conformal_metric,
+          conformal_christoffel_second_kind, conformal_christoffel_contracted);
+      const auto contracted_integrand = tenex::evaluate(
+          surface_integrand(ti::I) * conformal_face_normal(ti::i));
+
+      // Compute contribution to surface integral
+      surface_integral.get() += definite_integral(
+          get(contracted_integrand) * get(conformal_area_element), face_mesh);
     }
   }
 
   // Check result
   auto custom_approx = Approx::custom().epsilon(10. / distance).scale(1.0);
   const double lorentz_factor = 1. / sqrt(1. - square(boost_speed));
-  CHECK(get<0>(surface_integral) == custom_approx(0.));
-  CHECK(get<1>(surface_integral) == custom_approx(0.));
-  CHECK(get<2>(surface_integral) ==
-        custom_approx(lorentz_factor * mass * boost_speed));
+  CHECK(get(surface_integral) == custom_approx(lorentz_factor * mass));
 }
 
 template <typename Solution>
@@ -160,7 +163,7 @@ void test_infinite_volume_integral(const double distance, const double mass,
   const size_t h_refinement = 1;
   const size_t p_refinement = 6;
   const domain::creators::Sphere shell{
-      /* inner_radius */ 2 * horizon_radius,
+      /* inner_radius */ 1.1 * horizon_radius,
       /* outer_radius */ distance,
       /* interior */ domain::creators::Sphere::Excision{},
       /* initial_refinement */ h_refinement,
@@ -178,8 +181,8 @@ void test_infinite_volume_integral(const double distance, const double mass,
   const Mesh<2> face_mesh{p_refinement + 1, Spectral::Basis::Legendre,
                           Spectral::Quadrature::GaussLobatto};
 
-  // Initialize surface integral
-  tnsr::I<double, 3> total_integral({0., 0., 0.});
+  // Initialize "reduced" integral.
+  Scalar<double> total_integral(0.);
 
   // Compute integrals by summing over each element
   for (const auto& element_id : element_ids) {
@@ -199,72 +202,97 @@ void test_infinite_volume_integral(const double distance, const double mass,
         logical_to_inertial_map.inv_jacobian(logical_coords);
 
     // Get required fields
-    const auto solution_fields = solution.variables(
-        inertial_coords,
+    const auto background_fields = solution.variables(
+        inertial_coords, mesh, inv_jacobian,
         tmpl::list<
             Xcts::Tags::ConformalFactor<DataVector>,
             ::Tags::deriv<Xcts::Tags::ConformalFactorMinusOne<DataVector>,
                           tmpl::size_t<3>, Frame::Inertial>,
-            Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
-            Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
-            gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>,
-            gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>,
+            Xcts::Tags::ConformalRicciScalar<DataVector>,
             gr::Tags::TraceExtrinsicCurvature<DataVector>,
+            Xcts::Tags::LongitudinalShiftMinusDtConformalMetricOverLapseSquare<
+                DataVector>,
+            Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+            ::Tags::deriv<
+                Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+                tmpl::size_t<3>, Frame::Inertial>,
+            Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>,
             Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
                                                        Frame::Inertial>,
+            ::Tags::deriv<Xcts::Tags::ConformalChristoffelSecondKind<
+                              DataVector, 3, Frame::Inertial>,
+                          tmpl::size_t<3>, Frame::Inertial>,
             Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
                                                        Frame::Inertial>>{});
     const auto& conformal_factor =
-        get<Xcts::Tags::ConformalFactor<DataVector>>(solution_fields);
+        get<Xcts::Tags::ConformalFactor<DataVector>>(background_fields);
     const auto& deriv_conformal_factor =
         get<::Tags::deriv<Xcts::Tags::ConformalFactorMinusOne<DataVector>,
-                          tmpl::size_t<3>, Frame::Inertial>>(solution_fields);
+                          tmpl::size_t<3>, Frame::Inertial>>(background_fields);
+    const auto& conformal_ricci_scalar =
+        get<Xcts::Tags::ConformalRicciScalar<DataVector>>(background_fields);
+    const auto& trace_extrinsic_curvature =
+        get<gr::Tags::TraceExtrinsicCurvature<DataVector>>(background_fields);
+    const auto& longitudinal_shift_minus_dt_conformal_metric_over_lapse_square =
+        get<Xcts::Tags::LongitudinalShiftMinusDtConformalMetricOverLapseSquare<
+            DataVector>>(background_fields);
     const auto& conformal_metric =
         get<Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>>(
-            solution_fields);
+            background_fields);
+    const auto& deriv_conformal_metric = get<::Tags::deriv<
+        Xcts::Tags::ConformalMetric<DataVector, 3, Frame::Inertial>,
+        tmpl::size_t<3>, Frame::Inertial>>(background_fields);
     const auto& inv_conformal_metric =
         get<Xcts::Tags::InverseConformalMetric<DataVector, 3, Frame::Inertial>>(
-            solution_fields);
-    const auto& inv_spatial_metric =
-        get<gr::Tags::InverseSpatialMetric<DataVector, 3, Frame::Inertial>>(
-            solution_fields);
-    const auto& extrinsic_curvature =
-        get<gr::Tags::ExtrinsicCurvature<DataVector, 3, Frame::Inertial>>(
-            solution_fields);
-    const auto& trace_extrinsic_curvature =
-        get<gr::Tags::TraceExtrinsicCurvature<DataVector>>(solution_fields);
+            background_fields);
     const auto& conformal_christoffel_second_kind =
         get<Xcts::Tags::ConformalChristoffelSecondKind<DataVector, 3,
                                                        Frame::Inertial>>(
-            solution_fields);
+            background_fields);
+    const auto& deriv_conformal_christoffel_second_kind =
+        get<::Tags::deriv<Xcts::Tags::ConformalChristoffelSecondKind<
+                              DataVector, 3, Frame::Inertial>,
+                          tmpl::size_t<3>, Frame::Inertial>>(background_fields);
     const auto& conformal_christoffel_contracted =
         get<Xcts::Tags::ConformalChristoffelContracted<DataVector, 3,
                                                        Frame::Inertial>>(
-            solution_fields);
+            background_fields);
 
-    // Compute the inverse extrinsic curvature
-    tnsr::II<DataVector, 3> inv_extrinsic_curvature;
-    tenex::evaluate<ti::I, ti::J>(make_not_null(&inv_extrinsic_curvature),
-                                  inv_spatial_metric(ti::I, ti::K) *
-                                      inv_spatial_metric(ti::J, ti::L) *
-                                      extrinsic_curvature(ti::k, ti::l));
+    const auto deriv_inv_conformal_metric =
+        tenex::evaluate<ti::i, ti::J, ti::K>(
+            inv_conformal_metric(ti::J, ti::L) *
+                inv_conformal_metric(ti::K, ti::M) *
+                (deriv_conformal_metric(ti::i, ti::l, ti::m) -
+                 conformal_christoffel_second_kind(ti::N, ti::i, ti::l) *
+                     conformal_metric(ti::n, ti::m) -
+                 conformal_christoffel_second_kind(ti::N, ti::i, ti::m) *
+                     conformal_metric(ti::l, ti::n)) -
+            conformal_christoffel_second_kind(ti::J, ti::i, ti::l) *
+                inv_conformal_metric(ti::L, ti::K) -
+            conformal_christoffel_second_kind(ti::K, ti::i, ti::l) *
+                inv_conformal_metric(ti::J, ti::L));
 
-    const auto surface_integrand = Xcts::adm_linear_momentum_surface_integrand(
-        conformal_factor, inv_spatial_metric, inv_extrinsic_curvature,
-        trace_extrinsic_curvature);
+    const auto energy_density =
+        make_with_value<Scalar<DataVector>>(inertial_coords, 0.0);
 
-    const auto volume_integrand = Xcts::adm_linear_momentum_volume_integrand(
-        surface_integrand, conformal_factor, deriv_conformal_factor,
-        conformal_metric, inv_conformal_metric,
-        conformal_christoffel_second_kind, conformal_christoffel_contracted);
-    for (int I = 0; I < 3; I++) {
-      total_integral.get(I) +=
-          definite_integral(volume_integrand.get(I) * get(det_jacobian), mesh);
-    }
+    const auto sqrt_det_conformal_metric =
+        Scalar<DataVector>(sqrt(get(determinant(conformal_metric))));
 
-    // Loop over external boundaries
+    // Evaluate volume integral.
+    const auto volume_integrand = Xcts::adm_mass_volume_integrand(
+        conformal_factor, conformal_ricci_scalar, trace_extrinsic_curvature,
+        longitudinal_shift_minus_dt_conformal_metric_over_lapse_square,
+        energy_density, inv_conformal_metric, deriv_inv_conformal_metric,
+        conformal_christoffel_second_kind, conformal_christoffel_contracted,
+        deriv_conformal_christoffel_second_kind);
+    total_integral.get() += definite_integral(
+        get(volume_integrand) * get(sqrt_det_conformal_metric) *
+            get(det_jacobian),
+        mesh);
+
+    // Loop over external boundaries.
     for (auto boundary_direction : current_element.external_boundaries()) {
-      // Skip interfaces not at the outer boundary
+      // Skip interfaces not at the inner boundary.
       if (boundary_direction != Direction<3>::lower_zeta()) {
         continue;
       }
@@ -278,46 +306,60 @@ void test_infinite_volume_integral(const double distance, const double mass,
       // Slice required fields to the interface
       const size_t slice_index =
           index_to_slice_at(mesh.extents(), boundary_direction);
-      const auto& face_surface_integrand =
-          data_on_slice(surface_integrand, mesh.extents(),
+      const auto& face_deriv_conformal_factor =
+          data_on_slice(deriv_conformal_factor, mesh.extents(),
+                        boundary_direction.dimension(), slice_index);
+      const auto& face_inv_conformal_metric =
+          data_on_slice(inv_conformal_metric, mesh.extents(),
+                        boundary_direction.dimension(), slice_index);
+      const auto& face_conformal_christoffel_second_kind =
+          data_on_slice(conformal_christoffel_second_kind, mesh.extents(),
+                        boundary_direction.dimension(), slice_index);
+      const auto& face_conformal_christoffel_contracted =
+          data_on_slice(conformal_christoffel_contracted, mesh.extents(),
+                        boundary_direction.dimension(), slice_index);
+      const auto& face_sqrt_det_conformal_metric =
+          data_on_slice(sqrt_det_conformal_metric, mesh.extents(),
                         boundary_direction.dimension(), slice_index);
 
-      // Compute Euclidean area element
-      const auto flat_area_element =
-          euclidean_area_element(face_inv_jacobian, boundary_direction);
+      // Compute conformal area element
+      const auto conformal_area_element = area_element(
+          face_inv_jacobian, boundary_direction, face_inv_conformal_metric,
+          face_sqrt_det_conformal_metric);
 
-      // Compute Euclidean face normal
-      auto flat_face_normal = unnormalized_face_normal(
+      // Compute conformal face normal
+      auto conformal_face_normal = unnormalized_face_normal(
           face_mesh, logical_to_inertial_map, boundary_direction);
-      const auto face_normal_magnitude = magnitude(flat_face_normal);
+      const auto face_normal_magnitude =
+          magnitude(conformal_face_normal, face_inv_conformal_metric);
       for (size_t d = 0; d < 3; ++d) {
-        flat_face_normal.get(d) /= get(face_normal_magnitude);
+        conformal_face_normal.get(d) /= get(face_normal_magnitude);
       }
 
-      // Compute surface integrand
-      const auto contracted_integrand = tenex::evaluate<ti::I>(
-          -face_surface_integrand(ti::I, ti::J) * flat_face_normal(ti::j));
+      // Evaluate surface integral.
+      const auto surface_integrand = Xcts::adm_mass_surface_integrand(
+          face_deriv_conformal_factor, face_inv_conformal_metric,
+          face_conformal_christoffel_second_kind,
+          face_conformal_christoffel_contracted);
+      const auto contracted_integrand = tenex::evaluate(
+          -surface_integrand(ti::I) * conformal_face_normal(ti::i));
 
       // Compute contribution to surface integral
-      for (int I = 0; I < 3; I++) {
-        total_integral.get(I) += definite_integral(
-            contracted_integrand.get(I) * get(flat_area_element), face_mesh);
-      }
+      total_integral.get() += definite_integral(
+          get(contracted_integrand) * get(conformal_area_element), face_mesh);
     }
   }
 
   // Check result
   const double lorentz_factor = 1. / sqrt(1. - square(boost_speed));
   auto custom_approx = Approx::custom().epsilon(10. / distance).scale(1.0);
-  CHECK(get<0>(total_integral) == custom_approx(0.));
-  CHECK(get<1>(total_integral) == custom_approx(0.));
-  CHECK(get<2>(total_integral) ==
-        custom_approx(lorentz_factor * mass * boost_speed));
+  CHECK(get(total_integral) == custom_approx(lorentz_factor * mass));
 }
 
 }  // namespace
 
-SPECTRE_TEST_CASE("Unit.PointwiseFunctions.Xcts.AdmLinearMomentum",
+// [[TimeOut, 60]]
+SPECTRE_TEST_CASE("Unit.PointwiseFunctions.Xcts.AdmMass",
                   "[Unit][PointwiseFunctions]") {
   {
     INFO("Schwarzschild in Kerr-Schild coordinates");
@@ -364,27 +406,4 @@ SPECTRE_TEST_CASE("Unit.PointwiseFunctions.Xcts.AdmLinearMomentum",
                                     solution);
     }
   }
-
-  // Test integrands against Python implementation with random values.
-  const pypp::SetupLocalPythonEnvironment local_python_env{
-      "PointwiseFunctions/Xcts"};
-  const DataVector used_for_size{5};
-  pypp::check_with_random_values<1>(
-      static_cast<void (*)(
-          gsl::not_null<tnsr::II<DataVector, 3>*>, const Scalar<DataVector>&,
-          const tnsr::II<DataVector, 3>&, const tnsr::II<DataVector, 3>&,
-          const Scalar<DataVector>&)>(
-          &Xcts::adm_linear_momentum_surface_integrand),
-      "AdmLinearMomentum", {"adm_linear_momentum_surface_integrand"},
-      {{{-1., 1.}}}, used_for_size);
-  pypp::check_with_random_values<1>(
-      static_cast<void (*)(
-          gsl::not_null<tnsr::I<DataVector, 3>*>,
-          const tnsr::II<DataVector, 3>&, const Scalar<DataVector>&,
-          const tnsr::i<DataVector, 3>&, const tnsr::ii<DataVector, 3>&,
-          const tnsr::II<DataVector, 3>&, const tnsr::Ijj<DataVector, 3>&,
-          const tnsr::i<DataVector, 3>&)>(
-          &Xcts::adm_linear_momentum_volume_integrand),
-      "AdmLinearMomentum", {"adm_linear_momentum_volume_integrand"},
-      {{{-1, 1.}}}, used_for_size);
 }
