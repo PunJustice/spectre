@@ -321,21 +321,21 @@ EventsAndTriggers:
   - Trigger:
       Slabs:
         EvenlySpaced:
-          Interval: 2000
+          Interval: 1000
           Offset: 0
     Events:
       - ObserveFields:
           SubfileName: VolumeData
           VariablesToObserve:
-            - SpacetimeMetric
+            # - SpacetimeMetric
             # For diagnostics:
             - ConstraintEnergy
-            - PointwiseL2Norm(GaugeConstraint)
-            - PointwiseL2Norm(ThreeIndexConstraint)
+            # - PointwiseL2Norm(GaugeConstraint)
+            # - PointwiseL2Norm(ThreeIndexConstraint)
             # For visualization:
-            - Lapse
-            - SpatialRicciScalar
-            - Psi4Real
+            # - Lapse
+            # - SpatialRicciScalar
+            # - Psi4Real
           InterpolateToMesh: None
           # Save disk space by saving single precision data. This is enough
           # for visualization.
@@ -467,7 +467,7 @@ ControlSystems:
     TimescaleTuner: *KinematicTuner
     ControlError:
   Translation:
-    IsActive: false
+    IsActive: true
     Averager: *KinematicAverager
     Controller: *KinematicController
     TimescaleTuner: *KinematicTuner
@@ -550,4 +550,45 @@ ControlSystems:
 
 ResourceInfo:
   AvoidGlobalProc0: false
-  Singletons: Auto
+  Singletons:
+    MemoryMonitor: Auto
+    ControlSystemAhA:
+      Proc: Auto
+      Exclusive: True
+    ControlSystemAhB:
+      Proc: Auto
+      Exclusive: True
+    ControlSystemCharSpeedAhA:
+      Proc: Auto
+      Exclusive: True
+    ControlSystemCharSpeedAhB:
+      Proc: Auto
+      Exclusive: True
+    ControlSystemCharSpeedExcisionA:
+      Proc: Auto
+      Exclusive: True
+    ControlSystemCharSpeedExcisionB:
+      Proc: Auto
+      Exclusive: True
+    ObservationAhA:
+      Proc: Auto
+      Exclusive: True
+    ObservationAhB:
+      Proc: Auto
+      Exclusive: True
+    ObservationAhC: Auto
+    BondiSachsInterpolation: Auto
+    ObservationExcisionBoundaryA: Auto
+    ObservationExcisionBoundaryB: Auto
+    Rotation: Auto
+    Expansion: Auto
+    Translation: Auto
+    ShapeA:
+      Proc: Auto
+      Exclusive: True
+    ShapeB:
+      Proc: Auto
+      Exclusive: True
+    SizeA: Auto
+    SizeB: Auto
+    Component: Auto

@@ -10,16 +10,16 @@
 {% block head %}
 {{ super() -}}
 #SBATCH --nodes {{ num_nodes | default(1) }}
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=2
 #SBATCH --ntasks-per-core=1
-#SBATCH --cpus-per-task=72
+#SBATCH --cpus-per-task=36
 #SBATCH -t {{ time_limit | default("1-00:00:00") }}
 #SBATCH -p {{ queue | default("p.urania") }}
 {% endblock %}
 
 {% block charm_ppn %}
 # Two thread for communication
-CHARM_PPN=$(expr ${SLURM_CPUS_PER_TASK} - 2)
+CHARM_PPN=$(expr ${SLURM_CPUS_PER_TASK} - 1)
 {% endblock %}
 
 {% block list_modules %}
