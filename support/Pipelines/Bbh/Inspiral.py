@@ -144,6 +144,10 @@ def inspiral_parameters(
     # if total_mass != 1.0:
     #     raise ValueError(f"Total mass must 1.0, not {total_mass}.")
 
+    # Previous value: 1.0385
+    # Found that decreasing it fixed q=1.1 run at D=14.45
+    excision_rescale_factor = 1.032258
+
     params = {
         # Initial data files
         "IdFileGlob": str(
@@ -155,8 +159,14 @@ def inspiral_parameters(
         # as the final horizon found after the last iteration. Found through
         # trial and error that increasing the excision size by this factor
         # allowed the runs to evolve without early incoming char speeds.
-        "ExcisionRadiusA": id_domain_creator["ObjectA"]["InnerRadius"] * 1.0385,
-        "ExcisionRadiusB": id_domain_creator["ObjectB"]["InnerRadius"] * 1.0385,
+        "ExcisionRadiusA": (
+            id_domain_creator["ObjectA"]["InnerRadius"]
+            * excision_rescale_factor
+        ),
+        "ExcisionRadiusB": (
+            id_domain_creator["ObjectB"]["InnerRadius"]
+            * excision_rescale_factor
+        ),
         "XCoordA": id_domain_creator["ObjectA"]["XCoord"],
         "XCoordB": id_domain_creator["ObjectB"]["XCoord"],
         "CenterOfMassOffset_y": id_domain_creator["CenterOfMassOffset"][0],
