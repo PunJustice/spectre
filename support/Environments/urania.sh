@@ -65,5 +65,6 @@ spectre_run_cmake() {
 /impi/gcc_11-11.2.0/2021.7.1/bin/mpig++ \
           -D MPI_Fortran_COMPILER=/mpcdf/soft/SLE_15/packages/skylake\
 /impi/gcc_11-11.2.0/2021.7.1/bin/mpigfortran \
+          -D SPEC_ROOT=/u/pjn/gitrepos/spec/master \
           -Wno-dev "$@" $SPECTRE_HOME
 }
