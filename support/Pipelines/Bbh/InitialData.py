@@ -86,6 +86,7 @@ def id_parameters(
         object_radius_B = object_radius_A
         envelope_radius = 60.0 * np.sqrt(separation / 14.0)
 
+    excision_fraction = 0.99
     return {
         "MassRight": mass_a,
         "MassLeft": mass_b,
@@ -96,8 +97,8 @@ def id_parameters(
         "LinearVelocity_x": linear_velocity[0],
         "LinearVelocity_y": linear_velocity[1],
         "LinearVelocity_z": linear_velocity[2],
-        "ExcisionRadiusRight": 0.93 * r_plus_A,
-        "ExcisionRadiusLeft": 0.93 * r_plus_B,
+        "ExcisionRadiusRight": excision_fraction * r_plus_A,
+        "ExcisionRadiusLeft": excision_fraction * r_plus_B,
         "ObjectRadiusRight": object_radius_A,
         "ObjectRadiusLeft": object_radius_B,
         "EnvelopeRadius": envelope_radius,

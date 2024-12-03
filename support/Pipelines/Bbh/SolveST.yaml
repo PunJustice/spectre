@@ -161,7 +161,7 @@ NonlinearSolver:
       RelativeResidual: 1.e-15
       AbsoluteResidual: 1.e-10
     SufficientDecrease: 1.e-4
-    MaxGlobalizationSteps: 10
+    MaxGlobalizationSteps: 20
     DampingFactor: 1.
     Verbosity: Verbose
 
@@ -188,7 +188,7 @@ LinearSolver:
     SubdomainSolver:
       ExplicitInverse:
         WriteMatrixToFile: None
-    SkipResets: True
+    SkipResets: False
     ObservePerCoreReductions: False
 
 RadiallyCompressedCoordinates: None
