@@ -92,29 +92,30 @@ void add_curved_sources(
       (1 + get(conformal_factor_minus_one));
 }
 
-tnsr::I<DataVector, 3> curved_sources(
-    const tnsr::II<DataVector, 3>& inv_conformal_metric,
+tnsr::i<DataVector, 3> curved_sources(
+    const tnsr::ii<DataVector, 3>& conformal_metric,
     const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
-    const tnsr::I<DataVector, 3>& flux_for_field,
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
     const tnsr::I<DataVector, 3>& conformal_factor_flux) {
-  tnsr::I<DataVector, 3> result;
-  const auto raised_christoffel = raise_or_lower_index(
-      conformal_christoffel_contracted, inv_conformal_metric);
+  tnsr::i<DataVector, 3> result;
+  const auto lowered_conformal_factor_flux =
+      raise_or_lower_index(conformal_factor_flux, conformal_metric);
+  const auto lowered_lapse_times_conformal_factor_flux =
+      raise_or_lower_index(lapse_times_conformal_factor_flux, conformal_metric);
   for (size_t i = 0; i < 3; i++) {
-    result.get(i) = lapse_times_conformal_factor_flux.get(i) /
+    result.get(i) = lowered_lapse_times_conformal_factor_flux.get(i) /
                     (1 + get(lapse_times_conformal_factor_minus_one));
-    result.get(i) += raised_christoffel.get(i);
-    result.get(i) += 5. * conformal_factor_flux.get(i) /
+    result.get(i) += conformal_christoffel_contracted.get(i);
+    result.get(i) += 5. * lowered_conformal_factor_flux.get(i) /
                      (1 + get(conformal_factor_minus_one));
   }
   return result;
 }
 
 // Returns linearisation of source w/ respect to xcts variables
-tnsr::I<DataVector, 3> source_part_linearization(
+tnsr::i<DataVector, 3> source_part_linearization(
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
@@ -122,19 +123,29 @@ tnsr::I<DataVector, 3> source_part_linearization(
     const Scalar<DataVector>& conformal_factor_correction,
     const Scalar<DataVector>& lapse_times_conformal_factor_correction,
     const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
-    const tnsr::I<DataVector, 3>&
-        lapse_times_conformal_factor_flux_correction) {
-  tnsr::I<DataVector, 3> result;
+    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux_correction,
+    const tnsr::ii<DataVector, 3>& conformal_metric) {
+  tnsr::i<DataVector, 3> result;
+  const auto lowered_lapse_times_conformal_factor_flux =
+      raise_or_lower_index(lapse_times_conformal_factor_flux, conformal_metric);
+  const auto lowered_lapse_times_conformal_factor_flux_correction =
+      raise_or_lower_index(lapse_times_conformal_factor_flux_correction,
+                           conformal_metric);
+  const auto lowered_conformal_factor_flux =
+      raise_or_lower_index(conformal_factor_flux, conformal_metric);
+  const auto lowered_conformal_factor_flux_correction =
+      raise_or_lower_index(conformal_factor_flux_correction, conformal_metric);
   for (size_t i = 0; i < 3; i++) {
     result.get(i) = -get(lapse_times_conformal_factor_correction) *
                     lapse_times_conformal_factor_flux.get(i) /
                     square(1 + get(lapse_times_conformal_factor_minus_one));
-    result.get(i) += lapse_times_conformal_factor_flux.get(i) /
-                     (1 + get(lapse_times_conformal_factor_minus_one));
+    result.get(i) +=
+        lowered_lapse_times_conformal_factor_flux_correction.get(i) /
+        (1 + get(lapse_times_conformal_factor_minus_one));
     result.get(i) -= 5. * get(conformal_factor_correction) *
-                     conformal_factor_flux.get(i) /
+                     lowered_conformal_factor_flux.get(i) /
                      square(1 + get(conformal_factor_minus_one));
-    result.get(i) += 5. * conformal_factor_flux_correction.get(i) /
+    result.get(i) += 5. * lowered_conformal_factor_flux_correction.get(i) /
                      (1 + get(conformal_factor_minus_one));
   }
   return result;
@@ -580,14 +591,14 @@ void LinearizedSources::apply(
       lapse_times_conformal_factor_minus_one, conformal_factor_minus_one,
       conformal_factor_correction, lapse_times_conformal_factor_correction,
       shift_rolloff, shift_excess_correction);
-  const tnsr::I<DataVector, 3> linearized_sources = source_part_linearization(
+  const tnsr::i<DataVector, 3> linearized_sources = source_part_linearization(
       lapse_times_conformal_factor_flux, lapse_times_conformal_factor_minus_one,
       conformal_factor_minus_one, conformal_factor_flux,
       conformal_factor_correction, lapse_times_conformal_factor_correction,
       conformal_factor_flux_correction,
-      lapse_times_conformal_factor_flux_correction);
-  const tnsr::I<DataVector, 3> sources = curved_sources(
-      inv_conformal_metric, conformal_christoffel_contracted, scalar_flux,
+      lapse_times_conformal_factor_flux_correction, conformal_metric);
+  const tnsr::i<DataVector, 3> sources = curved_sources(
+      conformal_metric, conformal_christoffel_contracted,
       lapse_times_conformal_factor_flux, lapse_times_conformal_factor_minus_one,
       conformal_factor_minus_one, conformal_factor_flux);
   const auto derivative_flux_terms =
@@ -595,19 +606,15 @@ void LinearizedSources::apply(
   for (size_t i = 0; i < 3; i++) {
     get(*linearized_scalar_equation) -= derivative_flux_terms.get(i, i);
   }
-  const auto lowered_linearized_source =
-      raise_or_lower_index(linearized_sources, conformal_metric);
-  const auto lowered_linearized_fluxes =
-      raise_or_lower_index(linearized_fluxes, conformal_metric);
   add_curved_sources(linearized_scalar_equation, conformal_metric,
                      conformal_christoffel_contracted, scalar_flux_correction,
                      lapse_times_conformal_factor_flux,
                      lapse_times_conformal_factor_minus_one,
                      conformal_factor_minus_one, conformal_factor_flux);
   get(*linearized_scalar_equation) -=
-      get(dot_product(sources, lowered_linearized_fluxes));
+      get(dot_product(sources, linearized_fluxes));
   get(*linearized_scalar_equation) -=
-      get(dot_product(lowered_linearized_source, scalar_flux));
+      get(dot_product(linearized_sources, scalar_flux));
 }
 
 }  // namespace sgb

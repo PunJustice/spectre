@@ -30,6 +30,7 @@ target_link_libraries(
   GeneralRelativity
   Utilities
   Xcts
+  XctsPointwiseFunctions
   INTERFACE
   LinearOperators
   )

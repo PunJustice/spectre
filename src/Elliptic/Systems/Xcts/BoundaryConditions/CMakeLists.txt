@@ -30,7 +30,9 @@ target_link_libraries(
   Domain
   Elliptic
   ErrorHandling
+  InitialDataUtilities
   XctsSolutions
+  ScalarGaussBonnetSolutions
   Options
   Serialization
   Utilities

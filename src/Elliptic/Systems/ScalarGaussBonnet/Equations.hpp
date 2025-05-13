@@ -72,10 +72,9 @@ void add_curved_sources(
     const Scalar<DataVector>& conformal_factor_minus_one,
     const tnsr::I<DataVector, 3>& conformal_factor_flux);
 
-tnsr::I<DataVector, 3> curved_sources(
+tnsr::i<DataVector, 3> curved_sources(
     const tnsr::II<DataVector, 3>& inv_conformal_metric,
     const tnsr::i<DataVector, 3>& conformal_christoffel_contracted,
-    const tnsr::I<DataVector, 3>& flux_for_field,
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
@@ -83,13 +82,14 @@ tnsr::I<DataVector, 3> curved_sources(
     const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux_correction);
 
-tnsr::I<DataVector, 3> source_part_linearization(
+tnsr::i<DataVector, 3> source_part_linearization(
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
     const tnsr::I<DataVector, 3>& conformal_factor_flux,
     const Scalar<DataVector>& conformal_factor_correction,
-    const Scalar<DataVector>& lapse_times_conformal_factor_correction);
+    const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+    const tnsr::ii<DataVector, 3>& conformal_metric);
 
 tnsr::I<DataVector, 3> flux_part_linearization(
     const Mesh<3>& mesh,
