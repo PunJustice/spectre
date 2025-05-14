@@ -137,7 +137,7 @@ tnsr::i<DataVector, 3> source_part_linearization(
       raise_or_lower_index(conformal_factor_flux_correction, conformal_metric);
   for (size_t i = 0; i < 3; i++) {
     result.get(i) = -get(lapse_times_conformal_factor_correction) *
-                    lapse_times_conformal_factor_flux.get(i) /
+                    lowered_lapse_times_conformal_factor_flux.get(i) /
                     square(1 + get(lapse_times_conformal_factor_minus_one));
     result.get(i) +=
         lowered_lapse_times_conformal_factor_flux_correction.get(i) /
