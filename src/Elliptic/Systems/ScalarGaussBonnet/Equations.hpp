@@ -89,6 +89,8 @@ tnsr::i<DataVector, 3> source_part_linearization(
     const tnsr::I<DataVector, 3>& conformal_factor_flux,
     const Scalar<DataVector>& conformal_factor_correction,
     const Scalar<DataVector>& lapse_times_conformal_factor_correction,
+    const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
+    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux_correction,
     const tnsr::ii<DataVector, 3>& conformal_metric);
 
 tnsr::I<DataVector, 3> flux_part_linearization(
