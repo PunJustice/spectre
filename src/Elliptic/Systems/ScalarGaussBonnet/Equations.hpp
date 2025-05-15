@@ -78,9 +78,7 @@ tnsr::i<DataVector, 3> curved_sources(
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
     const Scalar<DataVector>& lapse_times_conformal_factor_minus_one,
     const Scalar<DataVector>& conformal_factor_minus_one,
-    const tnsr::I<DataVector, 3>& conformal_factor_flux,
-    const tnsr::I<DataVector, 3>& conformal_factor_flux_correction,
-    const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux_correction);
+    const tnsr::I<DataVector, 3>& conformal_factor_flux);
 
 tnsr::i<DataVector, 3> source_part_linearization(
     const tnsr::I<DataVector, 3>& lapse_times_conformal_factor_flux,
