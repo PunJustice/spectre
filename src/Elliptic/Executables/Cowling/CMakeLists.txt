@@ -38,6 +38,7 @@ target_link_libraries(
   ParallelMultigrid
   ParallelNonlinearSolver
   ParallelSchwarz
+  PhaseControl
   Cowling
   Xcts
   XctsAnalyticData

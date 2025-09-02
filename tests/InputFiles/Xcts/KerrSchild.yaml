@@ -58,7 +58,6 @@ OutputFileChecks:
     AbsoluteTolerance: 1e-4
 
 ---
-
 Parallelization:
   ElementDistribution: NumGridPoints
 
@@ -242,6 +241,7 @@ EventsAndTriggersAtIterations:
             - Error(ConformalFactorMinusOne)
             - Error(LapseTimesConformalFactorMinusOne)
             - Error(ShiftExcess)
+            - Confo
           InterpolateToMesh: None
           CoordinatesFloatingPointType: Double
           FloatingPointTypes: [Double]

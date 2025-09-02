@@ -65,7 +65,7 @@ struct Metavariables {
 
   static constexpr size_t volume_dim = 3;
   using system = Cowling::FirstOrderSystem;
-  using solver = elliptic::Solver<Metavariables>;
+  using solver = elliptic::Solver<Metavariables, volume_dim, system>;
 
   using observe_fields = tmpl::append<
       typename system::primal_fields, typename system::background_fields,
@@ -120,7 +120,7 @@ struct Metavariables {
                        Events::Completion,
                        dg::Events::field_observations<
                            volume_dim, observe_fields, observer_compute_tags,
-                           LinearSolver::multigrid::Tags::IsFinestGrid>>>>,
+                           ::amr::Tags::IsFinestGrid>>>>,
         tmpl::pair<Trigger, elliptic::Triggers::all_triggers<
                                 ::amr::OptionTags::AmrGroup>>,
         tmpl::pair<
@@ -204,9 +204,17 @@ struct Metavariables {
               tmpl::push_back<register_actions,
                               importers::Actions::RegisterWithElementDataReader,
                               Parallel::Actions::TerminatePhase>>,
+          Parallel::PhaseActions<
+              Parallel::Phase::Restart,
+              tmpl::push_back<register_actions,
+                              Parallel::Actions::TerminatePhase>>,
           Parallel::PhaseActions<Parallel::Phase::ImportInitialData,
                                  import_actions>,
-          Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>>,
+          Parallel::PhaseActions<Parallel::Phase::Solve, solve_actions>,
+          Parallel::PhaseActions<
+              Parallel::Phase::CheckDomain,
+              tmpl::list<::amr::Actions::SendAmrDiagnostics,
+                         Parallel::Actions::TerminatePhase>>>,
       LinearSolver::multigrid::ElementsAllocator<
           volume_dim, typename solver::multigrid::options_group>>;
 
@@ -274,6 +282,8 @@ struct Metavariables {
             gr::Tags::InverseSpatialMetric<DataVector, 3>,
             gr::Tags::SpatialChristoffelSecondKind<DataVector, 3>,
             gr::Tags::SpatialRicci<DataVector, 3>>>;
+    static constexpr bool keep_coarse_grids = true;
+    static constexpr bool p_refine_only_in_event = false;
   };
 
   struct registration
@@ -289,8 +299,9 @@ struct Metavariables {
                  observers::ObserverWriter<Metavariables>,
                  importers::ElementDataReader<Metavariables>>>;
 
-  static constexpr std::array<Parallel::Phase, 5> default_phase_order{
+  static constexpr std::array<Parallel::Phase, 7> default_phase_order{
       {Parallel::Phase::Initialization, Parallel::Phase::Register,
+       Parallel::Phase::UpdateSections, Parallel::Phase::CheckDomain,
        Parallel::Phase::ImportInitialData, Parallel::Phase::Solve,
        Parallel::Phase::Exit}};
 
